@@ -1,0 +1,58 @@
+# Page snapshot
+
+```yaml
+- generic [ref=e1]:
+  - generic [ref=e2]:
+    - banner [ref=e3]:
+      - generic [ref=e5]:
+        - generic [ref=e6]:
+          - link "蜂巢" [ref=e7] [cursor=pointer]:
+            - /url: /
+            - generic [ref=e8]:
+              - img [ref=e10]
+              - generic [ref=e18]: 蜂巢
+          - navigation [ref=e19]:
+            - link "探索项目" [ref=e20] [cursor=pointer]:
+              - /url: /
+            - link "分类浏览" [ref=e21] [cursor=pointer]:
+              - /url: /categories
+            - link "关于我们" [ref=e22] [cursor=pointer]:
+              - /url: /about
+        - generic [ref=e23]:
+          - generic [ref=e24]:
+            - img [ref=e25]
+            - textbox "搜索项目..." [ref=e27]: 管理员1765423900021
+          - link "登录" [ref=e28] [cursor=pointer]:
+            - /url: /auth/login
+          - link "开始创作" [ref=e29] [cursor=pointer]:
+            - /url: /auth/register
+    - main [ref=e30]:
+      - generic [ref=e32]:
+        - generic [ref=e33]:
+          - generic [ref=e34]: 🐝
+          - heading "加入蜂巢" [level=2] [ref=e35]
+          - paragraph [ref=e36]: 开始你的AI视频创作之旅
+        - generic [ref=e37]:
+          - generic [ref=e38]:
+            - generic [ref=e39]:
+              - generic [ref=e40]: 姓名
+              - textbox "请输入您的姓名" [ref=e41]
+              - paragraph [ref=e42]: 请输入姓名
+            - generic [ref=e43]:
+              - generic [ref=e44]: 邮箱
+              - textbox "请输入您的邮箱" [ref=e45]: admin1765423900021@test.com
+            - generic [ref=e46]:
+              - generic [ref=e47]: 密码
+              - textbox "请输入密码（至少6个字符）" [ref=e48]: admin123456
+            - generic [ref=e49]:
+              - generic [ref=e50]: 确认密码
+              - textbox "请再次输入密码" [ref=e51]: admin123456
+            - button "注册" [active] [ref=e52]
+          - paragraph [ref=e54]:
+            - text: 已有账户？
+            - link "立即登录" [ref=e55] [cursor=pointer]:
+              - /url: /auth/login
+  - button "Open Next.js Dev Tools" [ref=e61] [cursor=pointer]:
+    - img [ref=e62]
+  - alert [ref=e65]
+```

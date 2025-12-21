@@ -1,0 +1,382 @@
+@import "tailwindcss";
+
+:root {
+  /* Figma 设计系统 - 基础变量 */
+  --font-size: 16px;
+  --background: #ffffff;
+  --foreground: #111827;
+  --card: #ffffff;
+  --card-foreground: #111827;
+  
+  /* 蜂巢设计系统 - 主色系 (来自 Figma) */
+  --color-primary: #FFD700;
+  --color-primary-hover: #E6C200;
+  --color-primary-light: #FFF9E6;
+  
+  /* 辅助色系 */
+  --color-secondary-orange: #FF8C42;
+  --color-secondary-blue: #4A90E2;
+  --color-secondary-green: #10B981;
+  
+  /* 中性色系 (Figma 设计规范) */
+  --color-neutral-900: #111827;
+  --color-neutral-800: #1F2937;
+  --color-neutral-700: #374151;
+  --color-neutral-600: #4B5563;
+  --color-neutral-500: #6B7280;
+  --color-neutral-400: #9CA3AF;
+  --color-neutral-300: #D1D5DB;
+  --color-neutral-200: #E5E7EB;
+  --color-neutral-100: #F3F4F6;
+  --color-neutral-50: #F9FAFB;
+  --color-neutral-0: #FFFFFF;
+  
+  /* 分类颜色系统 (来自 Figma ProjectCard) */
+  --category-scifi-bg: #EDE9FE;
+  --category-scifi-text: #5B21B6;
+  --category-animation-bg: #FEF3C7;
+  --category-animation-text: #92400E;
+  --category-documentary-bg: #D1FAE5;
+  --category-documentary-text: #065F46;
+  --category-education-bg: #DBEAFE;
+  --category-education-text: #1E40AF;
+  --category-other-bg: #FCE7F3;
+  --category-other-text: #831843;
+  
+  /* 状态色系 */
+  --color-success: #10B981;
+  --color-success-light: #D1FAE5;
+  --color-success-dark: #065F46;
+  
+  --color-warning: #F59E0B;
+  --color-warning-light: #FEF3C7;
+  --color-warning-dark: #92400E;
+  
+  --color-error: #EF4444;
+  --color-error-light: #FEE2E2;
+  --color-error-dark: #991B1B;
+  
+  --color-info: #3B82F6;
+  --color-info-light: #DBEAFE;
+  --color-info-dark: #1E40AF;
+  
+  /* 输入框样式 (来自 Figma) */
+  --input-background: #f3f3f5;
+  --input-border: rgba(0, 0, 0, 0.1);
+  --switch-background: #cbced4;
+  
+  /* 间距系统 (8px栅格) */
+  --spacing-xs: 4px;
+  --spacing-sm: 8px;
+  --spacing-md: 16px;
+  --spacing-lg: 24px;
+  --spacing-xl: 32px;
+  --spacing-2xl: 48px;
+  --spacing-3xl: 64px;
+  
+  /* 圆角 (来自 Figma) */
+  --radius: 0.625rem;
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  
+  /* 阴影 */
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.1);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.15);
+  --shadow-lg: 0 20px 25px rgba(0, 0, 0, 0.15);
+  
+  /* 过渡 */
+  --transition-fast: 150ms ease;
+  --transition-base: 300ms ease;
+  --transition-slow: 500ms ease;
+  
+  /* 字重 (来自 Figma) */
+  --font-weight-normal: 400;
+  --font-weight-medium: 500;
+  --font-weight-semibold: 600;
+  --font-weight-bold: 700;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+body {
+  background: var(--color-neutral-0);
+  color: var(--color-neutral-800);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  line-height: 1.5;
+}
+
+/* 标题样式 */
+h1, h2, h3, h4, h5, h6 {
+  color: var(--color-neutral-900);
+  font-weight: 600;
+  line-height: 1.3;
+}
+
+/* 平滑滚动 */
+html {
+  scroll-behavior: smooth;
+}
+
+/* 选中文本样式 */
+::selection {
+  background-color: var(--color-primary-light);
+  color: var(--color-neutral-900);
+}
+
+/* 焦点样式 */
+*:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
+/* 黄色按钮 */
+.btn-primary {
+  background: var(--primary-color);
+  color: #333333;
+  font-weight: 500;
+  transition: all 0.2s ease;
+}
+
+.btn-primary:hover {
+  background: var(--secondary-color);
+}
+
+/* 卡片样式 */
+.project-card {
+  background: white;
+  border: 1px solid var(--border-color);
+  transition: all 0.3s ease;
+}
+
+.project-card:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+/* 进度条 */
+.progress-bar {
+  background: var(--primary-color);
+  height: 4px;
+  transition: width 0.5s ease;
+}
+
+/* 标签样式 */
+.badge-success {
+  background: var(--primary-color);
+  color: #333333;
+  font-weight: 500;
+  padding: 4px 12px;
+  border-radius: 4px;
+  font-size: 0.875rem;
+}
+
+/* Toast 动画 */
+@keyframes slide-in-right {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+.animate-slide-in-right {
+  animation: slide-in-right 0.3s ease-out;
+}
+
+/* 项目详情页样式优化 */
+.prose {
+  color: #374151;
+}
+
+.prose p {
+  margin-bottom: 1rem;
+}
+
+.prose p:last-child {
+  margin-bottom: 0;
+}
+
+/* 响应式优化 */
+@media (max-width: 1024px) {
+  .sticky {
+    position: relative;
+    top: 0;
+  }
+}
+
+/* 进度条动画 */
+@keyframes progress-animate {
+  from {
+    width: 0%;
+  }
+}
+
+.progress-bar-animated {
+  animation: progress-animate 1s ease-out;
+}
+
+/* Logo 脉冲动画 - 更优雅 */
+@keyframes pulse-slow {
+  0%, 100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.7;
+    transform: scale(1.05);
+  }
+}
+
+.animate-pulse-slow {
+  animation: pulse-slow 2s ease-in-out infinite;
+}
+
+/* 页面加载动画 */
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.page-loader-enter {
+  animation: fade-in 0.3s ease-out;
+}
+
+/* 卡片悬停效果 */
+.project-card-hover {
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.project-card-hover:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+}
+
+/* 富文本内容样式 */
+.rich-text-content {
+  color: #374151;
+  line-height: 1.8;
+}
+
+.rich-text-content h1,
+.rich-text-content h2,
+.rich-text-content h3,
+.rich-text-content h4 {
+  font-weight: bold;
+  margin-top: 2rem;
+  margin-bottom: 1rem;
+  color: #111827;
+}
+
+.rich-text-content h1 {
+  font-size: 2rem;
+  border-bottom: 2px solid #FFD700;
+  padding-bottom: 0.5rem;
+}
+
+.rich-text-content h2 {
+  font-size: 1.75rem;
+  border-bottom: 1px solid #e5e7eb;
+  padding-bottom: 0.5rem;
+}
+
+.rich-text-content h3 {
+  font-size: 1.5rem;
+}
+
+.rich-text-content h4 {
+  font-size: 1.25rem;
+}
+
+.rich-text-content p {
+  margin-bottom: 1.25rem;
+  color: #374151;
+  line-height: 1.8;
+}
+
+.rich-text-content img {
+  max-width: 100%;
+  height: auto;
+  border-radius: 0.5rem;
+  margin: 1.5rem 0;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.rich-text-content ul,
+.rich-text-content ol {
+  margin: 1rem 0;
+  padding-left: 2rem;
+}
+
+.rich-text-content li {
+  margin: 0.5rem 0;
+  line-height: 1.8;
+}
+
+.rich-text-content blockquote {
+  border-left: 4px solid #FFD700;
+  padding-left: 1.5rem;
+  margin: 1.5rem 0;
+  color: #6b7280;
+  font-style: italic;
+  background-color: #f9fafb;
+  padding: 1rem 1.5rem;
+  border-radius: 0.25rem;
+}
+
+.rich-text-content a {
+  color: #2563eb;
+  text-decoration: underline;
+  transition: color 0.2s;
+}
+
+.rich-text-content a:hover {
+  color: #1d4ed8;
+}
+
+.rich-text-content strong {
+  font-weight: 700;
+  color: #111827;
+}
+
+.rich-text-content em {
+  font-style: italic;
+}
+
+.rich-text-content code {
+  background-color: #f3f4f6;
+  padding: 0.2rem 0.4rem;
+  border-radius: 0.25rem;
+  font-family: 'Courier New', monospace;
+  font-size: 0.9em;
+  color: #dc2626;
+}
+
+.rich-text-content pre {
+  background-color: #1f2937;
+  color: #f9fafb;
+  padding: 1.5rem;
+  border-radius: 0.5rem;
+  overflow-x: auto;
+  margin: 1.5rem 0;
+}
+
+.rich-text-content pre code {
+  background-color: transparent;
+  color: inherit;
+  padding: 0;
+}

@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>初始化演示数据</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 600px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        button {
+            background: #ff6b35;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 10px 5px;
+        }
+        button:hover {
+            background: #f7931e;
+        }
+        .success {
+            color: green;
+            margin-top: 20px;
+        }
+        .info {
+            background: #e8f4f8;
+            padding: 15px;
+            border-radius: 4px;
+            margin: 15px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🐝 蜂巢演示数据初始化</h1>
+        
+        <div class="info">
+            <p><strong>这个工具会创建一些演示数据，包括：</strong></p>
+            <ul>
+                <li>1个管理员账户</li>
+                <li>3个测试用户</li>
+                <li>5个示例项目</li>
+            </ul>
+            <p><strong>测试账户：</strong></p>
+            <ul>
+                <li><strong>管理员</strong> - 邮箱: admin@beehive.com / 密码: admin123</li>
+                <li>普通用户 - 邮箱: demo@beehive.com / 密码: 123456</li>
+                <li>普通用户 - 邮箱: creator@beehive.com / 密码: 123456</li>
+            </ul>
+        </div>
+
+        <button onclick="initDemoData()">初始化演示数据</button>
+        <button onclick="clearAllData()">清除所有数据</button>
+        
+        <div id="message"></div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/bcryptjs/2.4.3/bcrypt.min.js"></script>
+    <script>
+        async function initDemoData() {
+            // 使用bcrypt加密密码
+            const adminPasswordHash = await bcrypt.hash('admin123', 10);
+            const userPasswordHash = await bcrypt.hash('123456', 10);
+            
+            // 创建测试用户（包括管理员）
+            const users = [
+                {
+                    id: 'admin_1',
+                    name: '系统管理员',
+                    email: 'admin@beehive.com',
+                    avatar: '/default-avatar.svg',
+                    passwordHash: adminPasswordHash,
+                    role: 'super_admin',
+                    isActive: true,
+                    createdAt: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString()
+                },
+                {
+                    id: 'user_demo_1',
+                    name: '张创意',
+                    email: 'demo@beehive.com',
+                    avatar: '/default-avatar.svg',
+                    passwordHash: userPasswordHash,
+                    role: 'user',
+                    isActive: true,
+                    createdAt: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000).toISOString()
+                },
+                {
+                    id: 'user_demo_2',
+                    name: '李导演',
+                    email: 'creator@beehive.com',
+                    avatar: '/default-avatar.svg',
+                    passwordHash: userPasswordHash,
+                    role: 'user',
+                    isActive: true,
+                    createdAt: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString()
+                }
+            ];
+
+            localStorage.setItem('registeredUsers', JSON.stringify(users));
+
+            // 创建示例项目
+            const projects = [
+                {
+                    id: 'project_1',
+                    title: '科幻短片：未来城市2050',
+                    description: '探索2050年智能城市生活的AI视频短片，融合科技与人文关怀。我们将展示未来城市中人工智能、自动驾驶、智能家居等技术如何改变人们的日常生活。',
+                    category: '科幻',
+                    targetDuration: 5,
+                    currentDuration: 2,
+                    telegramGroup: 'https://t.me/future_city',
+                    coverImage: '',
+                    creatorId: 'user_demo_1',
+                    creatorName: '张创意',
+                    participantsCount: 8,
+                    status: 'active',
+                    createdAt: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(),
+                    logs: [
+                        {
+                            id: 'log_1',
+                            type: 'update',
+                            content: '项目启动！我们已经完成了剧本大纲和角色设定。',
+                            createdAt: new Date(Date.now() - 6 * 24 * 60 * 60 * 1000).toISOString(),
+                            creatorName: '张创意'
+                        }
+                    ]
+                },
+                {
+                    id: 'project_2',
+                    title: '动画系列：小蜜蜂的冒险',
+                    description: '可爱的小蜜蜂在花园中的奇妙冒险故事，适合全家观看的温馨动画。',
+                    category: '动画',
+                    targetDuration: 10,
+                    currentDuration: 3,
+                    telegramGroup: 'https://t.me/little_bee',
+                    coverImage: '',
+                    creatorId: 'user_demo_2',
+                    creatorName: '李导演',
+                    participantsCount: 5,
+                    status: 'active',
+                    createdAt: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(),
+                    logs: []
+                },
+                {
+                    id: 'project_3',
+                    title: '纪录片：AI艺术家诞生记',
+                    description: '记录AI从学习到创作的全过程，展示人工智能如何理解和创造艺术。',
+                    category: '纪录片',
+                    targetDuration: 15,
+                    currentDuration: 15,
+                    telegramGroup: '',
+                    coverImage: '',
+                    creatorId: 'user_demo_1',
+                    creatorName: '张创意',
+                    participantsCount: 12,
+                    status: 'completed',
+                    createdAt: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString(),
+                    logs: []
+                }
+            ];
+
+            localStorage.setItem('projects', JSON.stringify(projects));
+            
+            document.getElementById('message').innerHTML = 
+                '<div class="success"><strong>✅ 演示数据初始化成功！</strong><br>请返回首页查看。</div>';
+        }
+
+        function clearAllData() {
+            if (confirm('确定要清除所有数据吗？此操作不可恢复！')) {
+                localStorage.clear();
+                document.getElementById('message').innerHTML = 
+                    '<div class="success"><strong>✅ 所有数据已清除！</strong></div>';
+            }
+        }
+    </script>
+</body>
+</html>

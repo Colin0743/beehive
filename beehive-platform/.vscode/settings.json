@@ -1,0 +1,18 @@
+{
+  "livePreview.defaultPreviewPath": "/",
+  "livePreview.serverRoot": "http://localhost:3000",
+  "files.exclude": {
+    "**/.git": true,
+    "**/.DS_Store": true,
+    "**/node_modules": true,
+    "**/.next": true
+  },
+  "search.exclude": {
+    "**/node_modules": true,
+    "**/.next": true,
+    "**/dist": true
+  },
+  "task.autoDetect": "on",
+  "task.quickOpenHistory": 10,
+  "task.quickOpenDetail": true
+}

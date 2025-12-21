@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>初始化大量演示数据 - 蜂巢平台</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        h1 { color: #111827; margin-bottom: 10px; }
+        .subtitle { color: #6B7280; margin-bottom: 20px; }
+        button {
+            background: #FFD700;
+            color: #111827;
+            border: none;
+            padding: 14px 28px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 600;
+            margin: 10px 5px;
+            transition: all 0.2s;
+        }
+        button:hover { background: #E6C200; transform: translateY(-1px); }
+        button.danger { background: #EF4444; color: white; }
+        button.danger:hover { background: #DC2626; }
+        .success { color: #10B981; margin-top: 20px; padding: 15px; background: #D1FAE5; border-radius: 8px; }
+        .info { background: #FFF9E6; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #FFD700; }
+        .stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; margin: 20px 0; }
+        .stat-card { background: #F9FAFB; padding: 15px; border-radius: 8px; text-align: center; }
+        .stat-number { font-size: 28px; font-weight: bold; color: #111827; }
+        .stat-label { font-size: 12px; color: #6B7280; }
+        .progress { height: 8px; background: #E5E7EB; border-radius: 4px; margin: 20px 0; overflow: hidden; }
+        .progress-bar { height: 100%; background: #10B981; border-radius: 4px; transition: width 0.3s; }
+        #log { max-height: 200px; overflow-y: auto; background: #1F2937; color: #10B981; padding: 15px; border-radius: 8px; font-family: monospace; font-size: 12px; margin-top: 20px; display: none; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🐝 蜂巢大规模演示数据</h1>
+        <p class="subtitle">创建50+个项目和多个用户账户，用于测试平台性能</p>
+        
+        <div class="info">
+            <p><strong>将创建以下数据：</strong></p>
+            <ul>
+                <li>10个测试用户账户</li>
+                <li>55个示例项目（各分类均匀分布）</li>
+                <li>随机的进度、参与者数量</li>
+            </ul>
+        </div>
+
+        <div class="stats">
+            <div class="stat-card">
+                <div class="stat-number" id="userCount">0</div>
+                <div class="stat-label">用户账户</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number" id="projectCount">0</div>
+                <div class="stat-label">项目数量</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number" id="categoryCount">5</div>
+                <div class="stat-label">项目分类</div>
+            </div>
+        </div>
+
+        <div class="progress" id="progressContainer" style="display: none;">
+            <div class="progress-bar" id="progressBar" style="width: 0%"></div>
+        </div>
+
+        <button onclick="initLargeDemoData()">🚀 初始化大量演示数据</button>
+        <button class="danger" onclick="clearAllData()">🗑️ 清除所有数据</button>
+        
+        <div id="message"></div>
+        <div id="log"></div>
+    </div>
+
+    <script>
+        // 简单的密码哈希函数（仅用于演示数据）
+        function simpleHash(str) {
+            let hash = 0;
+            for (let i = 0; i < str.length; i++) {
+                const char = str.charCodeAt(i);
+                hash = ((hash << 5) - hash) + char;
+                hash = hash & hash;
+            }
+            return 'demo_hash_' + Math.abs(hash).toString(16);
+        }
+
+        // 项目标题模板
+        const projectTitles = {
+            '科幻': [
+                '星际迷航：新纪元', '赛博朋克2077：夜之城', '机械觉醒', '量子纠缠', '时空裂缝',
+                '火星殖民计划', '人工智能觉醒', '虚拟现实世界', '太空漫游2050', '机器人起义',
+                '未来城市2050', '星际穿越者', '数字永生'
+            ],
+            '动画': [
+                '小蜜蜂的冒险', '魔法森林', '星空下的约定', '梦幻王国', '彩虹桥',
+                '精灵物语', '童话镇', '奇幻旅程', '动物王国', '海底世界',
+                '云端城堡', '魔法学院', '神奇宠物'
+            ],
+            '纪录片': [
+                'AI艺术家诞生记', '深海探索', '野生动物世界', '人类文明史', '宇宙奥秘',
+                '城市变迁', '美食之旅', '音乐传奇', '体育精神', '科技革命',
+                '自然奇观', '历史回眸', '文化传承'
+            ],
+            '教育': [
+                'AI入门教程', '编程基础', '数学之美', '物理世界', '化学实验室',
+                '历史课堂', '地理探索', '生物奥秘', '艺术鉴赏', '音乐入门',
+                '语言学习', '思维训练', '创意写作'
+            ],
+            '其他': [
+                '生活小技巧', '美食制作', '旅行日记', '健身指南', '心理健康',
+                '职场技能', '理财入门', '家居装饰', '园艺爱好', '手工艺术',
+                '摄影技巧', '绘画教程', '音乐创作'
+            ]
+        };
+
+        // 项目描述模板
+        const descriptions = [
+            '这是一个充满创意和想象力的AI视频项目，我们希望通过先进的AI技术，创造出令人惊叹的视觉效果。',
+            '加入我们的创作团队，一起探索AI视频制作的无限可能。我们相信，每一个创意都值得被实现。',
+            '这个项目旨在展示AI技术在视频创作领域的巨大潜力，让更多人了解和参与AI艺术创作。',
+            '我们正在寻找志同道合的创作者，共同完成这部具有开创性意义的AI视频作品。',
+            '通过这个项目，我们希望能够推动AI视频创作的发展，为观众带来全新的视觉体验。',
+            '这是一个开放的协作项目，欢迎所有对AI视频感兴趣的创作者加入我们的团队。',
+            '我们的目标是创造一部高质量的AI视频作品，展示人工智能与人类创意的完美结合。',
+            '加入蜂巢，成为这个创新项目的一部分，让我们一起见证AI视频创作的未来。'
+        ];
+
+        // 用户名模板
+        const userNames = [
+            '张创意', '李导演', '王编剧', '赵制片', '钱摄影',
+            '孙剪辑', '周特效', '吴配音', '郑美术', '冯音乐'
+        ];
+
+        function log(message) {
+            const logDiv = document.getElementById('log');
+            logDiv.style.display = 'block';
+            logDiv.innerHTML += message + '<br>';
+            logDiv.scrollTop = logDiv.scrollHeight;
+        }
+
+        function updateProgress(current, total) {
+            const percent = Math.round((current / total) * 100);
+            document.getElementById('progressBar').style.width = percent + '%';
+        }
+
+        async function initLargeDemoData() {
+            document.getElementById('progressContainer').style.display = 'block';
+            document.getElementById('log').innerHTML = '';
+            log('开始初始化数据...');
+
+            // 使用简单哈希（演示数据）
+            const userPasswordHash = simpleHash('123456');
+            const adminPasswordHash = simpleHash('admin123');
+            
+            // 创建用户
+            log('创建用户账户...');
+            const users = [
+                {
+                    id: 'admin_1',
+                    name: '系统管理员',
+                    email: 'admin@beehive.com',
+                    avatar: '/default-avatar.svg',
+                    passwordHash: adminPasswordHash,
+                    role: 'super_admin',
+                    isActive: true,
+                    createdAt: new Date(Date.now() - 60 * 24 * 60 * 60 * 1000).toISOString()
+                }
+            ];
+
+            for (let i = 0; i < userNames.length; i++) {
+                users.push({
+                    id: `user_${i + 1}`,
+                    name: userNames[i],
+                    email: `user${i + 1}@beehive.com`,
+                    avatar: '/default-avatar.svg',
+                    passwordHash: userPasswordHash,
+                    role: 'user',
+                    isActive: true,
+                    createdAt: new Date(Date.now() - (30 - i) * 24 * 60 * 60 * 1000).toISOString()
+                });
+                updateProgress(i + 1, userNames.length + 55);
+            }
+
+            localStorage.setItem('registeredUsers', JSON.stringify(users));
+            document.getElementById('userCount').textContent = users.length;
+            log(`✓ 创建了 ${users.length} 个用户账户`);
+
+
+            // 创建项目
+            log('创建项目...');
+            const categories = ['科幻', '动画', '纪录片', '教育', '其他'];
+            const projects = [];
+            let projectId = 1;
+
+            for (const category of categories) {
+                const titles = projectTitles[category];
+                for (let i = 0; i < 11; i++) {
+                    const titleIndex = i % titles.length;
+                    const suffix = i >= titles.length ? ` 第${Math.floor(i / titles.length) + 1}季` : '';
+                    const title = titles[titleIndex] + suffix;
+                    
+                    const targetDuration = Math.floor(Math.random() * 20) + 5; // 5-25分钟
+                    const progress = Math.random();
+                    const currentDuration = Math.floor(targetDuration * progress);
+                    const creatorIndex = Math.floor(Math.random() * userNames.length);
+                    const daysAgo = Math.floor(Math.random() * 30) + 1;
+                    
+                    const project = {
+                        id: `project_${projectId}`,
+                        title: title,
+                        description: descriptions[Math.floor(Math.random() * descriptions.length)] + 
+                            `<br><br>项目特色：<ul><li>专业的AI视频制作流程</li><li>经验丰富的创作团队</li><li>高质量的视觉效果</li></ul>`,
+                        category: category,
+                        targetDuration: targetDuration,
+                        currentDuration: currentDuration,
+                        telegramGroup: Math.random() > 0.3 ? `https://t.me/beehive_project_${projectId}` : '',
+                        coverImage: '',
+                        creatorId: `user_${creatorIndex + 1}`,
+                        creatorName: userNames[creatorIndex],
+                        participantsCount: Math.floor(Math.random() * 50) + 1,
+                        status: currentDuration >= targetDuration ? 'completed' : 'active',
+                        createdAt: new Date(Date.now() - daysAgo * 24 * 60 * 60 * 1000).toISOString(),
+                        logs: []
+                    };
+
+                    // 添加一些项目日志
+                    if (Math.random() > 0.5) {
+                        project.logs.push({
+                            id: `log_${projectId}_1`,
+                            type: 'update',
+                            content: '项目进展顺利，已完成初步设计和剧本大纲。感谢所有参与者的支持！',
+                            createdAt: new Date(Date.now() - (daysAgo - 2) * 24 * 60 * 60 * 1000).toISOString(),
+                            creatorName: userNames[creatorIndex]
+                        });
+                    }
+
+                    projects.push(project);
+                    projectId++;
+                    updateProgress(userNames.length + projects.length, userNames.length + 55);
+                    
+                    if (projects.length % 10 === 0) {
+                        log(`✓ 已创建 ${projects.length} 个项目...`);
+                    }
+                }
+            }
+
+            localStorage.setItem('projects', JSON.stringify(projects));
+            document.getElementById('projectCount').textContent = projects.length;
+            log(`✓ 创建了 ${projects.length} 个项目`);
+            
+            updateProgress(100, 100);
+            log('');
+            log('🎉 数据初始化完成！');
+            
+            document.getElementById('message').innerHTML = 
+                `<div class="success">
+                    <strong>✅ 演示数据初始化成功！</strong><br>
+                    已创建 ${users.length} 个用户和 ${projects.length} 个项目。<br><br>
+                    <strong>测试账户：</strong><br>
+                    管理员: admin@beehive.com / admin123<br>
+                    普通用户: user1@beehive.com ~ user10@beehive.com / 123456<br><br>
+                    <a href="/" style="color: #4A90E2;">返回首页查看 →</a>
+                </div>`;
+        }
+
+        function clearAllData() {
+            if (confirm('确定要清除所有数据吗？此操作不可恢复！')) {
+                localStorage.clear();
+                document.getElementById('userCount').textContent = '0';
+                document.getElementById('projectCount').textContent = '0';
+                document.getElementById('log').innerHTML = '';
+                document.getElementById('progressBar').style.width = '0%';
+                document.getElementById('message').innerHTML = 
+                    '<div class="success"><strong>✅ 所有数据已清除！</strong></div>';
+            }
+        }
+    </script>
+</body>
+</html>
