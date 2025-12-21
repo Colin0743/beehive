@@ -16,7 +16,7 @@
     "bcryptjs": "^3.0.3",
     "i18next": "^25.7.3",
     "i18next-browser-languagedetector": "^8.2.0",
-    "next": "15.1.6",
+    "next": "14.2.35",
     "quill": "^2.0.3",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
@@ -26,13 +26,14 @@
     "semantic-ui-react": "^2.1.5"
   },
   "devDependencies": {
+    "@eslint/eslintrc": "^3",
     "@playwright/test": "^1.57.0",
     "@tailwindcss/postcss": "^4",
     "@types/node": "^20",
     "@types/react": "^18",
     "@types/react-dom": "^18",
     "eslint": "^9",
-    "eslint-config-next": "15.1.6",
+    "eslint-config-next": "14.2.35",
     "playwright": "^1.57.0",
     "tailwindcss": "^4",
     "typescript": "^5"
