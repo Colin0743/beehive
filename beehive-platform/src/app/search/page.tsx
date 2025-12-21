@@ -3,59 +3,15 @@
 import React, { useState, useEffect, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { useTranslation } from 'react-i18next';
 import { Project } from '@/types';
 import { projectStorage } from '@/lib/storage';
 import { useAuth } from '@/contexts/AuthContext';
+import Logo from '@/components/Logo';
+import LanguageSwitcher from '@/components/LanguageSwitcher';
 
-// Logo 组件
-function Logo({ size = "medium" }: { size?: "small" | "medium" | "large" }) {
-  const sizes = {
-    small: { icon: 20, text: "text-base" },
-    medium: { icon: 28, text: "text-xl" },
-    large: { icon: 40, text: "text-3xl" },
-  };
-  const currentSize = sizes[size];
-
-  return (
-    <div className="flex items-center gap-2">
-      <div className="relative">
-        <svg
-          width={currentSize.icon}
-          height={currentSize.icon}
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="#FFD700"
-          strokeWidth="2.5"
-        >
-          <path d="M12 2L21.5 7.5V16.5L12 22L2.5 16.5V7.5L12 2Z" fill="#FFD700" fillOpacity="0.1" />
-        </svg>
-        <div className="absolute inset-0 flex items-center justify-center">
-          <div className="grid grid-cols-2 gap-[1px]">
-            <div className="w-[3px] h-[3px] bg-[#FFD700] rounded-full" />
-            <div className="w-[3px] h-[3px] bg-[#FFD700] rounded-full" />
-            <div className="w-[3px] h-[3px] bg-[#FFD700] rounded-full" />
-            <div className="w-[3px] h-[3px] bg-[#FFD700] rounded-full" />
-          </div>
-        </div>
-      </div>
-      <span className={`${currentSize.text} font-semibold text-[#FFD700]`}>蜂巢</span>
-    </div>
-  );
-}
-
-// 按钮组件
-function Button({ 
-  children, 
-  variant = "primary", 
-  size = "medium",
-  onClick,
-  className = ""
-}: { 
-  children: React.ReactNode; 
-  variant?: "primary" | "secondary" | "text";
-  size?: "small" | "medium" | "large";
-  onClick?: () => void;
-  className?: string;
+function Button({ children, variant = "primary", size = "medium", onClick, className = "" }: { 
+  children: React.ReactNode; variant?: "primary" | "secondary" | "text"; size?: "small" | "medium" | "large"; onClick?: () => void; className?: string;
 }) {
   const baseStyles = "font-semibold rounded-lg transition-all active:scale-[0.98]";
   const variantStyles = {
@@ -63,25 +19,16 @@ function Button({
     secondary: "bg-transparent border-2 border-[#FFD700] text-[#FFD700] hover:bg-[#FFF9E6]",
     text: "bg-transparent text-[#4A90E2] hover:underline",
   };
-  const sizeStyles = {
-    small: "h-9 px-4 text-sm",
-    medium: "h-11 px-6 text-sm",
-    large: "h-[52px] px-8 text-base",
-  };
+  const sizeStyles = { small: "h-9 px-4 text-sm", medium: "h-11 px-6 text-sm", large: "h-[52px] px-8 text-base" };
 
   return (
-    <button
-      className={`${baseStyles} ${variantStyles[variant]} ${sizeStyles[size]} ${className}`}
-      onClick={onClick}
-    >
+    <button className={`${baseStyles} ${variantStyles[variant]} ${sizeStyles[size]} ${className}`} onClick={onClick}>
       {children}
     </button>
   );
 }
 
-
-// 项目卡片组件
-function ProjectCard({ project, daysLeft }: { project: Project; daysLeft: number }) {
+function ProjectCard({ project, daysLeft, t }: { project: Project; daysLeft: number; t: (key: string) => string }) {
   const categoryColors: { [key: string]: { bg: string; text: string } } = {
     科幻: { bg: "#EDE9FE", text: "#5B21B6" },
     动画: { bg: "#FEF3C7", text: "#92400E" },
@@ -108,7 +55,7 @@ function ProjectCard({ project, daysLeft }: { project: Project; daysLeft: number
             {project.category}
           </div>
           {isCompleted && (
-            <div className="absolute top-3 right-3 px-3 py-1 rounded-md text-xs bg-[#10B981] text-white">已完成</div>
+            <div className="absolute top-3 right-3 px-3 py-1 rounded-md text-xs bg-[#10B981] text-white">{t('completedBadge')}</div>
           )}
         </div>
         <div className="p-6">
@@ -116,18 +63,18 @@ function ProjectCard({ project, daysLeft }: { project: Project; daysLeft: number
           <p className="text-sm text-[#4B5563] mb-4 line-clamp-2 leading-relaxed">{plainDescription}</p>
           <div className="mb-1">
             <span className="text-3xl text-[#111827]">{project.currentDuration}</span>
-            <span className="text-sm text-[#6B7280] ml-1">分钟</span>
+            <span className="text-sm text-[#6B7280] ml-1">{t('minutes')}</span>
           </div>
-          <div className="text-sm text-[#6B7280] mb-3">目标 {project.targetDuration} 分钟</div>
+          <div className="text-sm text-[#6B7280] mb-3">{t('target')} {project.targetDuration} {t('minutes')}</div>
           <div className="h-0.5 bg-neutral-200 rounded-full mb-4 overflow-hidden">
             <div className="h-full bg-[#10B981] rounded-full transition-all duration-500" style={{ width: `${progress}%` }} />
           </div>
           <div className="flex items-center gap-2 text-xs text-[#6B7280]">
-            <span>{project.participantsCount || 0} 支持者</span>
+            <span>{project.participantsCount || 0} {t('supporters')}</span>
             <span>•</span>
-            <span>{progress.toFixed(0)}% 完成</span>
+            <span>{progress.toFixed(0)}% {t('completed')}</span>
             <span>•</span>
-            <span>{daysLeft} 天</span>
+            <span>{daysLeft} {t('days')}</span>
           </div>
         </div>
       </div>
@@ -135,20 +82,26 @@ function ProjectCard({ project, daysLeft }: { project: Project; daysLeft: number
   );
 }
 
-
-// 搜索结果页面内容
 function SearchContent() {
+  const { t } = useTranslation('common');
   const searchParams = useSearchParams();
   const router = useRouter();
   const { user, isLoggedIn, logout } = useAuth();
   const [projects, setProjects] = useState<Project[]>([]);
   const [filteredProjects, setFilteredProjects] = useState<Project[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState('全部');
+  const [selectedCategory, setSelectedCategory] = useState('all');
   const [currentPage, setCurrentPage] = useState(1);
-  const projectsPerPage = 12; // 每页显示12个项目
+  const projectsPerPage = 12;
 
-  const categories = ["全部", "科幻", "动画", "纪录片", "教育", "其他"];
+  const categories = [
+    { key: 'all', label: t('all'), value: '全部' },
+    { key: 'sciFi', label: t('sciFi'), value: '科幻' },
+    { key: 'animation', label: t('animation'), value: '动画' },
+    { key: 'documentary', label: t('documentary'), value: '纪录片' },
+    { key: 'education', label: t('education'), value: '教育' },
+    { key: 'other', label: t('other'), value: '其他' },
+  ];
   const keyword = searchParams.get('keyword') || '';
 
   useEffect(() => {
@@ -158,18 +111,15 @@ function SearchContent() {
     }
   }, []);
 
-  // 从 URL 读取搜索关键词
   useEffect(() => {
     if (keyword) {
       setSearchQuery(keyword);
     }
   }, [keyword]);
 
-  // 过滤项目
   useEffect(() => {
     let filtered = projects;
 
-    // 按关键词搜索
     if (keyword.trim()) {
       const query = keyword.toLowerCase();
       filtered = filtered.filter(p => 
@@ -178,16 +128,17 @@ function SearchContent() {
       );
     }
 
-    // 按分类过滤
-    if (selectedCategory !== '全部') {
-      filtered = filtered.filter(p => p.category === selectedCategory);
+    if (selectedCategory !== 'all') {
+      const categoryObj = categories.find(c => c.key === selectedCategory);
+      if (categoryObj) {
+        filtered = filtered.filter(p => p.category === categoryObj.value);
+      }
     }
 
     setFilteredProjects(filtered);
-    setCurrentPage(1); // 切换筛选条件时重置到第一页
+    setCurrentPage(1);
   }, [projects, keyword, selectedCategory]);
 
-  // 分页逻辑
   const totalPages = Math.ceil(filteredProjects.length / projectsPerPage);
   const startIndex = (currentPage - 1) * projectsPerPage;
   const endIndex = startIndex + projectsPerPage;
@@ -220,7 +171,6 @@ function SearchContent() {
 
   return (
     <div className="min-h-screen bg-neutral-50">
-      {/* 导航栏 */}
       <nav className="bg-white border-b border-neutral-200 shadow-sm sticky top-0 z-50">
         <div className="max-w-[1440px] mx-auto px-8">
           <div className="h-16 flex items-center justify-between">
@@ -233,7 +183,7 @@ function SearchContent() {
                 </svg>
                 <input
                   type="text"
-                  placeholder="搜索项目..."
+                  placeholder={t('searchPlaceholder')}
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   className="w-full h-11 pl-12 pr-4 rounded-lg border border-neutral-300 focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:border-transparent"
@@ -247,14 +197,14 @@ function SearchContent() {
                     <img src={user?.avatar || '/default-avatar.svg'} alt={user?.name} className="w-8 h-8 rounded-full border-2 border-neutral-200" />
                     <span>{user?.name}</span>
                   </Link>
-                  <button onClick={handleLogout} className="text-sm text-neutral-600 hover:text-neutral-900">退出</button>
-                  <Link href="/projects/new"><Button variant="primary" size="medium">开始创作</Button></Link>
+                  <button onClick={handleLogout} className="text-sm text-neutral-600 hover:text-neutral-900">{t('logout')}</button>
+                  <Link href="/projects/new"><Button variant="primary" size="medium">{t('startCreating')}</Button></Link>
                 </>
               ) : (
                 <>
-                  <Link href="/auth/login" className="text-sm text-neutral-600 hover:text-neutral-900">登录</Link>
-                  <Link href="/auth/register" className="text-sm text-neutral-600 hover:text-neutral-900">注册</Link>
-                  <Link href="/projects/new"><Button variant="primary" size="medium">开始创作</Button></Link>
+                  <Link href="/auth/login" className="text-sm text-neutral-600 hover:text-neutral-900">{t('login')}</Link>
+                  <Link href="/auth/register" className="text-sm text-neutral-600 hover:text-neutral-900">{t('register')}</Link>
+                  <Link href="/projects/new"><Button variant="primary" size="medium">{t('startCreating')}</Button></Link>
                 </>
               )}
             </div>
@@ -262,46 +212,40 @@ function SearchContent() {
         </div>
       </nav>
 
-
-      {/* 搜索结果区域 */}
       <div className="max-w-[1200px] mx-auto px-8 py-8">
-        {/* 搜索信息 */}
         <div className="mb-6">
           <h1 className="text-2xl text-[#111827] mb-2">
-            搜索结果：<span className="text-[#FFD700]">"{keyword}"</span>
+            {t('searchResultsFor', { keyword })}
           </h1>
           <p className="text-sm text-[#6B7280]">
-            共找到 {filteredProjects.length} 个相关项目
+            {filteredProjects.length} {t('projects')}
           </p>
         </div>
 
-        {/* 分类筛选 */}
         <div className="flex gap-3 mb-8 flex-wrap">
           {categories.map((category) => (
             <button
-              key={category}
-              onClick={() => setSelectedCategory(category)}
+              key={category.key}
+              onClick={() => setSelectedCategory(category.key)}
               className={`px-4 py-2 rounded-full text-sm transition-all ${
-                selectedCategory === category
+                selectedCategory === category.key
                   ? "bg-[#FFD700] text-[#111827]"
                   : "bg-white border border-neutral-300 text-neutral-600 hover:border-[#FFD700]"
               }`}
             >
-              {category}
+              {category.label}
             </button>
           ))}
         </div>
 
-        {/* 搜索结果列表 */}
         {filteredProjects.length > 0 ? (
           <>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {currentProjects.map((project) => (
-                <ProjectCard key={project.id} project={project} daysLeft={getDaysLeft(project.createdAt)} />
+                <ProjectCard key={project.id} project={project} daysLeft={getDaysLeft(project.createdAt)} t={t} />
               ))}
             </div>
 
-            {/* 分页控件 */}
             {totalPages > 1 && (
               <div className="flex justify-center items-center gap-2 mt-12">
                 <button
@@ -309,7 +253,7 @@ function SearchContent() {
                   disabled={currentPage === 1}
                   className="px-4 py-2 rounded-lg border border-neutral-300 text-neutral-600 hover:bg-neutral-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                 >
-                  上一页
+                  {t('previousPage')}
                 </button>
                 
                 <div className="flex gap-2">
@@ -333,7 +277,7 @@ function SearchContent() {
                   disabled={currentPage === totalPages}
                   className="px-4 py-2 rounded-lg border border-neutral-300 text-neutral-600 hover:bg-neutral-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                 >
-                  下一页
+                  {t('nextPage')}
                 </button>
               </div>
             )}
@@ -341,25 +285,22 @@ function SearchContent() {
         ) : (
           <div className="text-center py-16">
             <div className="text-6xl mb-4 opacity-30">🔍</div>
-            <h3 className="text-xl text-[#111827] mb-2">没有找到相关项目</h3>
-            <p className="text-sm text-[#6B7280] mb-6">
-              尝试使用其他关键词搜索，或浏览全部项目
-            </p>
+            <h3 className="text-xl text-[#111827] mb-2">{t('noSearchResults')}</h3>
+            <p className="text-sm text-[#6B7280] mb-6">{t('noSearchResultsDesc')}</p>
             <Link href="/">
-              <Button variant="primary" size="medium">浏览全部项目</Button>
+              <Button variant="primary" size="medium">{t('browseAllProjects')}</Button>
             </Link>
           </div>
         )}
       </div>
 
-      {/* 页脚 */}
       <footer className="bg-white border-t border-neutral-200 mt-16">
         <div className="max-w-[1440px] mx-auto px-8 py-8">
           <div className="flex flex-col md:flex-row justify-between items-center gap-4">
-            <p className="text-sm text-neutral-500">© 2025 蜂巢平台. All rights reserved.</p>
+            <p className="text-sm text-neutral-500">{t('allRightsReserved')}</p>
             <div className="flex gap-6 text-sm text-neutral-500">
-              <a href="#" className="hover:text-neutral-900">隐私政策</a>
-              <a href="#" className="hover:text-neutral-900">服务条款</a>
+              <Link href="/privacy" className="hover:text-neutral-900">{t('privacyPolicy')}</Link>
+              <Link href="/terms" className="hover:text-neutral-900">{t('termsOfService')}</Link>
             </div>
           </div>
         </div>
@@ -369,10 +310,11 @@ function SearchContent() {
 }
 
 export default function SearchPage() {
+  const { t } = useTranslation('common');
   return (
     <Suspense fallback={
       <div className="min-h-screen bg-neutral-50 flex justify-center items-center">
-        <div className="text-neutral-500">搜索中...</div>
+        <div className="text-neutral-500">{t('loading')}</div>
       </div>
     }>
       <SearchContent />

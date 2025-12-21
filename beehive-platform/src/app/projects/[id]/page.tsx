@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
+import { useTranslation } from 'react-i18next';
 import LayoutSimple from '@/components/LayoutSimple';
 import { useAuth } from '@/contexts/AuthContext';
 import Link from 'next/link';
@@ -15,6 +16,7 @@ export default function ProjectDetailPage() {
   const router = useRouter();
   const { user, isLoggedIn } = useAuth();
   const { showToast } = useToast();
+  const { t } = useTranslation('common');
   const [project, setProject] = useState<Project | null>(null);
   const [loading, setLoading] = useState(true);
   const [isParticipating, setIsParticipating] = useState(false);
@@ -56,7 +58,7 @@ export default function ProjectDetailPage() {
 
     // 检查是否有 Telegram 群组链接
     if (!project.telegramGroup) {
-      showToast('error', '该项目暂无群组链接');
+      showToast('error', t('noTelegramGroup'));
       return;
     }
 
@@ -128,7 +130,7 @@ export default function ProjectDetailPage() {
   const isOwner = user && project && user.id === project.creatorId;
 
   if (loading) {
-    return <LayoutSimple><div className="text-center py-12">加载中...</div></LayoutSimple>;
+    return <LayoutSimple><div className="text-center py-12">{t('loading')}</div></LayoutSimple>;
   }
 
   if (!project) {
@@ -136,14 +138,14 @@ export default function ProjectDetailPage() {
       <LayoutSimple>
         <div className="text-center py-16">
           <div className="text-6xl mb-4 opacity-30">⚠️</div>
-          <h3 className="text-xl font-medium mb-2" style={{ color: '#111827' }}>项目不存在</h3>
-          <p className="text-sm mb-6" style={{ color: '#6B7280' }}>该项目可能已被删除或链接无效</p>
+          <h3 className="text-xl font-medium mb-2" style={{ color: '#111827' }}>{t('projectNotFound')}</h3>
+          <p className="text-sm mb-6" style={{ color: '#6B7280' }}>{t('projectNotFoundDesc')}</p>
           <Link 
             href="/" 
             className="inline-block px-6 py-3 rounded-lg font-semibold text-sm transition-all"
             style={{ backgroundColor: '#FFD700', color: '#111827' }}
           >
-            返回首页
+            {t('backToHome')}
           </Link>
         </div>
       </LayoutSimple>
@@ -220,7 +222,7 @@ export default function ProjectDetailPage() {
                       onMouseLeave={(e) => e.currentTarget.style.color = '#6B7280'}
                     >
                       <span>✏️</span>
-                      <span>编辑项目</span>
+                      <span>{t('editProject')}</span>
                     </Link>
                   )}
                 </div>
@@ -231,7 +233,7 @@ export default function ProjectDetailPage() {
                   {project.title}
                 </h1>
                 <p className="text-base" style={{ color: '#6B7280' }}>
-                  由 <span className="font-medium" style={{ color: '#111827' }}>{project.creatorName}</span> 发起
+                  {t('createdBy')} <span className="font-medium" style={{ color: '#111827' }}>{project.creatorName}</span> 发起
                   <span className="mx-2">·</span>
                   <span>{new Date(project.createdAt).toLocaleDateString('zh-CN', { year: 'numeric', month: 'long', day: 'numeric' })}</span>
                 </p>
@@ -247,7 +249,7 @@ export default function ProjectDetailPage() {
                 boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)',
               }}
             >
-              <h2 className="text-xl font-medium mb-4" style={{ color: '#111827' }}>关于这个项目</h2>
+              <h2 className="text-xl font-medium mb-4" style={{ color: '#111827' }}>{t('aboutThisProject')}</h2>
               <div 
                 className="prose max-w-none rich-text-content"
                 dangerouslySetInnerHTML={{ __html: project.description }}
@@ -264,7 +266,7 @@ export default function ProjectDetailPage() {
               }}
             >
               <div className="flex justify-between items-center mb-6">
-                <h2 className="text-xl font-medium" style={{ color: '#111827' }}>项目动态</h2>
+                <h2 className="text-xl font-medium" style={{ color: '#111827' }}>{t('projectUpdates')}</h2>
                 {isOwner && (
                   <button
                     onClick={() => setShowLogModal(true)}
@@ -273,7 +275,7 @@ export default function ProjectDetailPage() {
                     onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#E6C200'}
                     onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#FFD700'}
                   >
-                    + 发布更新
+                    {t('publishUpdate')}
                   </button>
                 )}
               </div>
@@ -296,12 +298,12 @@ export default function ProjectDetailPage() {
                             </span>
                             {log.type === 'milestone' && (
                               <span className="bg-yellow-100 text-yellow-800 px-2 py-0.5 rounded text-xs font-medium">
-                                里程碑
+                                {t('milestone')}
                               </span>
                             )}
                             {log.type === 'announcement' && (
                               <span className="bg-blue-100 text-blue-800 px-2 py-0.5 rounded text-xs font-medium">
-                                公告
+                                {t('announcement')}
                               </span>
                             )}
                           </div>
@@ -314,9 +316,9 @@ export default function ProjectDetailPage() {
               ) : (
                 <div className="text-center py-12 text-gray-500">
                   <div className="text-6xl mb-4">📝</div>
-                  <p className="text-lg">还没有项目动态</p>
+                  <p className="text-lg">{t('noUpdatesYet')}</p>
                   {isOwner && (
-                    <p className="text-sm mt-2">点击上方按钮发布第一条更新</p>
+                    <p className="text-sm mt-2">{t('clickToPublishFirst')}</p>
                   )}
                 </div>
               )}
@@ -338,10 +340,10 @@ export default function ProjectDetailPage() {
                 <div className="mb-6">
                   <div className="flex items-baseline gap-2 mb-2">
                     <span className="text-4xl font-medium" style={{ color: '#111827' }}>{project.currentDuration}</span>
-                    <span className="text-lg" style={{ color: '#6B7280' }}>分钟</span>
+                    <span className="text-lg" style={{ color: '#6B7280' }}>{t('minutes')}</span>
                   </div>
                   <p className="text-sm mb-4" style={{ color: '#6B7280' }}>
-                    目标 <span className="font-medium" style={{ color: '#111827' }}>{project.targetDuration} 分钟</span>
+                    {t('target')} <span className="font-medium" style={{ color: '#111827' }}>{project.targetDuration} {t('minutes')}</span>
                   </p>
                   
                   {/* 进度条 */}
@@ -359,9 +361,9 @@ export default function ProjectDetailPage() {
                       />
                     </div>
                     <div className="flex justify-between text-xs mt-2" style={{ color: '#6B7280' }}>
-                      <span>{progress.toFixed(1)}% 已完成</span>
+                      <span>{progress.toFixed(1)}% {t('completedStatus')}</span>
                       {remainingDuration > 0 && (
-                        <span>还需 {remainingDuration} 分钟</span>
+                        <span>{t('stillNeed')} {remainingDuration} {t('minutes')}</span>
                       )}
                     </div>
                   </div>
@@ -370,8 +372,8 @@ export default function ProjectDetailPage() {
                 {/* 统计信息 */}
                 <div className="pt-4 space-y-3" style={{ borderTop: '1px solid #E5E7EB' }}>
                   <div className="flex justify-between items-center">
-                    <span style={{ color: '#6B7280' }}>参与者</span>
-                    <span className="font-medium" style={{ color: '#111827' }}>{project.participantsCount || 0} 人</span>
+                    <span style={{ color: '#6B7280' }}>{t('participants')}</span>
+                    <span className="font-medium" style={{ color: '#111827' }}>{project.participantsCount || 0} {t('people')}</span>
                   </div>
                 </div>
               </div>
@@ -401,7 +403,7 @@ export default function ProjectDetailPage() {
                     e.currentTarget.style.boxShadow = 'none';
                   }}
                 >
-                  📱 加入项目
+                  {t('joinProject')}
                 </button>
               </div>
             </div>
@@ -420,28 +422,28 @@ export default function ProjectDetailPage() {
             onClick={(e) => e.stopPropagation()}
           >
             <div className="p-6 border-b">
-              <h3 className="text-2xl font-bold text-gray-900">发布项目更新</h3>
-              <p className="text-gray-600 text-sm mt-1">与参与者分享项目进展</p>
+              <h3 className="text-2xl font-bold text-gray-900">{t('publishProjectUpdate')}</h3>
+              <p className="text-gray-600 text-sm mt-1">{t('shareProgressDesc')}</p>
             </div>
             
             <div className="p-6 space-y-5">
               <div>
-                <label className="block text-gray-700 font-semibold mb-2">更新类型</label>
+                <label className="block text-gray-700 font-semibold mb-2">{t('updateType')}</label>
                 <select
                   value={logType}
                   onChange={(e) => setLogType(e.target.value as any)}
                   className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:border-yellow-400"
                 >
-                  <option value="update">📝 进度更新</option>
-                  <option value="milestone">🏆 里程碑</option>
-                  <option value="announcement">📢 公告</option>
+                  <option value="update">📝 {t('progressUpdate')}</option>
+                  <option value="milestone">🏆 {t('milestone')}</option>
+                  <option value="announcement">📢 {t('announcement')}</option>
                 </select>
               </div>
 
               <div>
-                <label className="block text-gray-700 font-semibold mb-2">更新内容</label>
+                <label className="block text-gray-700 font-semibold mb-2">{t('updateContent')}</label>
                 <textarea
-                  placeholder="分享项目进展、成果或重要通知..."
+                  placeholder={t('shareProgressPlaceholder')}
                   value={logContent}
                   onChange={(e) => setLogContent(e.target.value)}
                   rows={8}
@@ -455,7 +457,7 @@ export default function ProjectDetailPage() {
                 onClick={() => setShowLogModal(false)}
                 className="flex-1 px-4 py-3 border-2 border-gray-300 rounded-lg hover:bg-gray-100 font-semibold text-gray-700 transition-colors"
               >
-                取消
+                {t('cancel')}
               </button>
               <button
                 onClick={handleAddLog}
@@ -467,7 +469,7 @@ export default function ProjectDetailPage() {
                 }`}
                 style={logContent.trim() ? { background: '#FFD700' } : {}}
               >
-                发布更新
+                {t('publishUpdateButton')}
               </button>
             </div>
           </div>

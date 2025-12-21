@@ -1,6 +1,7 @@
 'use client';
 
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 
 interface LogoProps {
   size?: 'small' | 'medium' | 'large' | 'sm' | 'md' | 'lg';
@@ -10,6 +11,7 @@ interface LogoProps {
 
 // 基于 Figma 设计的 Logo 组件
 export default function Logo({ size = 'medium', showText = true, className = '' }: LogoProps) {
+  const { t } = useTranslation('common');
   // 统一尺寸映射
   const normalizedSize = size === 'sm' ? 'small' : size === 'md' ? 'medium' : size === 'lg' ? 'large' : size;
   
@@ -55,7 +57,7 @@ export default function Logo({ size = 'medium', showText = true, className = '' 
       {/* Logo 文字 */}
       {showText && (
         <span className={`${currentSize.text} font-semibold`} style={{ color: '#FFD700' }}>
-          蜂巢
+          {t('appName', '蜜蜂制片厂AI')}
         </span>
       )}
     </div>

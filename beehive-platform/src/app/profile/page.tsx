@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { useTranslation } from 'react-i18next';
 import LayoutSimple from '@/components/LayoutSimple';
 import { useAuth } from '@/contexts/AuthContext';
 import Link from 'next/link';
@@ -10,6 +11,7 @@ import { projectStorage, projectRelationStorage } from '@/lib/storage';
 import { ErrorHandler } from '@/lib/errorHandler';
 
 export default function ProfilePage() {
+  const { t } = useTranslation('common');
   const { user, isLoggedIn } = useAuth();
   const router = useRouter();
   const [activeTab, setActiveTab] = useState<'created' | 'participated'>('created');
@@ -21,21 +23,16 @@ export default function ProfilePage() {
       router.push('/auth/login');
       return;
     }
-
     loadUserProjects();
   }, [isLoggedIn, user]);
 
   const loadUserProjects = () => {
     if (!user) return;
-
     try {
-      // 加载创建的项目
       const createdResult = projectStorage.getUserProjects(user.id);
       if (createdResult.success && createdResult.data) {
         setCreatedProjects(createdResult.data);
       }
-
-      // 加载参与的项目
       const participatedIdsResult = projectRelationStorage.getParticipatedProjectIds(user.id);
       if (participatedIdsResult.success && participatedIdsResult.data) {
         const allProjectsResult = projectStorage.getAllProjects();
@@ -51,7 +48,6 @@ export default function ProfilePage() {
     }
   };
 
-  // 分类颜色映射 - 来自 Figma 设计
   const categoryColors: { [key: string]: { bg: string; text: string } } = {
     '科幻': { bg: '#EDE9FE', text: '#5B21B6' },
     '动画': { bg: '#FEF3C7', text: '#92400E' },
@@ -63,7 +59,6 @@ export default function ProfilePage() {
   const renderProjectCard = (project: Project) => {
     const progress = Math.min((project.currentDuration / project.targetDuration) * 100, 100);
     const categoryStyle = categoryColors[project.category] || categoryColors['其他'];
-    // 移除 HTML 标签获取纯文本描述
     const plainDescription = project.description.replace(/<[^>]*>/g, '');
 
     return (
@@ -84,7 +79,6 @@ export default function ProfilePage() {
           e.currentTarget.style.transform = 'translateY(0)';
         }}
       >
-        {/* 封面图片区域 */}
         <div 
           className="h-32 flex items-center justify-center relative"
           style={{ backgroundColor: categoryStyle.bg }}
@@ -94,17 +88,15 @@ export default function ProfilePage() {
           ) : (
             <span className="text-4xl opacity-20" style={{ color: categoryStyle.text }}>📹</span>
           )}
-          {/* 分类标签 */}
           <div
             className="absolute top-3 left-3 px-3 py-1 rounded-md text-xs font-medium"
             style={{ backgroundColor: categoryStyle.bg, color: categoryStyle.text }}
           >
             {project.category}
           </div>
-          {/* 完成标签 */}
           {progress === 100 && (
             <div className="absolute top-3 right-3 px-3 py-1 rounded-md text-xs font-medium bg-green-500 text-white">
-              已完成
+              {t('completedBadge')}
             </div>
           )}
         </div>
@@ -118,34 +110,32 @@ export default function ProfilePage() {
             {plainDescription.length > 80 && '...'}
           </p>
           
-          {/* 进度信息 */}
           <div className="mb-3">
             <div className="flex items-baseline gap-1 mb-1">
               <span className="text-xl font-medium" style={{ color: '#111827' }}>{project.currentDuration}</span>
-              <span className="text-xs" style={{ color: '#6B7280' }}>/ {project.targetDuration} 分钟</span>
+              <span className="text-xs" style={{ color: '#6B7280' }}>/ {project.targetDuration} {t('minutes')}</span>
             </div>
             <div className="h-1 rounded-full overflow-hidden" style={{ backgroundColor: '#E5E7EB' }}>
               <div 
                 className="h-full rounded-full transition-all duration-500"
                 style={{ 
                   width: `${progress}%`,
-                  backgroundColor: progress === 100 ? '#10B981' : '#10B981'
+                  backgroundColor: '#10B981'
                 }}
               />
             </div>
           </div>
           
-          {/* 底部信息 */}
           <div className="flex justify-between items-center pt-3" style={{ borderTop: '1px solid #F3F4F6' }}>
             <span className="text-xs" style={{ color: '#6B7280' }}>
-              {project.participantsCount || 0} 支持者 • {progress.toFixed(0)}%
+              {project.participantsCount || 0} {t('supporters')} • {progress.toFixed(0)}%
             </span>
             <Link
               href={`/projects/${project.id}`}
               className="text-xs font-medium transition-colors"
               style={{ color: '#4A90E2' }}
             >
-              查看详情 →
+              {t('viewDetails')} →
             </Link>
           </div>
         </div>
@@ -157,7 +147,7 @@ export default function ProfilePage() {
     <div className="text-center py-16">
       <div className="text-6xl mb-4 opacity-30">📁</div>
       <h3 className="text-xl font-medium mb-2" style={{ color: '#111827' }}>{message}</h3>
-      <p className="text-sm mb-6" style={{ color: '#6B7280' }}>开始创建你的第一个项目吧</p>
+      <p className="text-sm mb-6" style={{ color: '#6B7280' }}>{t('startFirstProject')}</p>
       <Link
         href="/projects/new"
         className="inline-flex items-center px-6 py-3 rounded-lg font-semibold text-sm transition-all"
@@ -166,7 +156,7 @@ export default function ProfilePage() {
         onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#FFD700'}
       >
         <span className="mr-2">+</span>
-        创建项目
+        {t('createProject')}
       </Link>
     </div>
   );
@@ -176,17 +166,15 @@ export default function ProfilePage() {
   }
 
   const tabs = [
-    { id: 'created', label: `发起的项目 (${createdProjects.length})`, icon: '🚀' },
-    { id: 'participated', label: `参与的项目 (${participatedProjects.length})`, icon: '👥' },
+    { id: 'created', label: `${t('createdProjectsTab')} (${createdProjects.length})`, icon: '🚀' },
+    { id: 'participated', label: `${t('participatedProjectsTab')} (${participatedProjects.length})`, icon: '👥' },
   ];
 
-  const currentProjects = 
-    activeTab === 'created' ? createdProjects : participatedProjects;
+  const currentProjects = activeTab === 'created' ? createdProjects : participatedProjects;
 
   return (
     <LayoutSimple>
       <div className="mb-8">
-        {/* 用户信息 - Figma 设计风格 */}
         <div 
           className="rounded-xl p-6 mb-6"
           style={{
@@ -213,14 +201,13 @@ export default function ProfilePage() {
               <h2 className="text-xl font-medium" style={{ color: '#111827' }}>{user.name}</h2>
               <p className="text-sm" style={{ color: '#6B7280' }}>{user.email}</p>
               <div className="flex gap-4 mt-2 text-xs" style={{ color: '#6B7280' }}>
-                <span>{createdProjects.length} 个项目</span>
-                <span>{participatedProjects.length} 次参与</span>
+                <span>{createdProjects.length} {t('projects')}</span>
+                <span>{participatedProjects.length} {t('participations')}</span>
               </div>
             </div>
           </div>
         </div>
 
-        {/* 标签页 - Figma 设计风格 */}
         <div 
           className="rounded-xl overflow-hidden"
           style={{
@@ -233,7 +220,7 @@ export default function ProfilePage() {
             {tabs.map(tab => (
               <button
                 key={tab.id}
-                onClick={() => setActiveTab(tab.id as any)}
+                onClick={() => setActiveTab(tab.id as 'created' | 'participated')}
                 className="flex-1 px-6 py-4 font-medium text-sm transition-all relative"
                 style={{
                   backgroundColor: activeTab === tab.id ? '#FFF9E6' : '#ffffff',
@@ -269,7 +256,7 @@ export default function ProfilePage() {
               </div>
             ) : (
               renderEmptyState(
-                activeTab === 'created' ? '你还没有发起任何项目' : '你还没有参与任何项目'
+                activeTab === 'created' ? t('noCreatedProjects') : t('noParticipatedProjects')
               )
             )}
           </div>

@@ -5,6 +5,7 @@ import { AuthProvider } from "@/contexts/AuthContext";
 import { ToastProvider } from "@/components/Toast";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import PageLoader from "@/components/PageLoader";
+import I18nProvider from "@/components/I18nProvider";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -17,7 +18,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "蜂巢 - AI视频协作平台",
+  title: "蜜蜂AI电影制片厂 - AI视频协作平台",
   description: "AI视频创作者的协作平台，汇聚创意与算力",
 };
 
@@ -38,12 +39,14 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
         <ErrorBoundary>
-          <AuthProvider>
-            <ToastProvider>
-              <PageLoader />
-              {children}
-            </ToastProvider>
-          </AuthProvider>
+          <I18nProvider>
+            <AuthProvider>
+              <ToastProvider>
+                <PageLoader />
+                {children}
+              </ToastProvider>
+            </AuthProvider>
+          </I18nProvider>
         </ErrorBoundary>
       </body>
     </html>

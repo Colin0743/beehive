@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { useTranslation } from 'react-i18next';
 import LayoutSimple from '@/components/LayoutSimple';
 import { useAuth } from '@/contexts/AuthContext';
 import { Project, FormErrors } from '@/types';
@@ -21,6 +22,7 @@ interface FormData {
 }
 
 export default function NewProjectPage() {
+  const { t } = useTranslation('common');
   const [formData, setFormData] = useState<FormData>({
     title: '',
     description: '',
@@ -45,44 +47,43 @@ export default function NewProjectPage() {
   }, [isLoggedIn, router]);
 
   const categories = [
-    { value: '', label: '请选择分类' },
-    { value: '科幻', label: '科幻' },
-    { value: '动画', label: '动画' },
-    { value: '纪录片', label: '纪录片' },
-    { value: '教育', label: '教育' },
-    { value: '其他', label: '其他' },
+    { value: '', label: t('selectCategory') },
+    { value: '科幻', label: t('sciFi') },
+    { value: '动画', label: t('animation') },
+    { value: '纪录片', label: t('documentary') },
+    { value: '教育', label: t('education') },
+    { value: '其他', label: t('other') },
   ];
 
   const validateForm = (): FormErrors => {
     const newErrors: FormErrors = {};
 
     if (!formData.title.trim()) {
-      newErrors.title = '请输入项目标题';
+      newErrors.title = t('titleRequired');
     } else if (formData.title.trim().length < 5) {
-      newErrors.title = '标题至少需要5个字符';
+      newErrors.title = t('titleMinLength');
     }
 
-    // 移除HTML标签后检查纯文本长度
     const textContent = formData.description.replace(/<[^>]*>/g, '').trim();
     if (!textContent) {
-      newErrors.description = '请输入项目描述';
+      newErrors.description = t('descriptionRequired');
     } else if (textContent.length < 20) {
-      newErrors.description = '描述至少需要20个字符（不包括格式）';
+      newErrors.description = t('descriptionMinLength');
     }
 
     if (!formData.category) {
-      newErrors.category = '请选择项目分类';
+      newErrors.category = t('categoryRequired');
     }
 
     const duration = parseInt(formData.targetDuration);
     if (!formData.targetDuration) {
-      newErrors.targetDuration = '请输入目标时长';
+      newErrors.targetDuration = t('durationRequired');
     } else if (isNaN(duration) || duration <= 0) {
-      newErrors.targetDuration = '请输入有效的时长（分钟）';
+      newErrors.targetDuration = t('invalidDuration');
     }
 
     if (!formData.coverImage) {
-      newErrors.coverImage = '请上传项目封面图片';
+      newErrors.coverImage = t('coverRequired');
     }
 
     return newErrors;
@@ -98,7 +99,6 @@ export default function NewProjectPage() {
           let width = img.width;
           let height = img.height;
           
-          // 限制最大尺寸为 1200px
           const maxSize = 1200;
           if (width > height && width > maxSize) {
             height = (height * maxSize) / width;
@@ -114,7 +114,6 @@ export default function NewProjectPage() {
           const ctx = canvas.getContext('2d');
           ctx?.drawImage(img, 0, 0, width, height);
           
-          // 压缩质量为 0.7
           const compressedBase64 = canvas.toDataURL('image/jpeg', 0.7);
           resolve(compressedBase64);
         };
@@ -127,40 +126,32 @@ export default function NewProjectPage() {
   };
 
   const handleFileUpload = async (file: File, type: 'cover' | 'video') => {
-    const maxSize = type === 'cover' ? 5 * 1024 * 1024 : 20 * 1024 * 1024; // 5MB for images, 20MB for videos
+    const maxSize = type === 'cover' ? 5 * 1024 * 1024 : 20 * 1024 * 1024;
     const allowedTypes = type === 'cover' 
       ? ['image/jpeg', 'image/png', 'image/gif']
       : ['video/mp4', 'video/quicktime', 'video/x-msvideo'];
 
     if (!allowedTypes.includes(file.type)) {
-      const errorMsg = type === 'cover' 
-        ? '请上传JPG、PNG或GIF格式的图片'
-        : '请上传MP4、MOV或AVI格式的视频';
+      const errorMsg = type === 'cover' ? t('imageUploadError') : t('videoUploadError');
       setErrors(prev => ({ ...prev, [type === 'cover' ? 'coverImage' : 'videoFile']: errorMsg }));
       return;
     }
 
     if (file.size > maxSize) {
-      const errorMsg = type === 'cover' 
-        ? '图片大小不能超过5MB'
-        : '视频大小不能超过20MB（localStorage限制）';
+      const errorMsg = type === 'cover' ? t('imageSizeError') : t('videoSizeError');
       setErrors(prev => ({ ...prev, [type === 'cover' ? 'coverImage' : 'videoFile']: errorMsg }));
       return;
     }
 
     try {
       if (type === 'cover') {
-        // 压缩图片
         const compressedBase64 = await compressImage(file);
         setFormData(prev => ({ ...prev, coverImage: compressedBase64 }));
         setCoverPreview(compressedBase64);
         setErrors(prev => ({ ...prev, coverImage: undefined }));
       } else {
-        // 视频文件 - 警告用户
         if (file.size > 10 * 1024 * 1024) {
-          const confirmed = window.confirm(
-            '视频文件较大，可能会导致存储问题。建议使用较小的视频文件（<10MB）。是否继续？'
-          );
+          const confirmed = window.confirm(t('storageFullVideoConfirm'));
           if (!confirmed) return;
         }
         
@@ -174,10 +165,10 @@ export default function NewProjectPage() {
         reader.readAsDataURL(file);
       }
     } catch (error) {
-      console.error('文件处理失败:', error);
+      console.error('File processing failed:', error);
       setErrors(prev => ({ 
         ...prev, 
-        [type === 'cover' ? 'coverImage' : 'videoFile']: '文件处理失败，请重试' 
+        [type === 'cover' ? 'coverImage' : 'videoFile']: t('fileProcessError')
       }));
     }
   };
@@ -202,28 +193,25 @@ export default function NewProjectPage() {
     try {
       await new Promise(resolve => setTimeout(resolve, 500));
 
-      // 检查存储配额
       const quota = storageUtils.checkQuota();
       const estimatedSize = JSON.stringify(formData).length;
       
       if (!quota.available && quota.used + estimatedSize > quota.limit) {
         if (formData.videoFile) {
-          const confirmed = window.confirm(
-            '存储空间不足。是否创建项目但不保存视频文件？'
-          );
+          const confirmed = window.confirm(t('storageFullVideoConfirm'));
           if (!confirmed) {
-            throw ErrorHandler.handleStorageError('存储空间不足，请删除视频文件或清理浏览器存储');
+            throw ErrorHandler.handleStorageError(t('storageFullError'));
           }
           formData.videoFile = '';
         } else {
-          throw ErrorHandler.handleStorageError('存储空间不足，请清理浏览器存储后重试');
+          throw ErrorHandler.handleStorageError(t('storageFullError'));
         }
       }
 
       const newProject: Project = {
         id: `project_${Date.now()}`,
         title: formData.title.trim(),
-        description: formData.description, // 保留HTML格式
+        description: formData.description,
         category: formData.category,
         targetDuration: parseInt(formData.targetDuration),
         currentDuration: 0,
@@ -241,15 +229,15 @@ export default function NewProjectPage() {
       const result = projectStorage.createProject(newProject);
       
       if (!result.success) {
-        const errorMsg = result.error || '创建项目失败，请重试';
+        const errorMsg = result.error || t('createFailed');
         setErrors({ general: errorMsg });
         showToast('error', errorMsg);
         return;
       }
 
-      showToast('success', '项目创建成功');
+      showToast('success', t('createSuccess'));
       router.push(`/projects/${newProject.id}`);
-    } catch (error: any) {
+    } catch (error: unknown) {
       const errorMsg = ErrorHandler.handleError(error);
       ErrorHandler.logError(error);
       setErrors({ general: errorMsg });
@@ -271,7 +259,7 @@ export default function NewProjectPage() {
   }
 
   return (
-    <LayoutSimple title="创建新项目">
+    <LayoutSimple title={t('createNewProject')}>
       <div className="max-w-2xl mx-auto">
         <div className="bg-white rounded-lg shadow-md p-8">
           <form onSubmit={handleSubmit}>
@@ -282,10 +270,10 @@ export default function NewProjectPage() {
             )}
 
             <div className="mb-4">
-              <label className="block text-gray-700 font-medium mb-2">项目标题 *</label>
+              <label className="block text-gray-700 font-medium mb-2">{t('projectTitle')} *</label>
               <input
                 type="text"
-                placeholder="例如：科幻短片：未来城市"
+                placeholder={t('projectTitlePlaceholder')}
                 value={formData.title}
                 onChange={(e) => handleInputChange('title', e.target.value)}
                 className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 ${
@@ -298,26 +286,22 @@ export default function NewProjectPage() {
             </div>
 
             <div className="mb-6">
-              <label className="block text-gray-700 font-semibold mb-3 text-lg">项目描述 *</label>
-              <p className="text-sm text-gray-600 mb-3">
-                使用富文本编辑器添加标题、章节、加粗文字和图片，让项目描述更加丰富生动
-              </p>
+              <label className="block text-gray-700 font-semibold mb-3 text-lg">{t('projectDescriptionLabel')} *</label>
+              <p className="text-sm text-gray-600 mb-3">{t('projectDescriptionHelp')}</p>
               <RichTextEditor
                 value={formData.description}
                 onChange={(value) => handleInputChange('description', value)}
-                placeholder="详细描述你的项目创意、目标和需求..."
+                placeholder={t('projectDescriptionPlaceholder')}
                 error={!!errors.description}
               />
               {errors.description && (
                 <p className="text-red-500 text-sm mt-2">{errors.description}</p>
               )}
-              <p className="text-xs text-gray-500 mt-2">
-                提示：支持标题、加粗、列表、图片等功能。图片会自动压缩并嵌入到内容中。
-              </p>
+              <p className="text-xs text-gray-500 mt-2">{t('projectDescriptionTip')}</p>
             </div>
 
             <div className="mb-4">
-              <label className="block text-gray-700 font-medium mb-2">项目分类 *</label>
+              <label className="block text-gray-700 font-medium mb-2">{t('projectCategory')} *</label>
               <select
                 value={formData.category}
                 onChange={(e) => handleInputChange('category', e.target.value)}
@@ -335,10 +319,10 @@ export default function NewProjectPage() {
             </div>
 
             <div className="mb-4">
-              <label className="block text-gray-700 font-medium mb-2">目标时长（分钟）*</label>
+              <label className="block text-gray-700 font-medium mb-2">{t('targetDurationLabel')} *</label>
               <input
                 type="number"
-                placeholder="例如：5"
+                placeholder={t('targetDurationPlaceholder')}
                 value={formData.targetDuration}
                 onChange={(e) => handleInputChange('targetDuration', e.target.value)}
                 className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 ${
@@ -351,15 +335,11 @@ export default function NewProjectPage() {
             </div>
 
             <div className="mb-4">
-              <label className="block text-gray-700 font-medium mb-2">项目封面图片 *</label>
+              <label className="block text-gray-700 font-medium mb-2">{t('coverImage')} *</label>
               <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-gray-400 transition-colors">
                 {coverPreview ? (
                   <div className="relative">
-                    <img 
-                      src={coverPreview} 
-                      alt="封面预览" 
-                      className="max-h-48 mx-auto rounded"
-                    />
+                    <img src={coverPreview} alt="Cover preview" className="max-h-48 mx-auto rounded" />
                     <button
                       type="button"
                       onClick={() => {
@@ -368,7 +348,7 @@ export default function NewProjectPage() {
                       }}
                       className="absolute top-2 right-2 bg-red-500 text-white px-3 py-1 rounded text-sm hover:bg-red-600"
                     >
-                      删除
+                      {t('removeFile')}
                     </button>
                   </div>
                 ) : (
@@ -378,7 +358,7 @@ export default function NewProjectPage() {
                     </svg>
                     <div className="mt-2">
                       <label className="cursor-pointer text-sm" style={{ color: '#FFD700' }}>
-                        <span className="hover:underline">点击上传</span>
+                        <span className="hover:underline">{t('clickToUpload')}</span>
                         <input
                           type="file"
                           accept="image/jpeg,image/png,image/gif"
@@ -389,9 +369,9 @@ export default function NewProjectPage() {
                           className="hidden"
                         />
                       </label>
-                      <span className="text-gray-500"> 或拖拽文件到此处</span>
+                      <span className="text-gray-500"> {t('orDragFile')}</span>
                     </div>
-                    <p className="text-xs text-gray-500 mt-1">支持JPG、PNG、GIF格式，最大5MB</p>
+                    <p className="text-xs text-gray-500 mt-1">{t('imageFormats')}</p>
                   </div>
                 )}
               </div>
@@ -401,15 +381,11 @@ export default function NewProjectPage() {
             </div>
 
             <div className="mb-4">
-              <label className="block text-gray-700 font-medium mb-2">项目视频（可选）</label>
+              <label className="block text-gray-700 font-medium mb-2">{t('projectVideo')}</label>
               <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-gray-400 transition-colors">
                 {videoPreview ? (
                   <div className="relative">
-                    <video 
-                      src={videoPreview} 
-                      controls 
-                      className="max-h-48 mx-auto rounded"
-                    />
+                    <video src={videoPreview} controls className="max-h-48 mx-auto rounded" />
                     <button
                       type="button"
                       onClick={() => {
@@ -418,7 +394,7 @@ export default function NewProjectPage() {
                       }}
                       className="absolute top-2 right-2 bg-red-500 text-white px-3 py-1 rounded text-sm hover:bg-red-600"
                     >
-                      删除
+                      {t('removeFile')}
                     </button>
                   </div>
                 ) : (
@@ -428,7 +404,7 @@ export default function NewProjectPage() {
                     </svg>
                     <div className="mt-2">
                       <label className="cursor-pointer text-sm" style={{ color: '#FFD700' }}>
-                        <span className="hover:underline">点击上传</span>
+                        <span className="hover:underline">{t('clickToUpload')}</span>
                         <input
                           type="file"
                           accept="video/mp4,video/quicktime,video/x-msvideo"
@@ -439,10 +415,10 @@ export default function NewProjectPage() {
                           className="hidden"
                         />
                       </label>
-                      <span className="text-gray-500"> 或拖拽文件到此处</span>
+                      <span className="text-gray-500"> {t('orDragFile')}</span>
                     </div>
-                    <p className="text-xs text-gray-500 mt-1">支持MP4、MOV、AVI格式，建议小于10MB</p>
-                    <p className="text-xs text-yellow-600 mt-1">⚠️ 由于localStorage限制，大文件可能无法保存</p>
+                    <p className="text-xs text-gray-500 mt-1">{t('videoFormats')}</p>
+                    <p className="text-xs text-yellow-600 mt-1">{t('videoStorageWarning')}</p>
                   </div>
                 )}
               </div>
@@ -452,10 +428,10 @@ export default function NewProjectPage() {
             </div>
 
             <div className="mb-6">
-              <label className="block text-gray-700 font-medium mb-2">Telegram群组链接（可选）</label>
+              <label className="block text-gray-700 font-medium mb-2">{t('telegramGroupLabel')}</label>
               <input
                 type="text"
-                placeholder="https://t.me/your_group"
+                placeholder={t('telegramGroupPlaceholder')}
                 value={formData.telegramGroup}
                 onChange={(e) => handleInputChange('telegramGroup', e.target.value)}
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
@@ -467,23 +443,21 @@ export default function NewProjectPage() {
                 type="submit"
                 disabled={loading}
                 className={`flex-1 py-3 rounded-lg font-medium transition-colors ${
-                  loading
-                    ? 'cursor-not-allowed'
-                    : 'hover:opacity-90'
+                  loading ? 'cursor-not-allowed' : 'hover:opacity-90'
                 }`}
                 style={loading 
                   ? { background: '#E5E5E5', color: '#999999' }
                   : { background: '#FFD700', color: '#333333' }
                 }
               >
-                {loading ? '创建中...' : '创建项目'}
+                {loading ? t('creating') : t('createProject')}
               </button>
               <button
                 type="button"
                 onClick={() => router.push('/')}
                 className="px-6 py-3 border border-gray-300 rounded-lg hover:bg-gray-50"
               >
-                取消
+                {t('cancel')}
               </button>
             </div>
           </form>

@@ -10,9 +10,9 @@ export default function AboutPage() {
         
         <div className="bg-white rounded-xl border border-neutral-200 p-8 space-y-6">
           <section>
-            <h2 className="text-xl font-medium text-[#111827] mb-4">🐝 蜂巢是什么？</h2>
+            <h2 className="text-xl font-medium text-[#111827] mb-4">🐝 蜜蜂AI电影制片厂是什么？</h2>
             <p className="text-[#4B5563] leading-relaxed">
-              蜂巢是一个专为AI视频创作者打造的协作平台。我们的使命是连接全球的AI视频创作者，
+              蜜蜂AI电影制片厂是一个专为AI视频创作者打造的协作平台。我们的使命是连接全球的AI视频创作者，
               让每一个创意都能找到志同道合的伙伴，共同完成令人惊叹的AI视频作品。
             </p>
           </section>
@@ -22,7 +22,7 @@ export default function AboutPage() {
             <p className="text-[#4B5563] leading-relaxed">
               在AI技术飞速发展的今天，视频创作的门槛正在被重新定义。我们相信，
               通过协作的力量，每个人都可以参与到专业级AI视频的创作中来。
-              蜂巢致力于成为AI视频创作领域最活跃、最有价值的社区。
+              蜜蜂AI电影制片厂致力于成为AI视频创作领域最活跃、最有价值的社区。
             </p>
           </section>
 

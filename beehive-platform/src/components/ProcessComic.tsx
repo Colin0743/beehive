@@ -1,31 +1,30 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
-import Link from 'next/link';
-import { useAuth } from '@/contexts/AuthContext';
+import { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 
 export default function ProcessComic() {
-  const { isLoggedIn } = useAuth();
+  const { t } = useTranslation('common');
   const [currentIndex, setCurrentIndex] = useState(0);
 
-  // 精简为3个关键步骤
+  // 3个关键步骤 - 使用 i18n 翻译
   const steps = [
     {
       emoji: '🎯',
-      title: '发起人创建项目',
-      description: '提出创意蓝图，设定视频时长目标，吸引工蜂加入',
+      title: t('processStep1Title'),
+      description: t('processStep1Desc'),
       image: '📝',
     },
     {
       emoji: '🐝',
-      title: '工蜂加入项目',
-      description: '浏览项目，关注感兴趣的项目，以工蜂身份加入并提供算力支持',
+      title: t('processStep2Title'),
+      description: t('processStep2Desc'),
       image: '⚡',
     },
     {
       emoji: '🎬',
-      title: '协作完成作品',
-      description: '在Telegram群组中接收任务，生成AI视频片段，发起人整合完成最终作品',
+      title: t('processStep3Title'),
+      description: t('processStep3Desc'),
       image: '✨',
     },
   ];
@@ -125,7 +124,7 @@ export default function ProcessComic() {
                 style={{
                   boxShadow: index === currentIndex ? '0 0 8px rgba(255,215,0,0.6)' : 'none',
                 }}
-                aria-label={`跳转到步骤 ${index + 1}`}
+                aria-label={t('goToStep', { step: index + 1 })}
               />
             ))}
           </div>
@@ -135,7 +134,7 @@ export default function ProcessComic() {
             onClick={() => setCurrentIndex((prev) => (prev - 1 + steps.length) % steps.length)}
             className="absolute left-0 top-1/2 transform -translate-y-1/2 -translate-x-4 bg-white rounded-full w-9 h-9 flex items-center justify-center shadow-lg hover:shadow-xl transition-all border-2 border-yellow-400 text-lg font-bold"
             style={{ transform: 'translateY(-50%) translateX(-16px) rotate(-5deg)' }}
-            aria-label="上一个步骤"
+            aria-label={t('previousStep')}
           >
             ←
           </button>
@@ -143,7 +142,7 @@ export default function ProcessComic() {
             onClick={() => setCurrentIndex((prev) => (prev + 1) % steps.length)}
             className="absolute right-0 top-1/2 transform -translate-y-1/2 translate-x-4 bg-white rounded-full w-9 h-9 flex items-center justify-center shadow-lg hover:shadow-xl transition-all border-2 border-yellow-400 text-lg font-bold"
             style={{ transform: 'translateY(-50%) translateX(16px) rotate(5deg)' }}
-            aria-label="下一个步骤"
+            aria-label={t('nextStep')}
           >
             →
           </button>

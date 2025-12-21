@@ -4,42 +4,9 @@ import React, { useState, Suspense } from 'react';
 import Link from 'next/link';
 import { useRouter, usePathname, useSearchParams } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
-
-// Figma 设计的 Logo 组件
-function Logo({ size = "medium" }: { size?: "small" | "medium" | "large" }) {
-  const sizes = {
-    small: { icon: 20, text: "text-base" },
-    medium: { icon: 28, text: "text-xl" },
-    large: { icon: 40, text: "text-3xl" },
-  };
-  const currentSize = sizes[size];
-
-  return (
-    <div className="flex items-center gap-2">
-      <div className="relative">
-        <svg
-          width={currentSize.icon}
-          height={currentSize.icon}
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="#FFD700"
-          strokeWidth="2.5"
-        >
-          <path d="M12 2L21.5 7.5V16.5L12 22L2.5 16.5V7.5L12 2Z" fill="#FFD700" fillOpacity="0.1" />
-        </svg>
-        <div className="absolute inset-0 flex items-center justify-center">
-          <div className="grid grid-cols-2 gap-[1px]">
-            <div className="w-[3px] h-[3px] bg-[#FFD700] rounded-full" />
-            <div className="w-[3px] h-[3px] bg-[#FFD700] rounded-full" />
-            <div className="w-[3px] h-[3px] bg-[#FFD700] rounded-full" />
-            <div className="w-[3px] h-[3px] bg-[#FFD700] rounded-full" />
-          </div>
-        </div>
-      </div>
-      <span className={`${currentSize.text} font-semibold text-[#FFD700]`}>蜂巢</span>
-    </div>
-  );
-}
+import { useTranslation } from 'react-i18next';
+import LanguageSwitcher from '@/components/LanguageSwitcher';
+import Logo from './Logo';
 
 // Figma 设计的按钮组件
 function Button({ 
@@ -79,6 +46,7 @@ function Button({
 
 function HeaderContent() {
   const { user, isLoggedIn, logout } = useAuth();
+  const { t } = useTranslation('common');
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -97,14 +65,30 @@ function HeaderContent() {
     }
   };
 
-  const categories = ["全部", "科幻", "动画", "纪录片", "教育", "其他"];
-  const currentCategory = searchParams.get('category') || '全部';
+  const categories = [
+    { key: 'all', label: t('all') },
+    { key: 'sciFi', label: t('sciFi') },
+    { key: 'animation', label: t('animation') },
+    { key: 'documentary', label: t('documentary') },
+    { key: 'education', label: t('education') },
+    { key: 'other', label: t('other') },
+  ];
+  
+  const currentCategoryKey = searchParams.get('category') || 'all';
+  const currentCategory = categories.find(cat => 
+    (cat.key === 'all' && (currentCategoryKey === 'all' || currentCategoryKey === '全部')) ||
+    (cat.key === 'sciFi' && (currentCategoryKey === 'sciFi' || currentCategoryKey === '科幻')) ||
+    (cat.key === 'animation' && (currentCategoryKey === 'animation' || currentCategoryKey === '动画')) ||
+    (cat.key === 'documentary' && (currentCategoryKey === 'documentary' || currentCategoryKey === '纪录片')) ||
+    (cat.key === 'education' && (currentCategoryKey === 'education' || currentCategoryKey === '教育')) ||
+    (cat.key === 'other' && (currentCategoryKey === 'other' || currentCategoryKey === '其他'))
+  ) || categories[0];
 
-  const handleCategoryClick = (category: string) => {
-    if (category === '全部') {
+  const handleCategoryClick = (categoryKey: string) => {
+    if (categoryKey === 'all') {
       router.push('/');
     } else {
-      router.push(`/?category=${category}`);
+      router.push(`/?category=${categoryKey}`);
     }
   };
 
@@ -128,7 +112,7 @@ function HeaderContent() {
                 </svg>
                 <input
                   type="text"
-                  placeholder="搜索项目..."
+                  placeholder={t('searchPlaceholder')}
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   className="w-full h-11 pl-12 pr-4 rounded-lg border border-neutral-300 focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:border-transparent transition-all"
@@ -138,6 +122,7 @@ function HeaderContent() {
 
             {/* Right: Links and Button */}
             <div className="flex items-center gap-6">
+              <LanguageSwitcher />
               {isLoggedIn ? (
                 <>
                   <Link href="/profile" className="flex items-center gap-2 text-sm text-neutral-600 hover:text-neutral-900 transition-colors">
@@ -145,22 +130,22 @@ function HeaderContent() {
                     <span>{user?.name}</span>
                   </Link>
                   <button onClick={handleLogout} className="text-sm text-neutral-600 hover:text-neutral-900 transition-colors">
-                    退出
+                    {t('logout')}
                   </button>
                   <Link href="/projects/new">
-                    <Button variant="primary" size="medium">开始创作</Button>
+                    <Button variant="primary" size="medium">{t('startCreating')}</Button>
                   </Link>
                 </>
               ) : (
                 <>
                   <Link href="/auth/login" className="text-sm text-neutral-600 hover:text-neutral-900 transition-colors">
-                    登录
+                    {t('login')}
                   </Link>
                   <Link href="/auth/register" className="text-sm text-neutral-600 hover:text-neutral-900 transition-colors">
-                    注册
+                    {t('register')}
                   </Link>
                   <Link href="/projects/new">
-                    <Button variant="primary" size="medium">开始创作</Button>
+                    <Button variant="primary" size="medium">{t('startCreating')}</Button>
                   </Link>
                 </>
               )}
@@ -176,16 +161,16 @@ function HeaderContent() {
             <div className="flex gap-8 h-12">
               {categories.map((category) => (
                 <button
-                  key={category}
-                  onClick={() => handleCategoryClick(category)}
+                  key={category.key}
+                  onClick={() => handleCategoryClick(category.key)}
                   className={`relative text-sm transition-colors ${
-                    currentCategory === category
+                    currentCategory.key === category.key
                       ? "text-neutral-900"
                       : "text-neutral-600 hover:text-neutral-900"
                   }`}
                 >
-                  {category}
-                  {currentCategory === category && (
+                  {category.label}
+                  {currentCategory.key === category.key && (
                     <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-[#FFD700]" />
                   )}
                 </button>
@@ -205,7 +190,7 @@ export default function HeaderSimple() {
         <div className="max-w-[1440px] mx-auto px-8">
           <div className="flex items-center justify-between h-16">
             <Logo size="medium" />
-            <div className="text-neutral-500 text-sm">加载中...</div>
+            <div className="text-neutral-500 text-sm">Loading...</div>
           </div>
         </div>
       </header>

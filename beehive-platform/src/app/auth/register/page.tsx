@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { useTranslation } from 'react-i18next';
 import LayoutSimple from '@/components/LayoutSimple';
 import { useAuth } from '@/contexts/AuthContext';
 import { userStorage } from '@/lib/storage';
@@ -19,6 +20,7 @@ interface FormData {
 }
 
 export default function RegisterPage() {
+  const { t } = useTranslation('common');
   const [formData, setFormData] = useState<FormData>({
     name: '',
     email: '',
@@ -35,28 +37,28 @@ export default function RegisterPage() {
     const newErrors: FormErrors = {};
 
     if (!formData.name.trim()) {
-      newErrors.name = '请输入姓名';
+      newErrors.name = t('nameRequired');
     } else if (formData.name.trim().length < 2) {
-      newErrors.name = '姓名至少需要2个字符';
+      newErrors.name = t('nameMinLength');
     }
 
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!formData.email.trim()) {
-      newErrors.email = '请输入邮箱';
+      newErrors.email = t('emailRequired');
     } else if (!emailRegex.test(formData.email)) {
-      newErrors.email = '请输入有效的邮箱地址';
+      newErrors.email = t('invalidEmail');
     }
 
     if (!formData.password) {
-      newErrors.password = '请输入密码';
+      newErrors.password = t('passwordRequired');
     } else if (formData.password.length < 6) {
-      newErrors.password = '密码至少需要6个字符';
+      newErrors.password = t('passwordMinLength');
     }
 
     if (!formData.confirmPassword) {
-      newErrors.confirmPassword = '请确认密码';
+      newErrors.confirmPassword = t('confirmPasswordRequired');
     } else if (formData.password !== formData.confirmPassword) {
-      newErrors.confirmPassword = '两次输入的密码不一致';
+      newErrors.confirmPassword = t('passwordMismatch');
     }
 
     return newErrors;
@@ -71,11 +73,10 @@ export default function RegisterPage() {
       return;
     }
 
-    // 检查邮箱是否已存在
     const emailCheck = userStorage.findUserByEmail(formData.email.trim());
     if (emailCheck.success && emailCheck.data) {
-      setErrors({ email: '该邮箱已被注册' });
-      showToast('error', '该邮箱已被注册');
+      setErrors({ email: t('emailExists') });
+      showToast('error', t('emailExists'));
       return;
     }
 
@@ -85,7 +86,6 @@ export default function RegisterPage() {
     try {
       await new Promise(resolve => setTimeout(resolve, 500));
 
-      // 加密密码
       const passwordHashValue = await hashPassword(formData.password);
 
       const newUser = {
@@ -93,25 +93,24 @@ export default function RegisterPage() {
         name: formData.name.trim(),
         email: formData.email.trim(),
         avatar: '/default-avatar.svg',
-        passwordHash: passwordHashValue, // 存储密码哈希
-        role: 'user' as const, // 默认角色为普通用户
-        isActive: true, // 默认激活
+        passwordHash: passwordHashValue,
+        role: 'user' as const,
+        isActive: true,
         createdAt: new Date().toISOString()
       };
 
       const result = userStorage.registerUser(newUser);
       
       if (!result.success) {
-        const errorMsg = result.error || '注册失败，请重试';
+        const errorMsg = result.error || t('registerFailed');
         setErrors({ general: errorMsg });
         showToast('error', errorMsg);
         return;
       }
 
-      // 创建不包含passwordHash的用户对象用于前端存储（安全考虑）
       const { passwordHash: _, ...userWithoutPassword } = result.data!;
       login(userWithoutPassword);
-      showToast('success', '注册成功');
+      showToast('success', t('registerSuccess'));
       router.push('/');
     } catch (error) {
       const errorMsg = ErrorHandler.handleError(error);
@@ -133,7 +132,6 @@ export default function RegisterPage() {
   return (
     <LayoutSimple>
       <div className="max-w-md mx-auto">
-        {/* 标题区域 - Figma 设计风格 */}
         <div className="text-center mb-8">
           <div className="w-16 h-16 mx-auto mb-4 flex items-center justify-center">
             <svg viewBox="0 0 24 24" className="w-12 h-12" fill="none">
@@ -150,11 +148,10 @@ export default function RegisterPage() {
               <circle cx="14" cy="14" r="1.5" fill="#FFD700" />
             </svg>
           </div>
-          <h2 className="text-2xl font-medium mb-2" style={{ color: '#111827' }}>加入蜂巢</h2>
-          <p className="text-sm" style={{ color: '#6B7280' }}>开始你的AI视频创作之旅</p>
+          <h2 className="text-2xl font-medium mb-2" style={{ color: '#111827' }}>{t('joinHive')}</h2>
+          <p className="text-sm" style={{ color: '#6B7280' }}>{t('startJourney')}</p>
         </div>
 
-        {/* 表单卡片 - Figma 设计风格 */}
         <div 
           className="rounded-xl p-8"
           style={{ 
@@ -178,10 +175,10 @@ export default function RegisterPage() {
             )}
 
             <div className="mb-4">
-              <label className="block text-sm font-medium mb-2" style={{ color: '#111827' }}>姓名</label>
+              <label className="block text-sm font-medium mb-2" style={{ color: '#111827' }}>{t('name')}</label>
               <input
                 type="text"
-                placeholder="请输入您的姓名"
+                placeholder={t('namePlaceholder')}
                 value={formData.name}
                 onChange={(e) => handleInputChange('name', e.target.value)}
                 className="w-full h-11 px-4 rounded-lg text-sm transition-all"
@@ -208,10 +205,10 @@ export default function RegisterPage() {
             </div>
 
             <div className="mb-4">
-              <label className="block text-sm font-medium mb-2" style={{ color: '#111827' }}>邮箱</label>
+              <label className="block text-sm font-medium mb-2" style={{ color: '#111827' }}>{t('email')}</label>
               <input
                 type="email"
-                placeholder="请输入您的邮箱"
+                placeholder={t('emailPlaceholder')}
                 value={formData.email}
                 onChange={(e) => handleInputChange('email', e.target.value)}
                 className="w-full h-11 px-4 rounded-lg text-sm transition-all"
@@ -238,10 +235,10 @@ export default function RegisterPage() {
             </div>
 
             <div className="mb-4">
-              <label className="block text-sm font-medium mb-2" style={{ color: '#111827' }}>密码</label>
+              <label className="block text-sm font-medium mb-2" style={{ color: '#111827' }}>{t('password')}</label>
               <input
                 type="password"
-                placeholder="请输入密码（至少6个字符）"
+                placeholder={t('passwordMinLength')}
                 value={formData.password}
                 onChange={(e) => handleInputChange('password', e.target.value)}
                 className="w-full h-11 px-4 rounded-lg text-sm transition-all"
@@ -268,10 +265,10 @@ export default function RegisterPage() {
             </div>
 
             <div className="mb-6">
-              <label className="block text-sm font-medium mb-2" style={{ color: '#111827' }}>确认密码</label>
+              <label className="block text-sm font-medium mb-2" style={{ color: '#111827' }}>{t('confirmPassword')}</label>
               <input
                 type="password"
-                placeholder="请再次输入密码"
+                placeholder={t('confirmPasswordPlaceholder')}
                 value={formData.confirmPassword}
                 onChange={(e) => handleInputChange('confirmPassword', e.target.value)}
                 className="w-full h-11 px-4 rounded-lg text-sm transition-all"
@@ -317,19 +314,19 @@ export default function RegisterPage() {
                 }
               }}
             >
-              {loading ? '注册中...' : '注册'}
+              {loading ? t('registering') : t('register')}
             </button>
           </form>
 
           <div className="text-center mt-6">
             <p className="text-sm" style={{ color: '#6B7280' }}>
-              已有账户？{' '}
+              {t('hasAccount')}{' '}
               <Link 
                 href="/auth/login" 
                 className="font-medium transition-colors hover:underline"
                 style={{ color: '#4A90E2' }}
               >
-                立即登录
+                {t('loginNow')}
               </Link>
             </p>
           </div>

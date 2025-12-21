@@ -3,49 +3,14 @@
 import React, { useState, useEffect, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { useTranslation } from 'react-i18next';
 import { Project } from '@/types';
 import { projectStorage, projectRelationStorage } from '@/lib/storage';
 import { ErrorHandler } from '@/lib/errorHandler';
 import { useAuth } from '@/contexts/AuthContext';
 import ProcessComic from '@/components/ProcessComic';
-
-// Figma 设计的 Logo 组件
-function Logo({ size = "medium", showText = true }: { size?: "small" | "medium" | "large"; showText?: boolean }) {
-  const sizes = {
-    small: { icon: 20, text: "text-base" },
-    medium: { icon: 28, text: "text-xl" },
-    large: { icon: 40, text: "text-3xl" },
-  };
-  const currentSize = sizes[size];
-
-  return (
-    <div className="flex items-center gap-2">
-      <div className="relative">
-        <svg
-          width={currentSize.icon}
-          height={currentSize.icon}
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="#FFD700"
-          strokeWidth="2.5"
-        >
-          <path d="M12 2L21.5 7.5V16.5L12 22L2.5 16.5V7.5L12 2Z" fill="#FFD700" fillOpacity="0.1" />
-        </svg>
-        <div className="absolute inset-0 flex items-center justify-center">
-          <div className="grid grid-cols-2 gap-[1px]">
-            <div className="w-[3px] h-[3px] bg-[#FFD700] rounded-full" />
-            <div className="w-[3px] h-[3px] bg-[#FFD700] rounded-full" />
-            <div className="w-[3px] h-[3px] bg-[#FFD700] rounded-full" />
-            <div className="w-[3px] h-[3px] bg-[#FFD700] rounded-full" />
-          </div>
-        </div>
-      </div>
-      {showText && (
-        <span className={`${currentSize.text} font-semibold text-[#FFD700]`}>蜂巢</span>
-      )}
-    </div>
-  );
-}
+import LanguageSwitcher from '@/components/LanguageSwitcher';
+import Logo from '@/components/Logo';
 
 // Figma 设计的按钮组件
 function Button({ 
@@ -92,6 +57,8 @@ function ProjectCard({
   project: Project;
   daysLeft: number;
 }) {
+  const { t } = useTranslation('common');
+  
   const categoryColors: { [key: string]: { bg: string; text: string } } = {
     科幻: { bg: "#EDE9FE", text: "#5B21B6" },
     动画: { bg: "#FEF3C7", text: "#92400E" },
@@ -149,7 +116,7 @@ function ProjectCard({
           {/* Completed Badge */}
           {isCompleted && (
             <div className="absolute top-3 right-3 px-3 py-1 rounded-md text-xs bg-[#10B981] text-white">
-              已完成
+              {t('completedBadge')}
             </div>
           )}
         </div>
@@ -165,11 +132,11 @@ function ProjectCard({
           {/* Current Value */}
           <div className="mb-1">
             <span className="text-3xl text-[#111827]">{project.currentDuration}</span>
-            <span className="text-sm text-[#6B7280] ml-1">分钟</span>
+            <span className="text-sm text-[#6B7280] ml-1">{t('minutes')}</span>
           </div>
 
           {/* Target Value */}
-          <div className="text-sm text-[#6B7280] mb-3">目标 {project.targetDuration} 分钟</div>
+          <div className="text-sm text-[#6B7280] mb-3">{t('target')} {project.targetDuration} {t('minutes')}</div>
 
           {/* Progress Bar */}
           <div className="h-0.5 bg-neutral-200 rounded-full mb-4 overflow-hidden">
@@ -181,11 +148,11 @@ function ProjectCard({
 
           {/* Stats */}
           <div className="flex items-center gap-2 text-xs text-[#6B7280]">
-            <span>{project.participantsCount || 0} 支持者</span>
+            <span>{project.participantsCount || 0} {t('supporters')}</span>
             <span>•</span>
-            <span>{progress.toFixed(0)}% 完成</span>
+            <span>{progress.toFixed(0)}% {t('completed')}</span>
             <span>•</span>
-            <span>{daysLeft} 天</span>
+            <span>{daysLeft} {t('days')}</span>
           </div>
         </div>
       </div>
@@ -199,15 +166,23 @@ function HomeContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const { user, isLoggedIn, logout } = useAuth();
+  const { t } = useTranslation('common');
   const [projects, setProjects] = useState<Project[]>([]);
   const [filteredProjects, setFilteredProjects] = useState<Project[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState('全部');
+  const [selectedCategory, setSelectedCategory] = useState('all');
   const [currentPage, setCurrentPage] = useState(1);
   const [hasParticipated, setHasParticipated] = useState(false);
   const projectsPerPage = 12; // 每页显示12个项目
 
-  const categories = ["全部", "科幻", "动画", "纪录片", "教育", "其他"];
+  const categories = [
+    { key: 'all', label: t('all'), value: '全部' },
+    { key: 'sciFi', label: t('sciFi'), value: '科幻' },
+    { key: 'animation', label: t('animation'), value: '动画' },
+    { key: 'documentary', label: t('documentary'), value: '纪录片' },
+    { key: 'education', label: t('education'), value: '教育' },
+    { key: 'other', label: t('other'), value: '其他' },
+  ];
 
   useEffect(() => {
     const result = projectStorage.getAllProjects();
@@ -234,28 +209,45 @@ function HomeContent() {
     const categoryFromUrl = searchParams.get('category');
     
     if (categoryFromUrl) {
-      setSelectedCategory(categoryFromUrl === 'all' ? '全部' : categoryFromUrl);
+      // 处理旧的中文分类参数和新的英文分类参数
+      const categoryMapping: { [key: string]: string } = {
+        'all': 'all',
+        '全部': 'all',
+        'sciFi': 'sciFi',
+        '科幻': 'sciFi',
+        'animation': 'animation',
+        '动画': 'animation',
+        'documentary': 'documentary',
+        '纪录片': 'documentary',
+        'education': 'education',
+        '教育': 'education',
+        'other': 'other',
+        '其他': 'other',
+      };
+      
+      setSelectedCategory(categoryMapping[categoryFromUrl] || 'all');
     }
   }, [searchParams]);
 
   useEffect(() => {
     let filtered = projects;
 
-    if (selectedCategory !== '全部') {
-      filtered = filtered.filter(p => p.category === selectedCategory);
+    if (selectedCategory !== 'all') {
+      const categoryValue = categories.find(cat => cat.key === selectedCategory)?.value || '';
+      filtered = filtered.filter(p => p.category === categoryValue);
     }
 
     setFilteredProjects(filtered);
     setCurrentPage(1); // 切换分类时重置到第一页
-  }, [projects, selectedCategory]);
+  }, [projects, selectedCategory, categories]);
 
-  const handleCategoryClick = (category: string) => {
-    setSelectedCategory(category);
+  const handleCategoryClick = (categoryKey: string) => {
+    setSelectedCategory(categoryKey);
     setCurrentPage(1); // 切换分类时重置到第一页
-    if (category === '全部') {
+    if (categoryKey === 'all') {
       router.push('/');
     } else {
-      router.push(`/?category=${category}`);
+      router.push(`/?category=${categoryKey}`);
     }
   };
 
@@ -312,7 +304,7 @@ function HomeContent() {
                 </svg>
                 <input
                   type="text"
-                  placeholder="搜索项目..."
+                  placeholder={t('searchPlaceholder')}
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   className="w-full h-11 pl-12 pr-4 rounded-lg border border-neutral-300 focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:border-transparent transition-all"
@@ -322,6 +314,7 @@ function HomeContent() {
 
             {/* Right: Links and Button */}
             <div className="flex items-center gap-6">
+              <LanguageSwitcher />
               {isLoggedIn ? (
                 <>
                   <Link href="/profile" className="flex items-center gap-2 text-sm text-neutral-600 hover:text-neutral-900 transition-colors">
@@ -329,22 +322,22 @@ function HomeContent() {
                     <span>{user?.name}</span>
                   </Link>
                   <button onClick={handleLogout} className="text-sm text-neutral-600 hover:text-neutral-900 transition-colors">
-                    退出
+                    {t('logout')}
                   </button>
                   <Link href="/projects/new">
-                    <Button variant="primary" size="medium">开始创作</Button>
+                    <Button variant="primary" size="medium">{t('startCreating')}</Button>
                   </Link>
                 </>
               ) : (
                 <>
                   <Link href="/auth/login" className="text-sm text-neutral-600 hover:text-neutral-900 transition-colors">
-                    登录
+                    {t('login')}
                   </Link>
                   <Link href="/auth/register" className="text-sm text-neutral-600 hover:text-neutral-900 transition-colors">
-                    注册
+                    {t('register')}
                   </Link>
                   <Link href="/projects/new">
-                    <Button variant="primary" size="medium">开始创作</Button>
+                    <Button variant="primary" size="medium">{t('startCreating')}</Button>
                   </Link>
                 </>
               )}
@@ -359,16 +352,16 @@ function HomeContent() {
           <div className="flex gap-8 h-12">
             {categories.map((category) => (
               <button
-                key={category}
-                onClick={() => handleCategoryClick(category)}
+                key={category.key}
+                onClick={() => handleCategoryClick(category.key)}
                 className={`relative text-sm transition-colors ${
-                  selectedCategory === category
+                  selectedCategory === category.key
                     ? "text-neutral-900"
                     : "text-neutral-600 hover:text-neutral-900"
                 }`}
               >
-                {category}
-                {selectedCategory === category && (
+                {category.label}
+                {selectedCategory === category.key && (
                   <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-[#FFD700]" />
                 )}
               </button>
@@ -379,7 +372,7 @@ function HomeContent() {
 
       {/* Hero Section - 完全按照 Figma 设计（除了流程漫画） */}
       {/* 只在第一页且用户未参与过项目时显示 */}
-      {selectedCategory === '全部' && currentPage === 1 && !hasParticipated && (
+      {selectedCategory === 'all' && currentPage === 1 && !hasParticipated && (
         <section
           className="relative overflow-hidden rounded-b-3xl"
           style={{
@@ -415,10 +408,10 @@ function HomeContent() {
               className="text-5xl text-center text-[#111827] mb-4"
               style={{ letterSpacing: "-0.02em" }}
             >
-              让创意在蜂巢中绽放
+              {t('heroTitle')}
             </h1>
             <p className="text-lg text-center text-[#1F2937] max-w-[800px] mb-8">
-              蜂巢是AI视频创作者的协作平台，加入蜂巢，与优秀创作者一起完成AI视频作品
+              {t('heroSubtitle')}
             </p>
 
             {/* Process Comic - 保留原有组件 */}
@@ -432,7 +425,10 @@ function HomeContent() {
       {/* Featured Projects Grid - 完全按照 Figma 设计 */}
       <section className="max-w-[1200px] mx-auto px-8 py-16">
         <h2 className="text-3xl text-[#111827] mb-8">
-          {selectedCategory !== '全部' ? `${selectedCategory}项目` : '精选项目'}
+          {selectedCategory !== 'all' 
+            ? t('categoryProjects', { category: categories.find(cat => cat.key === selectedCategory)?.label || '' })
+            : t('featuredProjects')
+          }
         </h2>
         
         {filteredProjects.length > 0 ? (
@@ -455,7 +451,7 @@ function HomeContent() {
                   disabled={currentPage === 1}
                   className="px-4 py-2 rounded-lg border border-neutral-300 text-neutral-600 hover:bg-neutral-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                 >
-                  上一页
+                  {t('previousPage')}
                 </button>
                 
                 <div className="flex gap-2">
@@ -479,7 +475,7 @@ function HomeContent() {
                   disabled={currentPage === totalPages}
                   className="px-4 py-2 rounded-lg border border-neutral-300 text-neutral-600 hover:bg-neutral-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                 >
-                  下一页
+                  {t('nextPage')}
                 </button>
               </div>
             )}
@@ -488,16 +484,16 @@ function HomeContent() {
           <div className="text-center py-16">
             <div className="text-6xl mb-4 opacity-30">📹</div>
             <h3 className="text-xl text-[#111827] mb-2">
-              {selectedCategory !== '全部' ? '该分类暂无项目' : '还没有项目'}
+              {selectedCategory !== 'all' ? t('noCategoryProjects') : t('noProjects')}
             </h3>
             <p className="text-sm text-[#6B7280] mb-6">
-              {selectedCategory !== '全部' 
-                ? '尝试查看其他分类' 
-                : '成为第一个在蜂巢平台创建AI视频项目的创作者！'}
+              {selectedCategory !== 'all' 
+                ? t('tryOtherCategories')
+                : t('firstProjectCTA')}
             </p>
-            {selectedCategory === '全部' && (
+            {selectedCategory === 'all' && (
               <Link href="/projects/new">
-                <Button variant="primary" size="medium">创建第一个项目</Button>
+                <Button variant="primary" size="medium">{t('createFirstProject')}</Button>
               </Link>
             )}
           </div>
@@ -515,40 +511,40 @@ function HomeContent() {
                 <Logo size="medium" />
               </div>
               <p className="text-sm text-neutral-600 leading-relaxed">
-                AI视频创作者的协作平台，让创意在蜂巢中绽放
+                {t('footerDescription')}
               </p>
             </div>
 
             {/* Quick Links */}
             <div>
-              <h4 className="text-sm text-neutral-900 mb-4">快速链接</h4>
+              <h4 className="text-sm text-neutral-900 mb-4">{t('quickLinks')}</h4>
               <ul className="space-y-2 text-sm text-neutral-600">
-                <li><Link href="/about" className="hover:text-neutral-900 transition-colors">关于我们</Link></li>
-                <li><Link href="/how-it-works" className="hover:text-neutral-900 transition-colors">如何运作</Link></li>
-                <li><Link href="/guide" className="hover:text-neutral-900 transition-colors">创作指南</Link></li>
-                <li><Link href="/help" className="hover:text-neutral-900 transition-colors">帮助中心</Link></li>
+                <li><Link href="/about" className="hover:text-neutral-900 transition-colors">{t('aboutUs')}</Link></li>
+                <li><Link href="/how-it-works" className="hover:text-neutral-900 transition-colors">{t('howItWorks')}</Link></li>
+                <li><Link href="/guide" className="hover:text-neutral-900 transition-colors">{t('creationGuide')}</Link></li>
+                <li><Link href="/help" className="hover:text-neutral-900 transition-colors">{t('helpCenter')}</Link></li>
               </ul>
             </div>
 
             {/* Categories */}
             <div>
-              <h4 className="text-sm text-neutral-900 mb-4">项目分类</h4>
+              <h4 className="text-sm text-neutral-900 mb-4">{t('projectCategories')}</h4>
               <ul className="space-y-2 text-sm text-neutral-600">
-                <li><button onClick={() => handleCategoryClick('科幻')} className="hover:text-neutral-900 transition-colors">科幻</button></li>
-                <li><button onClick={() => handleCategoryClick('动画')} className="hover:text-neutral-900 transition-colors">动画</button></li>
-                <li><button onClick={() => handleCategoryClick('纪录片')} className="hover:text-neutral-900 transition-colors">纪录片</button></li>
-                <li><button onClick={() => handleCategoryClick('教育')} className="hover:text-neutral-900 transition-colors">教育</button></li>
+                <li><button onClick={() => handleCategoryClick('sciFi')} className="hover:text-neutral-900 transition-colors">{t('sciFi')}</button></li>
+                <li><button onClick={() => handleCategoryClick('animation')} className="hover:text-neutral-900 transition-colors">{t('animation')}</button></li>
+                <li><button onClick={() => handleCategoryClick('documentary')} className="hover:text-neutral-900 transition-colors">{t('documentary')}</button></li>
+                <li><button onClick={() => handleCategoryClick('education')} className="hover:text-neutral-900 transition-colors">{t('education')}</button></li>
               </ul>
             </div>
 
             {/* Community */}
             <div>
-              <h4 className="text-sm text-neutral-900 mb-4">社区</h4>
+              <h4 className="text-sm text-neutral-900 mb-4">{t('community')}</h4>
               <ul className="space-y-2 text-sm text-neutral-600">
-                <li><a href="#" className="hover:text-neutral-900 transition-colors">博客</a></li>
-                <li><a href="#" className="hover:text-neutral-900 transition-colors">创作者故事</a></li>
-                <li><a href="#" className="hover:text-neutral-900 transition-colors">合作伙伴</a></li>
-                <li><a href="mailto:contact@beehive.ai" className="hover:text-neutral-900 transition-colors">联系我们</a></li>
+                <li><a href="#" className="hover:text-neutral-900 transition-colors">{t('blog')}</a></li>
+                <li><a href="#" className="hover:text-neutral-900 transition-colors">{t('creatorStories')}</a></li>
+                <li><a href="#" className="hover:text-neutral-900 transition-colors">{t('partners')}</a></li>
+                <li><a href="mailto:contact@beehive.ai" className="hover:text-neutral-900 transition-colors">{t('contactUs')}</a></li>
               </ul>
             </div>
           </div>
@@ -556,12 +552,12 @@ function HomeContent() {
           {/* Bottom Bar */}
           <div className="mt-12 pt-8 border-t border-neutral-200 flex flex-col md:flex-row justify-between items-center gap-4">
             <p className="text-sm text-neutral-500">
-              © 2025 蜂巢平台. All rights reserved.
+              {t('allRightsReserved')}
             </p>
             <div className="flex gap-6 text-sm text-neutral-500">
-              <Link href="/privacy" className="hover:text-neutral-900 transition-colors">隐私政策</Link>
-              <Link href="/terms" className="hover:text-neutral-900 transition-colors">服务条款</Link>
-              <Link href="/cookies" className="hover:text-neutral-900 transition-colors">Cookie设置</Link>
+              <Link href="/privacy" className="hover:text-neutral-900 transition-colors">{t('privacyPolicy')}</Link>
+              <Link href="/terms" className="hover:text-neutral-900 transition-colors">{t('termsOfService')}</Link>
+              <Link href="/cookies" className="hover:text-neutral-900 transition-colors">{t('cookieSettings')}</Link>
             </div>
           </div>
         </div>
@@ -574,7 +570,7 @@ export default function Home() {
   return (
     <Suspense fallback={
       <div className="min-h-screen bg-neutral-50 flex justify-center items-center">
-        <div className="text-neutral-500">加载中...</div>
+        <div className="text-neutral-500">Loading...</div>
       </div>
     }>
       <HomeContent />

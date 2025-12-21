@@ -9,7 +9,7 @@ export default function Home() {
       <div className="max-w-4xl mx-auto">
         <div className="text-center mb-12">
           <div className="text-6xl mb-4">🐝</div>
-          <h1 className="text-4xl font-bold mb-4">欢迎来到蜂巢</h1>
+          <h1 className="text-4xl font-bold mb-4">欢迎来到蜜蜂AI电影制片厂</h1>
           <p className="text-xl text-gray-600 mb-8">
             AI视频创作者的协作平台，汇聚创意与算力
           </p>

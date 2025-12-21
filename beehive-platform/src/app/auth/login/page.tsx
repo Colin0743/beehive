@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { useTranslation } from 'react-i18next';
 import LayoutSimple from '@/components/LayoutSimple';
 import { useAuth } from '@/contexts/AuthContext';
 import { userStorage } from '@/lib/storage';
@@ -17,6 +18,7 @@ interface FormData {
 }
 
 export default function LoginPage() {
+  const { t } = useTranslation('common');
   const [formData, setFormData] = useState<FormData>({
     email: '',
     password: ''
@@ -32,13 +34,13 @@ export default function LoginPage() {
 
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!formData.email.trim()) {
-      newErrors.email = '请输入邮箱';
+      newErrors.email = t('emailRequired');
     } else if (!emailRegex.test(formData.email)) {
-      newErrors.email = '请输入有效的邮箱地址';
+      newErrors.email = t('invalidEmail');
     }
 
     if (!formData.password) {
-      newErrors.password = '请输入密码';
+      newErrors.password = t('passwordRequired');
     }
 
     return newErrors;
@@ -62,14 +64,14 @@ export default function LoginPage() {
       const result = userStorage.findUserByEmail(formData.email.trim());
       
       if (!result.success) {
-        const errorMsg = result.error || '登录失败，请重试';
+        const errorMsg = result.error || t('loginFailed');
         setErrors({ general: errorMsg });
         showToast('error', errorMsg);
         return;
       }
 
       if (!result.data) {
-        const errorMsg = '邮箱或密码错误';
+        const errorMsg = t('wrongCredentials');
         setErrors({ general: errorMsg });
         showToast('error', errorMsg);
         return;
@@ -77,26 +79,21 @@ export default function LoginPage() {
 
       const user = result.data;
 
-      // 验证密码
-      // 兼容旧数据：如果没有passwordHash，说明是旧用户，允许登录（向后兼容）
       if (user.passwordHash) {
         const isValidPassword = await verifyPassword(formData.password, user.passwordHash);
         if (!isValidPassword) {
-          const errorMsg = '邮箱或密码错误';
+          const errorMsg = t('wrongCredentials');
           setErrors({ general: errorMsg });
           showToast('error', errorMsg);
           return;
         }
       } else {
-        // 旧用户没有密码哈希，为了安全，提示需要重新设置密码
-        // 但为了向后兼容，暂时允许登录
-        console.warn('用户没有密码哈希，这是旧数据，建议用户重新设置密码');
+        console.warn('User has no password hash, this is legacy data');
       }
 
-      // 创建不包含passwordHash的用户对象用于前端存储（安全考虑）
       const { passwordHash, ...userWithoutPassword } = user;
       login(userWithoutPassword);
-      showToast('success', '登录成功');
+      showToast('success', t('loginSuccess'));
       router.push('/');
     } catch (error) {
       const errorMsg = ErrorHandler.handleError(error);
@@ -118,7 +115,6 @@ export default function LoginPage() {
   return (
     <LayoutSimple>
       <div className="max-w-md mx-auto">
-        {/* 标题区域 - Figma 设计风格 */}
         <div className="text-center mb-8">
           <div className="w-16 h-16 mx-auto mb-4 flex items-center justify-center">
             <svg viewBox="0 0 24 24" className="w-12 h-12" fill="none">
@@ -135,11 +131,10 @@ export default function LoginPage() {
               <circle cx="14" cy="14" r="1.5" fill="#FFD700" />
             </svg>
           </div>
-          <h2 className="text-2xl font-medium mb-2" style={{ color: '#111827' }}>欢迎回到蜂巢</h2>
-          <p className="text-sm" style={{ color: '#6B7280' }}>继续你的AI视频创作之旅</p>
+          <h2 className="text-2xl font-medium mb-2" style={{ color: '#111827' }}>{t('welcomeBack')}</h2>
+          <p className="text-sm" style={{ color: '#6B7280' }}>{t('continueJourney')}</p>
         </div>
 
-        {/* 表单卡片 - Figma 设计风格 */}
         <div 
           className="rounded-xl p-8"
           style={{ 
@@ -163,10 +158,10 @@ export default function LoginPage() {
             )}
 
             <div className="mb-4">
-              <label className="block text-sm font-medium mb-2" style={{ color: '#111827' }}>邮箱</label>
+              <label className="block text-sm font-medium mb-2" style={{ color: '#111827' }}>{t('email')}</label>
               <input
                 type="email"
-                placeholder="请输入您的邮箱"
+                placeholder={t('emailPlaceholder')}
                 value={formData.email}
                 onChange={(e) => handleInputChange('email', e.target.value)}
                 className="w-full h-11 px-4 rounded-lg text-sm transition-all"
@@ -193,10 +188,10 @@ export default function LoginPage() {
             </div>
 
             <div className="mb-6">
-              <label className="block text-sm font-medium mb-2" style={{ color: '#111827' }}>密码</label>
+              <label className="block text-sm font-medium mb-2" style={{ color: '#111827' }}>{t('password')}</label>
               <input
                 type="password"
-                placeholder="请输入您的密码"
+                placeholder={t('passwordPlaceholder')}
                 value={formData.password}
                 onChange={(e) => handleInputChange('password', e.target.value)}
                 className="w-full h-11 px-4 rounded-lg text-sm transition-all"
@@ -242,19 +237,19 @@ export default function LoginPage() {
                 }
               }}
             >
-              {loading ? '登录中...' : '登录'}
+              {loading ? t('loggingIn') : t('login')}
             </button>
           </form>
 
           <div className="text-center mt-6">
             <p className="text-sm" style={{ color: '#6B7280' }}>
-              还没有账户？{' '}
+              {t('noAccount')}{' '}
               <Link 
                 href="/auth/register" 
                 className="font-medium transition-colors hover:underline"
                 style={{ color: '#4A90E2' }}
               >
-                立即注册
+                {t('registerNow')}
               </Link>
             </p>
           </div>
