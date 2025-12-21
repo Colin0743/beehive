@@ -6,6 +6,7 @@ import { ToastProvider } from "@/components/Toast";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import PageLoader from "@/components/PageLoader";
 import I18nProvider from "@/components/I18nProvider";
+import DynamicTitle from "@/components/DynamicTitle";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -13,8 +14,8 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "蜜蜂AI电影制片厂 - AI视频协作平台",
-  description: "AI视频创作者的协作平台，汇聚创意与算力",
+  title: "Bee AI Movie Studio - AI Video Collaboration Platform",
+  description: "AI video creators collaboration platform, gathering creativity and computing power",
 };
 
 export default function RootLayout({
@@ -35,6 +36,7 @@ export default function RootLayout({
       >
         <ErrorBoundary>
           <I18nProvider>
+            <DynamicTitle />
             <AuthProvider>
               <ToastProvider>
                 <PageLoader />

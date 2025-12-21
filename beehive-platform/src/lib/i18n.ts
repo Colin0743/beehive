@@ -4,6 +4,10 @@ import { initReactI18next } from 'react-i18next';
 // 英文资源
 const enResources = {
   common: {
+    // Site Meta
+    'site.title': 'Bee AI Movie Studio - AI Video Collaboration Platform',
+    'site.description': 'AI video creators collaboration platform, gathering creativity and computing power',
+    
     // Navigation
     login: 'Login',
     register: 'Register',
@@ -245,6 +249,10 @@ const enResources = {
 // 中文资源
 const zhResources = {
   common: {
+    // Site Meta
+    'site.title': '蜜蜂AI电影制片厂 - AI视频协作平台',
+    'site.description': 'AI视频创作者的协作平台，汇聚创意与算力',
+    
     // Navigation
     login: '登录',
     register: '注册',
