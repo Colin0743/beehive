@@ -107,20 +107,7 @@ export default function RechargePage() {
         setLoading(false);
         return;
       }
-      const { mock_pay_url, out_trade_no, redirect_url, code_url } = orderRes.data;
-
-      if (mock_pay_url) {
-        const confirmRes = await rechargeStorage.mockConfirm(out_trade_no);
-        if (confirmRes.success) {
-          setMessage({ type: 'success', text: t('rechargeSuccess') });
-          setSelectedCents(null);
-          refreshBalance();
-        } else {
-          setMessage({ type: 'error', text: confirmRes.error || '支付失败' });
-        }
-        setLoading(false);
-        return;
-      }
+      const { out_trade_no, redirect_url, code_url } = orderRes.data;
 
       if (redirect_url) {
         setMessage({ type: 'success', text: t('redirectingToPay') });
