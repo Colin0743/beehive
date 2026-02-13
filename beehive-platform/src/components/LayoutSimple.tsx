@@ -11,12 +11,13 @@ interface LayoutProps {
 
 export default function LayoutSimple({ children, title }: LayoutProps) {
   return (
-    <div className="min-h-screen bg-neutral-50 flex flex-col">
+    <div className="min-h-screen bg-[var(--ink)] flex flex-col">
+      <div className="film-grain" />
       <HeaderSimple />
-      <main className="flex-1 pb-12">
-        <div className="max-w-[1440px] mx-auto px-8">
+      <main className="flex-1 py-12">
+        <div className="container">
           {title && (
-            <h1 className="text-3xl text-[#111827] mb-6 pt-6">
+            <h1 className="text-3xl text-[var(--text-primary)] mb-8 animate-fade-up">
               {title}
             </h1>
           )}

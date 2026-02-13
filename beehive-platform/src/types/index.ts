@@ -7,10 +7,57 @@ export interface User {
   name: string;
   email: string;
   avatar: string;
-  passwordHash?: string; // 密码哈希（注册时设置，登录时验证）
   role?: UserRole; // 用户角色，默认为'user'
   isActive?: boolean; // 账号是否激活，默认为true
   createdAt: string;
+}
+
+// 任务状态类型
+export type TaskStatus = 'draft' | 'published' | 'completed';
+
+// 任务接口
+export interface Task {
+  id: string;
+  prompt: string;           // 提示词文本
+  referenceImages: string[]; // 参考图片 base64 数组
+  requirements: string;      // 任务需求说明
+  creatorEmail: string;      // 创建者邮箱（用于接收提交）
+  status: TaskStatus;        // 任务状态
+  contributorName?: string;  // 完成者名称（completed 时填写）
+  duration: number;          // 任务时长（5-30秒），表示该任务对项目进度的贡献量
+  order: number;             // 排序序号
+  createdAt: string;         // ISO 时间戳
+  updatedAt: string;         // ISO 时间戳
+}
+
+// 任务接受记录接口
+export interface TaskAcceptance {
+  id: string;
+  taskId: string;
+  userId: string;
+  acceptedAt: string;  // ISO 时间戳
+}
+
+// 站内通知接口
+export interface Notification {
+  id: string;
+  type: 'task_completed' | 'contribution_accepted';
+  message: string;
+  taskId: string;
+  projectId: string;
+  isRead: boolean;
+  createdAt: string;  // ISO 时间戳
+}
+
+// 成就记录接口
+export interface Achievement {
+  id: string;
+  taskId: string;
+  taskName: string;
+  contributorName: string;
+  projectId: string;
+  projectName: string;
+  completedAt: string;  // ISO 时间戳
 }
 
 // 项目相关类型
@@ -30,6 +77,7 @@ export interface Project {
   status: 'active' | 'completed' | 'paused';
   createdAt: string;
   logs: ProjectLog[];
+  tasks?: Task[];  // 任务数组
 }
 
 // 项目日志类型

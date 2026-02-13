@@ -1,265 +1,193 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useTranslation } from 'react-i18next';
 import LayoutSimple from '@/components/LayoutSimple';
 import { useAuth } from '@/contexts/AuthContext';
-import Link from 'next/link';
-import { Project } from '@/types';
-import { projectStorage, projectRelationStorage } from '@/lib/storage';
-import { ErrorHandler } from '@/lib/errorHandler';
+import { uploadFile } from '@/lib/upload';
+import { balanceStorage } from '@/lib/api';
 
 export default function ProfilePage() {
   const { t } = useTranslation('common');
-  const { user, isLoggedIn } = useAuth();
+  const { user, isLoggedIn, updateUser } = useAuth();
   const router = useRouter();
-  const [activeTab, setActiveTab] = useState<'created' | 'participated'>('created');
-  const [createdProjects, setCreatedProjects] = useState<Project[]>([]);
-  const [participatedProjects, setParticipatedProjects] = useState<Project[]>([]);
+
+  const [name, setName] = useState(user?.name || '');
+  const [balanceYuan, setBalanceYuan] = useState<string | null>(null);
+  const [avatarPreview, setAvatarPreview] = useState(user?.avatar || '');
+  const [saving, setSaving] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    if (!isLoggedIn) {
-      router.push('/auth/login');
-      return;
+    if (isLoggedIn && user) {
+      balanceStorage.getBalance().then((r) => {
+        if (r.success && r.data) setBalanceYuan(r.data.balance_yuan);
+      });
     }
-    loadUserProjects();
   }, [isLoggedIn, user]);
 
-  const loadUserProjects = () => {
-    if (!user) return;
-    try {
-      const createdResult = projectStorage.getUserProjects(user.id);
-      if (createdResult.success && createdResult.data) {
-        setCreatedProjects(createdResult.data);
-      }
-      const participatedIdsResult = projectRelationStorage.getParticipatedProjectIds(user.id);
-      if (participatedIdsResult.success && participatedIdsResult.data) {
-        const allProjectsResult = projectStorage.getAllProjects();
-        if (allProjectsResult.success && allProjectsResult.data) {
-          const participated = allProjectsResult.data.filter(p => 
-            participatedIdsResult.data!.includes(p.id)
-          );
-          setParticipatedProjects(participated);
-        }
-      }
-    } catch (error) {
-      ErrorHandler.logError(error);
-    }
-  };
-
-  const categoryColors: { [key: string]: { bg: string; text: string } } = {
-    '科幻': { bg: '#EDE9FE', text: '#5B21B6' },
-    '动画': { bg: '#FEF3C7', text: '#92400E' },
-    '纪录片': { bg: '#D1FAE5', text: '#065F46' },
-    '教育': { bg: '#DBEAFE', text: '#1E40AF' },
-    '其他': { bg: '#FCE7F3', text: '#831843' },
-  };
-
-  const renderProjectCard = (project: Project) => {
-    const progress = Math.min((project.currentDuration / project.targetDuration) * 100, 100);
-    const categoryStyle = categoryColors[project.category] || categoryColors['其他'];
-    const plainDescription = project.description.replace(/<[^>]*>/g, '');
-
-    return (
-      <div 
-        key={project.id} 
-        className="rounded-xl overflow-hidden transition-all duration-300 cursor-pointer"
-        style={{
-          backgroundColor: '#ffffff',
-          border: '1px solid #E5E7EB',
-          boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)',
-        }}
-        onMouseEnter={(e) => {
-          e.currentTarget.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.15)';
-          e.currentTarget.style.transform = 'translateY(-2px)';
-        }}
-        onMouseLeave={(e) => {
-          e.currentTarget.style.boxShadow = '0 1px 3px rgba(0, 0, 0, 0.1)';
-          e.currentTarget.style.transform = 'translateY(0)';
-        }}
-      >
-        <div 
-          className="h-32 flex items-center justify-center relative"
-          style={{ backgroundColor: categoryStyle.bg }}
-        >
-          {project.coverImage ? (
-            <img src={project.coverImage} alt={project.title} className="w-full h-full object-cover" />
-          ) : (
-            <span className="text-4xl opacity-20" style={{ color: categoryStyle.text }}>📹</span>
-          )}
-          <div
-            className="absolute top-3 left-3 px-3 py-1 rounded-md text-xs font-medium"
-            style={{ backgroundColor: categoryStyle.bg, color: categoryStyle.text }}
-          >
-            {project.category}
-          </div>
-          {progress === 100 && (
-            <div className="absolute top-3 right-3 px-3 py-1 rounded-md text-xs font-medium bg-green-500 text-white">
-              {t('completedBadge')}
-            </div>
-          )}
-        </div>
-
-        <div className="p-5">
-          <h3 className="text-lg font-medium mb-2 truncate" style={{ color: '#111827' }}>
-            {project.title}
-          </h3>
-          <p className="text-sm mb-4 line-clamp-2" style={{ color: '#4B5563', lineHeight: '1.5' }}>
-            {plainDescription.substring(0, 80)}
-            {plainDescription.length > 80 && '...'}
-          </p>
-          
-          <div className="mb-3">
-            <div className="flex items-baseline gap-1 mb-1">
-              <span className="text-xl font-medium" style={{ color: '#111827' }}>{project.currentDuration}</span>
-              <span className="text-xs" style={{ color: '#6B7280' }}>/ {project.targetDuration} {t('minutes')}</span>
-            </div>
-            <div className="h-1 rounded-full overflow-hidden" style={{ backgroundColor: '#E5E7EB' }}>
-              <div 
-                className="h-full rounded-full transition-all duration-500"
-                style={{ 
-                  width: `${progress}%`,
-                  backgroundColor: '#10B981'
-                }}
-              />
-            </div>
-          </div>
-          
-          <div className="flex justify-between items-center pt-3" style={{ borderTop: '1px solid #F3F4F6' }}>
-            <span className="text-xs" style={{ color: '#6B7280' }}>
-              {project.participantsCount || 0} {t('supporters')} • {progress.toFixed(0)}%
-            </span>
-            <Link
-              href={`/projects/${project.id}`}
-              className="text-xs font-medium transition-colors"
-              style={{ color: '#4A90E2' }}
-            >
-              {t('viewDetails')} →
-            </Link>
-          </div>
-        </div>
-      </div>
-    );
-  };
-
-  const renderEmptyState = (message: string) => (
-    <div className="text-center py-16">
-      <div className="text-6xl mb-4 opacity-30">📁</div>
-      <h3 className="text-xl font-medium mb-2" style={{ color: '#111827' }}>{message}</h3>
-      <p className="text-sm mb-6" style={{ color: '#6B7280' }}>{t('startFirstProject')}</p>
-      <Link
-        href="/projects/new"
-        className="inline-flex items-center px-6 py-3 rounded-lg font-semibold text-sm transition-all"
-        style={{ backgroundColor: '#FFD700', color: '#111827' }}
-        onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#E6C200'}
-        onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#FFD700'}
-      >
-        <span className="mr-2">+</span>
-        {t('createProject')}
-      </Link>
-    </div>
-  );
-
+  // 未登录重定向
   if (!isLoggedIn || !user) {
+    if (typeof window !== 'undefined') router.push('/auth/login');
     return null;
   }
 
-  const tabs = [
-    { id: 'created', label: `${t('createdProjectsTab')} (${createdProjects.length})`, icon: '🚀' },
-    { id: 'participated', label: `${t('participatedProjectsTab')} (${participatedProjects.length})`, icon: '👥' },
-  ];
+  // 处理头像文件选择 - 上传到 Supabase Storage
+  const handleAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
 
-  const currentProjects = activeTab === 'created' ? createdProjects : participatedProjects;
+    setUploading(true);
+    setMessage(null);
+
+    try {
+      const url = await uploadFile(file);
+      setAvatarPreview(url);
+    } catch (err: any) {
+      setMessage({ type: 'error', text: err.message || '头像上传失败，请重试' });
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  // 保存修改
+  const handleSave = async () => {
+    if (!name.trim()) {
+      setMessage({ type: 'error', text: '昵称不能为空' });
+      return;
+    }
+
+    setSaving(true);
+    setMessage(null);
+
+    try {
+      const updateData: Record<string, string> = {};
+      if (name !== user.name) updateData.name = name.trim();
+      if (avatarPreview !== user.avatar) updateData.avatar = avatarPreview;
+
+      if (Object.keys(updateData).length === 0) {
+        setMessage({ type: 'success', text: '没有需要保存的修改' });
+        setSaving(false);
+        return;
+      }
+
+      await updateUser(updateData);
+      setMessage({ type: 'success', text: '个人信息已更新' });
+    } catch (err: any) {
+      setMessage({ type: 'error', text: err.message || '保存失败，请稍后重试' });
+    } finally {
+      setSaving(false);
+    }
+  };
 
   return (
     <LayoutSimple>
-      <div className="mb-8">
-        <div 
-          className="rounded-xl p-6 mb-6"
-          style={{
-            backgroundColor: '#ffffff',
-            border: '1px solid #E5E7EB',
-            boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)',
-          }}
-        >
-          <div className="flex items-center gap-4">
-            <div 
-              className="w-16 h-16 rounded-full flex items-center justify-center overflow-hidden"
-              style={{ 
-                backgroundColor: '#FFF9E6',
-                border: '3px solid #FFD700'
-              }}
-            >
-              {user.avatar ? (
-                <img src={user.avatar} alt={user.name} className="w-full h-full object-cover" />
-              ) : (
-                <span className="text-3xl">👤</span>
-              )}
-            </div>
-            <div>
-              <h2 className="text-xl font-medium" style={{ color: '#111827' }}>{user.name}</h2>
-              <p className="text-sm" style={{ color: '#6B7280' }}>{user.email}</p>
-              <div className="flex gap-4 mt-2 text-xs" style={{ color: '#6B7280' }}>
-                <span>{createdProjects.length} {t('projects')}</span>
-                <span>{participatedProjects.length} {t('participations')}</span>
-              </div>
-            </div>
+      <div className="max-w-2xl mx-auto">
+        <h1 className="text-2xl text-[var(--text-primary)] mb-8 animate-fade-up">个人设置</h1>
+
+        {/* 余额卡片 */}
+        <div className="card p-6 mb-8 animate-fade-up flex items-center justify-between">
+          <div>
+            <p className="text-sm text-[var(--text-muted)] mb-1">{t('balance')}</p>
+            <p className="text-2xl font-semibold text-[var(--gold)]">¥{balanceYuan ?? '0.00'}</p>
           </div>
+          <Link href="/recharge" className="btn-primary">
+            {t('recharge')}
+          </Link>
         </div>
 
-        <div 
-          className="rounded-xl overflow-hidden"
-          style={{
-            backgroundColor: '#ffffff',
-            border: '1px solid #E5E7EB',
-            boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)',
-          }}
-        >
-          <div className="flex" style={{ borderBottom: '1px solid #E5E7EB' }}>
-            {tabs.map(tab => (
-              <button
-                key={tab.id}
-                onClick={() => setActiveTab(tab.id as 'created' | 'participated')}
-                className="flex-1 px-6 py-4 font-medium text-sm transition-all relative"
-                style={{
-                  backgroundColor: activeTab === tab.id ? '#FFF9E6' : '#ffffff',
-                  color: activeTab === tab.id ? '#111827' : '#6B7280',
-                }}
-                onMouseEnter={(e) => {
-                  if (activeTab !== tab.id) {
-                    e.currentTarget.style.backgroundColor = '#F9FAFB';
-                  }
-                }}
-                onMouseLeave={(e) => {
-                  if (activeTab !== tab.id) {
-                    e.currentTarget.style.backgroundColor = '#ffffff';
-                  }
-                }}
-              >
-                <span className="mr-2">{tab.icon}</span>
-                {tab.label}
-                {activeTab === tab.id && (
-                  <div 
-                    className="absolute bottom-0 left-0 right-0 h-0.5"
-                    style={{ backgroundColor: '#FFD700' }}
-                  />
+        <div className="card p-8 animate-fade-up delay-1">
+          {/* 头像编辑 */}
+          <div className="flex flex-col items-center mb-8">
+            <div
+              className="w-24 h-24 rounded-full overflow-hidden border-2 border-[var(--ink-border)] cursor-pointer hover:border-[var(--gold)] transition-colors relative group"
+              onClick={() => !uploading && fileInputRef.current?.click()}
+            >
+              <img
+                src={avatarPreview || '/default-avatar.svg'}
+                alt=""
+                className="w-full h-full object-cover"
+              />
+              <div className="absolute inset-0 bg-black/50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                {uploading ? (
+                  <span className="text-white text-xs">上传中...</span>
+                ) : (
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2">
+                    <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" />
+                    <circle cx="12" cy="13" r="4" />
+                  </svg>
                 )}
-              </button>
-            ))}
+              </div>
+              {uploading && (
+                <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
+                  <span className="text-white text-xs">上传中...</span>
+                </div>
+              )}
+            </div>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              className="hidden"
+              onChange={handleAvatarChange}
+            />
+            <button
+              onClick={() => !uploading && fileInputRef.current?.click()}
+              disabled={uploading}
+              className="mt-3 text-sm text-[var(--text-muted)] hover:text-[var(--gold)] transition-colors disabled:opacity-50"
+            >
+              {uploading ? t('uploadingText') : t('clickToChangeAvatar')}
+            </button>
           </div>
 
-          <div className="p-6">
-            {currentProjects.length > 0 ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {currentProjects.map(renderProjectCard)}
-              </div>
-            ) : (
-              renderEmptyState(
-                activeTab === 'created' ? t('noCreatedProjects') : t('noParticipatedProjects')
-              )
-            )}
+          {/* 昵称编辑 */}
+          <div className="mb-6">
+            <label className="block text-sm text-[var(--text-secondary)] mb-2">{t('nickname')}</label>
+            <input
+              type="text"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              className="input w-full"
+              placeholder={t('enterNickname')}
+              maxLength={30}
+            />
           </div>
+
+          {/* 邮箱（只读） */}
+          <div className="mb-8">
+            <label className="block text-sm text-[var(--text-secondary)] mb-2">{t('email')}</label>
+            <input
+              type="text"
+              value={user.email}
+              disabled
+              className="input w-full opacity-60 cursor-not-allowed"
+            />
+            <p className="text-xs text-[var(--text-muted)] mt-1">{t('emailNotEditable')}</p>
+          </div>
+
+          {/* 提示消息 */}
+          {message && (
+            <div className={`mb-6 p-3 rounded-lg text-sm ${
+              message.type === 'success'
+                ? 'bg-green-500/10 text-green-400 border border-green-500/20'
+                : 'bg-red-500/10 text-red-400 border border-red-500/20'
+            }`}>
+              {message.text}
+            </div>
+          )}
+
+          {/* 保存按钮 */}
+          <button
+            onClick={handleSave}
+            disabled={saving || uploading}
+            className="btn-primary w-full"
+          >
+            {saving ? '保存中...' : uploading ? '头像上传中...' : '保存修改'}
+          </button>
         </div>
       </div>
     </LayoutSimple>

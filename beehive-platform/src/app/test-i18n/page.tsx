@@ -35,10 +35,10 @@ export default function TestI18nPage() {
                 <h2 className="text-xl font-semibold text-neutral-800">分类</h2>
                 <div className="space-y-2 text-sm">
                   <p><strong>全部:</strong> {t('all')}</p>
-                  <p><strong>科幻:</strong> {t('sciFi')}</p>
+                  <p><strong>电影:</strong> {t('film')}</p>
                   <p><strong>动画:</strong> {t('animation')}</p>
-                  <p><strong>纪录片:</strong> {t('documentary')}</p>
-                  <p><strong>教育:</strong> {t('education')}</p>
+                  <p><strong>商业制作:</strong> {t('commercial')}</p>
+                  <p><strong>公益:</strong> {t('publicWelfare')}</p>
                   <p><strong>其他:</strong> {t('other')}</p>
                 </div>
               </div>
@@ -58,6 +58,7 @@ export default function TestI18nPage() {
                   <p><strong>完成:</strong> {t('completed')}</p>
                   <p><strong>天:</strong> {t('days')}</p>
                   <p><strong>分钟:</strong> {t('minutes')}</p>
+                  <p><strong>秒:</strong> {t('seconds')}</p>
                   <p><strong>目标:</strong> {t('target')}</p>
                   <p><strong>已完成徽章:</strong> {t('completedBadge')}</p>
                   <p><strong>加入项目:</strong> {t('joinProject')}</p>

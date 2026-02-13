@@ -1,563 +1,404 @@
 'use client';
 
 import React, { useState, useEffect, Suspense } from 'react';
-import { useSearchParams, useRouter } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useTranslation } from 'react-i18next';
-import { Project } from '@/types';
-import { projectStorage, projectRelationStorage } from '@/lib/storage';
-import { ErrorHandler } from '@/lib/errorHandler';
+import { Project, Task } from '@/types';
+import { projectStorage, taskStorage, clickTracker } from '@/lib/api';
+import { sortingEngine } from '@/lib/sortingEngine';
 import { useAuth } from '@/contexts/AuthContext';
-import ProcessComic from '@/components/ProcessComic';
 import LanguageSwitcher from '@/components/LanguageSwitcher';
+import NotificationBell from '@/components/NotificationBell';
+import UserDropdown from '@/components/UserDropdown';
 import Logo from '@/components/Logo';
 
-// Figma 设计的按钮组件
-function Button({ 
-  children, 
-  variant = "primary", 
-  size = "medium",
-  onClick,
-  className = ""
-}: { 
-  children: React.ReactNode; 
-  variant?: "primary" | "secondary" | "text";
-  size?: "small" | "medium" | "large";
-  onClick?: () => void;
-  className?: string;
-}) {
-  const baseStyles = "font-semibold rounded-lg transition-all active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed";
-  const variantStyles = {
-    primary: "bg-[#FFD700] text-[#111827] hover:bg-[#E6C200] shadow-sm",
-    secondary: "bg-transparent border-2 border-[#FFD700] text-[#FFD700] hover:bg-[#FFF9E6]",
-    text: "bg-transparent text-[#4A90E2] hover:underline",
-  };
-  const sizeStyles = {
-    small: "h-9 px-4 text-sm",
-    medium: "h-11 px-6 text-sm",
-    large: "h-[52px] px-8 text-base",
-  };
+const Icons = {
+  search: (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+      <circle cx="11" cy="11" r="8" /><path d="m21 21-4.35-4.35" />
+    </svg>
+  ),
+  users: (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+      <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" />
+      <path d="M22 21v-2a4 4 0 0 0-3-3.87" /><path d="M16 3.13a4 4 0 0 1 0 7.75" />
+    </svg>
+  ),
+  clock: (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+      <circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" />
+    </svg>
+  ),
+  play: (
+    <svg width="48" height="48" viewBox="0 0 24 24" fill="currentColor">
+      <polygon points="5 3 19 12 5 21 5 3" />
+    </svg>
+  ),
+};
 
-  return (
-    <button
-      className={`${baseStyles} ${variantStyles[variant]} ${sizeStyles[size]} ${className}`}
-      onClick={onClick}
-    >
-      {children}
-    </button>
-  );
+const CATEGORIES = [
+  { key: 'film', value: '电影' },
+  { key: 'animation', value: '动画' },
+  { key: 'commercial', value: '商业制作' },
+  { key: 'publicWelfare', value: '公益' },
+  { key: 'other', value: '其他' },
+];
+
+function getDaysLeft(createdAt: string) {
+  const created = new Date(createdAt);
+  const now = new Date();
+  const diffTime = 30 * 24 * 60 * 60 * 1000 - (now.getTime() - created.getTime());
+  return Math.max(0, Math.ceil(diffTime / (1000 * 60 * 60 * 24)));
 }
 
-
-// Figma 设计的项目卡片组件
-function ProjectCard({
-  project,
-  daysLeft,
-}: {
-  project: Project;
-  daysLeft: number;
-}) {
+function ProjectCard({ project, index = 0, compact = false }: { project: Project; index?: number; compact?: boolean }) {
   const { t } = useTranslation('common');
-  
-  const categoryColors: { [key: string]: { bg: string; text: string } } = {
-    科幻: { bg: "#EDE9FE", text: "#5B21B6" },
-    动画: { bg: "#FEF3C7", text: "#92400E" },
-    纪录片: { bg: "#D1FAE5", text: "#065F46" },
-    教育: { bg: "#DBEAFE", text: "#1E40AF" },
-    其他: { bg: "#FCE7F3", text: "#831843" },
-  };
-
-  const categoryStyle = categoryColors[project.category] || categoryColors["其他"];
   const progress = Math.min((project.currentDuration / project.targetDuration) * 100, 100);
-  const isCompleted = progress === 100;
-  
-  // 移除 HTML 标签获取纯文本描述
   const plainDescription = project.description.replace(/<[^>]*>/g, '');
+  const daysLeft = getDaysLeft(project.createdAt);
 
-  // 分类图标
-  const CategoryIcon = () => {
-    const iconProps = { size: 64, className: "opacity-20", style: { color: categoryStyle.text }, strokeWidth: 1.5 };
-    switch (project.category) {
-      case '科幻':
-        return <svg {...iconProps} viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 0 0-2.91-.09z"/><path d="m12 15-3-3a22 22 0 0 1 2-3.95A12.88 12.88 0 0 1 22 2c0 2.72-.78 7.5-6 11a22.35 22.35 0 0 1-4 2z"/><path d="M9 12H4s.55-3.03 2-4c1.62-1.08 5 0 5 0"/><path d="M12 15v5s3.03-.55 4-2c1.08-1.62 0-5 0-5"/></svg>;
-      case '动画':
-        return <svg {...iconProps} viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>;
-      case '纪录片':
-        return <svg {...iconProps} viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="m22 8-6 4 6 4V8Z"/><rect width="14" height="12" x="2" y="6" rx="2" ry="2"/></svg>;
-      case '教育':
-        return <svg {...iconProps} viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20"/></svg>;
-      default:
-        return <svg {...iconProps} viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/></svg>;
-    }
-  };
+  if (compact) {
+    return (
+      <Link href={`/projects/${project.id}`}>
+        <article className="card group cursor-pointer overflow-hidden animate-fade-up" style={{ animationDelay: `${index * 80}ms` }}>
+          <div className="relative aspect-[4/3] overflow-hidden bg-[var(--ink-lighter)]">
+            {project.coverImage ? (
+              <img src={project.coverImage} alt={project.title} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" />
+            ) : (
+              <div className="w-full h-full flex items-center justify-center text-[var(--text-muted)]">{Icons.play}</div>
+            )}
+            <div className="absolute top-2 left-2"><span className="tag text-[10px] px-2 py-0.5">{project.category}</span></div>
+            {progress >= 100 && <div className="absolute top-2 right-2"><span className="tag tag-gold text-[10px] px-2 py-0.5">{t('completedBadge')}</span></div>}
+            <div className="absolute inset-0 bg-gradient-to-t from-[var(--ink)] via-transparent to-transparent opacity-50" />
+          </div>
+          <div className="p-3">
+            <h3 className="text-sm font-medium text-[var(--text-primary)] mb-1.5 line-clamp-1 group-hover:text-[var(--gold)] transition-colors">{project.title}</h3>
+            <div className="mb-2">
+              <div className="flex items-baseline gap-1 mb-1">
+                <span className="text-base font-medium text-[var(--text-primary)]">
+                  {project.currentDuration}
+                  <span className="text-xs text-[var(--text-muted)] ml-0.5">/ {project.targetDuration} {t('seconds')}</span>
+                </span>
+              </div>
+              <div className="progress-track h-1.5"><div className="progress-fill" style={{ width: `${progress}%` }} /></div>
+            </div>
+            <div className="flex items-center justify-between text-[11px] text-[var(--text-muted)]">
+              <span className="flex items-center gap-1">{Icons.users}{project.participantsCount || 0} {progress.toFixed(0)}%</span>
+              <span className="flex items-center gap-1">{Icons.clock}{daysLeft} {t('days')}</span>
+            </div>
+          </div>
+        </article>
+      </Link>
+    );
+  }
 
   return (
     <Link href={`/projects/${project.id}`}>
-      <div className="group w-full max-w-[360px] bg-white rounded-xl border border-neutral-200 shadow-sm hover:shadow-lg transition-all duration-300 hover:-translate-y-0.5 cursor-pointer overflow-hidden">
-        {/* Cover Image */}
-        <div
-          className="relative h-48 flex items-center justify-center"
-          style={{ backgroundColor: categoryStyle.bg }}
-        >
+      <article className="card group cursor-pointer overflow-hidden animate-fade-up" style={{ animationDelay: `${index * 80}ms` }}>
+        <div className="relative aspect-[16/10] overflow-hidden bg-[var(--ink-lighter)]">
           {project.coverImage ? (
-            <img src={project.coverImage} alt={project.title} className="w-full h-full object-cover" />
+            <img src={project.coverImage} alt={project.title} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" />
           ) : (
-            <CategoryIcon />
+            <div className="w-full h-full flex items-center justify-center text-[var(--text-muted)]">{Icons.play}</div>
           )}
-          
-          {/* Category Tag */}
-          <div
-            className="absolute top-3 left-3 px-3 py-1 rounded-md text-xs"
-            style={{ backgroundColor: categoryStyle.bg, color: categoryStyle.text }}
-          >
-            {project.category}
+          <div className="absolute top-4 left-4"><span className="tag">{project.category}</span></div>
+          {progress >= 100 && <div className="absolute top-4 right-4"><span className="tag tag-gold">{t('completedBadge')}</span></div>}
+          <div className="absolute inset-0 bg-gradient-to-t from-[var(--ink)] via-transparent to-transparent opacity-60" />
+        </div>
+        <div className="p-5">
+          <h3 className="text-lg font-medium text-[var(--text-primary)] mb-2 line-clamp-1 group-hover:text-[var(--gold)] transition-colors">{project.title}</h3>
+          <p className="text-sm text-[var(--text-muted)] mb-4 line-clamp-2 leading-relaxed">{plainDescription}</p>
+          <div className="mb-4">
+            <div className="flex items-baseline justify-between mb-2">
+              <span className="text-2xl font-medium text-[var(--text-primary)]">
+                {project.currentDuration}
+                <span className="text-sm text-[var(--text-muted)] ml-1">/ {project.targetDuration} {t('seconds')}</span>
+              </span>
+            </div>
+            <div className="progress-track"><div className="progress-fill" style={{ width: `${progress}%` }} /></div>
           </div>
+          <div className="flex items-center justify-between text-xs text-[var(--text-muted)]">
+            <div className="flex items-center gap-4">
+              <span className="flex items-center gap-1.5">{Icons.users}{project.participantsCount || 0}</span>
+              <span>{progress.toFixed(0)}%</span>
+            </div>
+            <span className="flex items-center gap-1.5">{Icons.clock}{daysLeft} {t('days')}</span>
+          </div>
+        </div>
+      </article>
+    </Link>
+  );
+}
 
-          {/* Completed Badge */}
-          {isCompleted && (
-            <div className="absolute top-3 right-3 px-3 py-1 rounded-md text-xs bg-[#10B981] text-white">
-              {t('completedBadge')}
+function TaskPreviewCard({ task }: { task: Task & { projectId: string; projectName: string; projectCategory: string } }) {
+  const thumbnail = task.referenceImages?.[0];
+  return (
+    <Link href="/tasks">
+      <div className="flex gap-3 p-3 rounded-[var(--radius-lg)] bg-[var(--ink-light)] border border-[var(--ink-border)] hover:border-[var(--gold)]/30 transition-colors group cursor-pointer">
+        <div className="w-14 h-14 flex-shrink-0 rounded-[var(--radius-md)] overflow-hidden bg-[var(--ink-lighter)]">
+          {thumbnail ? (
+            <img src={thumbnail} alt="" className="w-full h-full object-cover" />
+          ) : (
+            <div className="w-full h-full flex items-center justify-center">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" strokeWidth="1.5" className="opacity-40">
+                <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
+                <circle cx="8.5" cy="8.5" r="1.5" />
+                <polyline points="21 15 16 10 5 21" />
+              </svg>
             </div>
           )}
         </div>
-
-        {/* Content */}
-        <div className="p-6">
-          {/* Title */}
-          <h3 className="text-xl text-[#111827] mb-2 truncate">{project.title}</h3>
-
-          {/* Description */}
-          <p className="text-sm text-[#4B5563] mb-4 line-clamp-2 leading-relaxed">{plainDescription}</p>
-
-          {/* Current Value */}
-          <div className="mb-1">
-            <span className="text-3xl text-[#111827]">{project.currentDuration}</span>
-            <span className="text-sm text-[#6B7280] ml-1">{t('minutes')}</span>
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2 mb-1">
+            <span className="tag text-xs">{task.projectCategory}</span>
+            <span className="text-xs text-[var(--text-muted)] truncate">{task.projectName}</span>
           </div>
-
-          {/* Target Value */}
-          <div className="text-sm text-[#6B7280] mb-3">{t('target')} {project.targetDuration} {t('minutes')}</div>
-
-          {/* Progress Bar */}
-          <div className="h-0.5 bg-neutral-200 rounded-full mb-4 overflow-hidden">
-            <div
-              className="h-full bg-[#10B981] rounded-full transition-all duration-500"
-              style={{ width: `${Math.min(progress, 100)}%` }}
-            />
-          </div>
-
-          {/* Stats */}
-          <div className="flex items-center gap-2 text-xs text-[#6B7280]">
-            <span>{project.participantsCount || 0} {t('supporters')}</span>
-            <span>•</span>
-            <span>{progress.toFixed(0)}% {t('completed')}</span>
-            <span>•</span>
-            <span>{daysLeft} {t('days')}</span>
-          </div>
+          <p className="text-sm text-[var(--text-primary)] line-clamp-2 group-hover:text-[var(--gold)] transition-colors leading-snug">
+            {task.prompt.length > 40 ? task.prompt.slice(0, 40) + '...' : task.prompt}
+          </p>
         </div>
       </div>
     </Link>
   );
 }
 
-
-// 主页内容组件
 function HomeContent() {
-  const searchParams = useSearchParams();
   const router = useRouter();
   const { user, isLoggedIn, logout } = useAuth();
   const { t } = useTranslation('common');
   const [projects, setProjects] = useState<Project[]>([]);
-  const [filteredProjects, setFilteredProjects] = useState<Project[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState('all');
-  const [currentPage, setCurrentPage] = useState(1);
-  const [hasParticipated, setHasParticipated] = useState(false);
-  const projectsPerPage = 12; // 每页显示12个项目
-
-  const categories = [
-    { key: 'all', label: t('all'), value: '全部' },
-    { key: 'sciFi', label: t('sciFi'), value: '科幻' },
-    { key: 'animation', label: t('animation'), value: '动画' },
-    { key: 'documentary', label: t('documentary'), value: '纪录片' },
-    { key: 'education', label: t('education'), value: '教育' },
-    { key: 'other', label: t('other'), value: '其他' },
-  ];
+  const [clickCounts, setClickCounts] = useState<Record<string, number>>({});
+  const [recentTasks, setRecentTasks] = useState<(Task & { projectId: string; projectName: string; projectCategory: string })[]>([]);
 
   useEffect(() => {
-    const result = projectStorage.getAllProjects();
-    if (result.success && result.data) {
-      setProjects(result.data);
-      setFilteredProjects(result.data);
-    } else if (!result.success) {
-      ErrorHandler.logError(new Error(result.error || '加载项目失败'));
-    }
+    const loadData = async () => {
+      try {
+        const result = await projectStorage.getAllProjects();
+        if (result.success && result.data) {
+          setProjects(result.data);
+          if (result.data.length > 0) {
+            const projectIds = result.data.map(p => p.id);
+            const counts = await clickTracker.getBatchClickCounts(projectIds);
+            setClickCounts(counts);
+          }
+        }
+      } catch (err) {
+        console.error('Failed to load projects:', err);
+      }
+      try {
+        const tasksResult = await taskStorage.getAllPublishedTasks();
+        if (tasksResult.success && tasksResult.data) {
+          const sorted = tasksResult.data.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+          setRecentTasks(sorted.slice(0, 5));
+        }
+      } catch (err) {
+        console.error('Failed to load tasks:', err);
+      }
+    };
+    loadData();
   }, []);
 
-  // 检查用户是否参与过项目
-  useEffect(() => {
-    if (user) {
-      const participatedResult = projectRelationStorage.getParticipatedProjectIds(user.id);
-      if (participatedResult.success && participatedResult.data && participatedResult.data.length > 0) {
-        setHasParticipated(true);
-      }
-    }
-  }, [user]);
-
-  // 从URL参数读取分类
-  useEffect(() => {
-    const categoryFromUrl = searchParams.get('category');
-    
-    if (categoryFromUrl) {
-      // 处理旧的中文分类参数和新的英文分类参数
-      const categoryMapping: { [key: string]: string } = {
-        'all': 'all',
-        '全部': 'all',
-        'sciFi': 'sciFi',
-        '科幻': 'sciFi',
-        'animation': 'animation',
-        '动画': 'animation',
-        'documentary': 'documentary',
-        '纪录片': 'documentary',
-        'education': 'education',
-        '教育': 'education',
-        'other': 'other',
-        '其他': 'other',
-      };
-      
-      setSelectedCategory(categoryMapping[categoryFromUrl] || 'all');
-    }
-  }, [searchParams]);
-
-  useEffect(() => {
-    let filtered = projects;
-
-    if (selectedCategory !== 'all') {
-      const categoryValue = categories.find(cat => cat.key === selectedCategory)?.value || '';
-      filtered = filtered.filter(p => p.category === categoryValue);
-    }
-
-    setFilteredProjects(filtered);
-    setCurrentPage(1); // 切换分类时重置到第一页
-  }, [projects, selectedCategory, categories]);
-
-  const handleCategoryClick = (categoryKey: string) => {
-    setSelectedCategory(categoryKey);
-    setCurrentPage(1); // 切换分类时重置到第一页
-    if (categoryKey === 'all') {
-      router.push('/');
-    } else {
-      router.push(`/?category=${categoryKey}`);
-    }
-  };
-
-  // 分页逻辑
-  const totalPages = Math.ceil(filteredProjects.length / projectsPerPage);
-  const startIndex = (currentPage - 1) * projectsPerPage;
-  const endIndex = startIndex + projectsPerPage;
-  const currentProjects = filteredProjects.slice(startIndex, endIndex);
-
-  const handlePageChange = (page: number) => {
-    setCurrentPage(page);
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  };
+  const featuredProjects = sortingEngine.getFeaturedProjects(projects, clickCounts, 6);
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
     if (searchQuery.trim()) {
-      // 跳转到搜索结果页面
       router.push(`/search?keyword=${encodeURIComponent(searchQuery.trim())}`);
     }
   };
 
-  const handleLogout = () => {
-    logout();
-    router.push('/');
-  };
-
-  // 计算剩余天数
-  const getDaysLeft = (createdAt: string) => {
-    const created = new Date(createdAt);
-    const now = new Date();
-    const diffTime = 30 * 24 * 60 * 60 * 1000 - (now.getTime() - created.getTime());
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-    return Math.max(0, diffDays);
-  };
-
   return (
-    <div className="min-h-screen bg-neutral-50">
-      {/* Navigation - 完全按照 Figma 设计 */}
-      <nav className="bg-white border-b border-neutral-200 shadow-sm sticky top-0 z-50">
-        <div className="max-w-[1440px] mx-auto px-8">
+    <div className="min-h-screen bg-[var(--ink)]">
+      <div className="film-grain" />
+      {/* 导航栏 */}
+      <nav className="sticky top-0 z-50 bg-[var(--ink)]/95 backdrop-blur-md border-b border-[var(--ink-border)]">
+        <div className="container">
           <div className="h-16 flex items-center justify-between">
-            {/* Left: Logo */}
-            <Link href="/">
-              <Logo size="medium" />
-            </Link>
-
-            {/* Center: Search */}
-            <div className="flex-1 max-w-[600px] mx-8">
-              <form onSubmit={handleSearch} className="relative">
-                <svg className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-neutral-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <circle cx="11" cy="11" r="8" />
-                  <path d="m21 21-4.35-4.35" />
-                </svg>
-                <input
-                  type="text"
-                  placeholder={t('searchPlaceholder')}
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full h-11 pl-12 pr-4 rounded-lg border border-neutral-300 focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:border-transparent transition-all"
-                />
-              </form>
-            </div>
-
-            {/* Right: Links and Button */}
-            <div className="flex items-center gap-6">
+            <Link href="/"><Logo size="medium" /></Link>
+            <form onSubmit={handleSearch} className="flex-1 max-w-md mx-8 hidden md:block">
+              <div className="relative">
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-muted)] pointer-events-none">{Icons.search}</span>
+                <input type="text" placeholder={t('searchPlaceholder')} value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)} className="input pl-10" />
+              </div>
+            </form>
+            <div className="flex items-center gap-4">
               <LanguageSwitcher />
+              {isLoggedIn && user && <NotificationBell userId={user.id} />}
               {isLoggedIn ? (
                 <>
-                  <Link href="/profile" className="flex items-center gap-2 text-sm text-neutral-600 hover:text-neutral-900 transition-colors">
-                    <img src={user?.avatar || '/default-avatar.svg'} alt={user?.name} className="w-8 h-8 rounded-full border-2 border-neutral-200" />
-                    <span>{user?.name}</span>
-                  </Link>
-                  <button onClick={handleLogout} className="text-sm text-neutral-600 hover:text-neutral-900 transition-colors">
-                    {t('logout')}
-                  </button>
-                  <Link href="/projects/new">
-                    <Button variant="primary" size="medium">{t('startCreating')}</Button>
-                  </Link>
+                  <UserDropdown
+                    user={{ name: user?.name || '', email: user?.email || '', avatar: user?.avatar || '' }}
+                    onLogout={() => { logout(); router.push('/'); }}
+                  />
+                  <Link href="/projects/new"><button className="btn-primary">{t('startCreating')}</button></Link>
                 </>
               ) : (
                 <>
-                  <Link href="/auth/login" className="text-sm text-neutral-600 hover:text-neutral-900 transition-colors">
-                    {t('login')}
-                  </Link>
-                  <Link href="/auth/register" className="text-sm text-neutral-600 hover:text-neutral-900 transition-colors">
-                    {t('register')}
-                  </Link>
-                  <Link href="/projects/new">
-                    <Button variant="primary" size="medium">{t('startCreating')}</Button>
-                  </Link>
+                  <Link href="/auth/login" className="nav-link">{t('login')}</Link>
+                  <Link href="/auth/register"><button className="btn-primary">{t('register')}</button></Link>
                 </>
               )}
             </div>
           </div>
         </div>
       </nav>
-
-      {/* Category Tabs - 完全按照 Figma 设计 */}
-      <div className="bg-white border-b border-neutral-200">
-        <div className="max-w-[1440px] mx-auto px-8">
-          <div className="flex gap-8 h-12">
-            {categories.map((category) => (
-              <button
-                key={category.key}
-                onClick={() => handleCategoryClick(category.key)}
-                className={`relative text-sm transition-colors ${
-                  selectedCategory === category.key
-                    ? "text-neutral-900"
-                    : "text-neutral-600 hover:text-neutral-900"
-                }`}
-              >
-                {category.label}
-                {selectedCategory === category.key && (
-                  <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-[#FFD700]" />
-                )}
-              </button>
+      {/* 分类导航栏 */}
+      <div className="sticky top-16 z-40 bg-[var(--ink)]/95 backdrop-blur-md border-b border-[var(--ink-border)]">
+        <div className="container">
+          <div className="flex gap-1 py-3 overflow-x-auto">
+            <Link href="/projects" className="px-4 py-2 text-sm font-medium rounded-md text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--ink-lighter)] transition-all">
+              {t('all')}
+            </Link>
+            {CATEGORIES.map((cat) => (
+              <Link key={cat.key} href={`/projects?category=${cat.key}`}
+                className="px-4 py-2 text-sm font-medium rounded-md text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--ink-lighter)] transition-all">
+                {t(cat.key)}
+              </Link>
             ))}
           </div>
         </div>
       </div>
-
-      {/* Hero Section - 完全按照 Figma 设计（除了流程漫画） */}
-      {/* 只在第一页且用户未参与过项目时显示 */}
-      {selectedCategory === 'all' && currentPage === 1 && !hasParticipated && (
-        <section
-          className="relative overflow-hidden rounded-b-3xl"
-          style={{
-            background: "linear-gradient(135deg, #FFF9E6 0%, #FFD700 100%)",
-            height: "400px",
-          }}
-        >
-          {/* Background Hexagons */}
-          <div className="absolute top-8 left-12 rotate-[-12deg] opacity-[0.08]">
-            <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="#111827" strokeWidth="1.5">
-              <path d="M12 2L21.5 7.5V16.5L12 22L2.5 16.5V7.5L12 2Z" />
-            </svg>
-          </div>
-          <div className="absolute top-12 right-16 rotate-[12deg] opacity-[0.08]">
-            <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="#111827" strokeWidth="1.5">
-              <path d="M12 2L21.5 7.5V16.5L12 22L2.5 16.5V7.5L12 2Z" />
-            </svg>
-          </div>
-          <div className="absolute bottom-16 left-20 rotate-[8deg] opacity-[0.08]">
-            <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="#111827" strokeWidth="1.5">
-              <path d="M12 2L21.5 7.5V16.5L12 22L2.5 16.5V7.5L12 2Z" />
-            </svg>
-          </div>
-          <div className="absolute bottom-12 right-24 rotate-[-8deg] opacity-[0.08]">
-            <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="#111827" strokeWidth="1.5">
-              <path d="M12 2L21.5 7.5V16.5L12 22L2.5 16.5V7.5L12 2Z" />
-            </svg>
-          </div>
-
-          {/* Content */}
-          <div className="relative h-full max-w-[1440px] mx-auto px-8 pt-12 flex flex-col items-center">
-            <h1
-              className="text-5xl text-center text-[#111827] mb-4"
-              style={{ letterSpacing: "-0.02em" }}
-            >
-              {t('heroTitle')}
-            </h1>
-            <p className="text-lg text-center text-[#1F2937] max-w-[800px] mb-8">
-              {t('heroSubtitle')}
-            </p>
-
-            {/* Process Comic - 保留原有组件 */}
-            <div className="w-full max-w-[900px] h-[200px] bg-white/40 backdrop-blur-sm rounded-2xl flex items-center justify-center border border-white/60 shadow-lg">
-              <ProcessComic />
+      {/* Hero */}
+      <section className="relative py-20 overflow-hidden">
+        <div className="glow -top-40 -left-40" />
+        <div className="glow -bottom-40 -right-40" style={{ opacity: 0.3 }} />
+        <div className="container relative">
+          <div className="max-w-3xl mx-auto text-center">
+            <h1 className="text-4xl md:text-5xl lg:text-6xl text-[var(--text-primary)] mb-6 animate-fade-up">{t('heroTitle')}</h1>
+            <p className="text-lg text-[var(--text-secondary)] mb-10 animate-fade-up delay-1">{t('heroSubtitle')}</p>
+            <div className="flex flex-col sm:flex-row gap-4 justify-center animate-fade-up delay-2">
+              <Link href="/projects/new"><button className="btn-primary h-14 px-8 text-base">{t('startCreating')}</button></Link>
+              <Link href="/tasks"><button className="btn-secondary h-14 px-8 text-base">{t('taskHall')}</button></Link>
             </div>
           </div>
-        </section>
-      )}
-
-      {/* Featured Projects Grid - 完全按照 Figma 设计 */}
-      <section className="max-w-[1200px] mx-auto px-8 py-16">
-        <h2 className="text-3xl text-[#111827] mb-8">
-          {selectedCategory !== 'all' 
-            ? t('categoryProjects', { category: categories.find(cat => cat.key === selectedCategory)?.label || '' })
-            : t('featuredProjects')
-          }
-        </h2>
-        
-        {filteredProjects.length > 0 ? (
-          <>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {currentProjects.map((project) => (
-                <ProjectCard 
-                  key={project.id} 
-                  project={project} 
-                  daysLeft={getDaysLeft(project.createdAt)}
-                />
-              ))}
+        </div>
+      </section>
+      {/* 我的作品 */}
+      {isLoggedIn && user && (() => {
+        const myProjects = projects.filter(p => p.creatorId === user.id);
+        if (myProjects.length === 0) return null;
+        return (
+          <section className="py-12 border-b border-[var(--ink-border)]">
+            <div className="container">
+              <div className="flex items-center justify-between mb-6">
+                <h2 className="text-2xl text-[var(--text-primary)]">{t('myWorks')}</h2>
+                <Link href="/profile" className="text-xl text-[var(--gold)] hover:underline">{t('viewAllWorks')}</Link>
+              </div>
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
+                {myProjects.slice(0, 6).map((project, i) => (
+                  <ProjectCard key={project.id} project={project} index={i} compact />
+                ))}
+              </div>
             </div>
+          </section>
+        );
+      })()}
+      {/* 项目内容区域 */}
+      <div className="container">
+        <div className="flex gap-8 py-12">
+          {/* 左侧：精选项目 + 各分类板块 */}
+          <div className="flex-1 min-w-0">
+            {/* 精选项目 */}
+            <section className="py-12 border-b border-[var(--ink-border)]">
+              <div className="flex items-center justify-between mb-6">
+                <h2 className="text-2xl text-[var(--text-primary)]">{t('featuredProjects')}</h2>
+                <Link href="/projects" className="text-xl text-[var(--gold)] hover:underline">{t('viewAllProjects')}</Link>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+                {featuredProjects.map((project, i) => (
+                  <ProjectCard key={project.id} project={project} index={i} />
+                ))}
+              </div>
+              {featuredProjects.length === 0 && (
+                <div className="text-center py-16 text-[var(--text-muted)]"><p>{t('noProjects')}</p></div>
+              )}
+            </section>
 
-            {/* 分页控件 */}
-            {totalPages > 1 && (
-              <div className="flex justify-center items-center gap-2 mt-12">
-                <button
-                  onClick={() => handlePageChange(currentPage - 1)}
-                  disabled={currentPage === 1}
-                  className="px-4 py-2 rounded-lg border border-neutral-300 text-neutral-600 hover:bg-neutral-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                >
-                  {t('previousPage')}
-                </button>
-                
-                <div className="flex gap-2">
-                  {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
-                    <button
-                      key={page}
-                      onClick={() => handlePageChange(page)}
-                      className={`w-10 h-10 rounded-lg font-medium transition-all ${
-                        currentPage === page
-                          ? 'bg-[#FFD700] text-[#111827]'
-                          : 'border border-neutral-300 text-neutral-600 hover:bg-neutral-50'
-                      }`}
-                    >
-                      {page}
-                    </button>
+            {/* 各分类板块 */}
+            {CATEGORIES.map((cat) => {
+              const catFiltered = projects.filter(p => p.category === cat.value);
+              const catProjects = sortingEngine.getCategoryMixedProjects(catFiltered, clickCounts, 6);
+              if (catProjects.length === 0) return null;
+              return (
+                <section key={cat.key} className="py-12 border-b border-[var(--ink-border)]">
+                  <div className="flex items-center justify-between mb-6">
+                    <h2 className="text-2xl text-[var(--text-primary)]">{t(cat.key)}</h2>
+                    <Link href={`/projects?category=${cat.key}`} className="text-xl md:text-2xl text-[var(--gold)] hover:underline">{t('viewAllProjects')}</Link>
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {catProjects.map((project, i) => (
+                      <ProjectCard key={project.id} project={project} index={i} />
+                    ))}
+                  </div>
+                </section>
+              );
+            })}
+          </div>
+
+          {/* 最新任务 - sticky 侧边栏 */}
+          {recentTasks.length > 0 && (
+            <div className="hidden lg:block w-80 flex-shrink-0">
+              <div className="sticky top-36">
+                <div className="flex items-center justify-between mb-6">
+                  <h2 className="text-2xl text-[var(--text-primary)]">{t('recentTasks')}</h2>
+                  <Link href="/tasks" className="text-xl text-[var(--gold)] hover:underline">{t('viewAllTasks')}</Link>
+                </div>
+                <div className="flex flex-col gap-3">
+                  {recentTasks.map((task) => (
+                    <TaskPreviewCard key={task.id} task={task} />
                   ))}
                 </div>
-
-                <button
-                  onClick={() => handlePageChange(currentPage + 1)}
-                  disabled={currentPage === totalPages}
-                  className="px-4 py-2 rounded-lg border border-neutral-300 text-neutral-600 hover:bg-neutral-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                >
-                  {t('nextPage')}
-                </button>
               </div>
-            )}
-          </>
-        ) : (
-          <div className="text-center py-16">
-            <div className="text-6xl mb-4 opacity-30">📹</div>
-            <h3 className="text-xl text-[#111827] mb-2">
-              {selectedCategory !== 'all' ? t('noCategoryProjects') : t('noProjects')}
-            </h3>
-            <p className="text-sm text-[#6B7280] mb-6">
-              {selectedCategory !== 'all' 
-                ? t('tryOtherCategories')
-                : t('firstProjectCTA')}
-            </p>
-            {selectedCategory === 'all' && (
-              <Link href="/projects/new">
-                <Button variant="primary" size="medium">{t('createFirstProject')}</Button>
-              </Link>
-            )}
-          </div>
-        )}
-      </section>
-
-
-      {/* Footer - 完全按照 Figma 设计 */}
-      <footer className="bg-white border-t border-neutral-200 mt-16">
-        <div className="max-w-[1440px] mx-auto px-8 py-12">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
-            {/* About */}
-            <div>
-              <div className="mb-4">
-                <Logo size="medium" />
-              </div>
-              <p className="text-sm text-neutral-600 leading-relaxed">
-                {t('footerDescription')}
-              </p>
             </div>
-
-            {/* Quick Links */}
+          )}
+        </div>
+      </div>
+      {/* 页脚 */}
+      <footer className="border-t border-[var(--ink-border)] py-16">
+        <div className="container">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-12">
             <div>
-              <h4 className="text-sm text-neutral-900 mb-4">{t('quickLinks')}</h4>
-              <ul className="space-y-2 text-sm text-neutral-600">
-                <li><Link href="/about" className="hover:text-neutral-900 transition-colors">{t('aboutUs')}</Link></li>
-                <li><Link href="/how-it-works" className="hover:text-neutral-900 transition-colors">{t('howItWorks')}</Link></li>
-                <li><Link href="/guide" className="hover:text-neutral-900 transition-colors">{t('creationGuide')}</Link></li>
-                <li><Link href="/help" className="hover:text-neutral-900 transition-colors">{t('helpCenter')}</Link></li>
+              <Logo size="medium" className="mb-4" />
+              <p className="text-sm text-[var(--text-muted)] leading-relaxed">{t('footerDescription')}</p>
+            </div>
+            <div>
+              <h4 className="text-sm font-medium text-[var(--text-primary)] mb-4">{t('quickLinks')}</h4>
+              <ul className="space-y-3 text-sm text-[var(--text-muted)]">
+                <li><Link href="/about" className="hover:text-[var(--gold)] transition-colors">{t('aboutUs')}</Link></li>
+                <li><Link href="/how-it-works" className="hover:text-[var(--gold)] transition-colors">{t('howItWorks')}</Link></li>
+                <li><Link href="/guide" className="hover:text-[var(--gold)] transition-colors">{t('creationGuide')}</Link></li>
+                <li><Link href="/help" className="hover:text-[var(--gold)] transition-colors">{t('helpCenter')}</Link></li>
               </ul>
             </div>
-
-            {/* Categories */}
             <div>
-              <h4 className="text-sm text-neutral-900 mb-4">{t('projectCategories')}</h4>
-              <ul className="space-y-2 text-sm text-neutral-600">
-                <li><button onClick={() => handleCategoryClick('sciFi')} className="hover:text-neutral-900 transition-colors">{t('sciFi')}</button></li>
-                <li><button onClick={() => handleCategoryClick('animation')} className="hover:text-neutral-900 transition-colors">{t('animation')}</button></li>
-                <li><button onClick={() => handleCategoryClick('documentary')} className="hover:text-neutral-900 transition-colors">{t('documentary')}</button></li>
-                <li><button onClick={() => handleCategoryClick('education')} className="hover:text-neutral-900 transition-colors">{t('education')}</button></li>
+              <h4 className="text-sm font-medium text-[var(--text-primary)] mb-4">{t('projectCategories')}</h4>
+              <ul className="space-y-3 text-sm text-[var(--text-muted)]">
+                {CATEGORIES.map(cat => (
+                  <li key={cat.key}>
+                    <Link href={`/projects?category=${cat.key}`} className="hover:text-[var(--gold)] transition-colors">{t(cat.key)}</Link>
+                  </li>
+                ))}
               </ul>
             </div>
-
-            {/* Community */}
             <div>
-              <h4 className="text-sm text-neutral-900 mb-4">{t('community')}</h4>
-              <ul className="space-y-2 text-sm text-neutral-600">
-                <li><a href="#" className="hover:text-neutral-900 transition-colors">{t('blog')}</a></li>
-                <li><a href="#" className="hover:text-neutral-900 transition-colors">{t('creatorStories')}</a></li>
-                <li><a href="#" className="hover:text-neutral-900 transition-colors">{t('partners')}</a></li>
-                <li><a href="mailto:contact@beehive.ai" className="hover:text-neutral-900 transition-colors">{t('contactUs')}</a></li>
+              <h4 className="text-sm font-medium text-[var(--text-primary)] mb-4">{t('community')}</h4>
+              <ul className="space-y-3 text-sm text-[var(--text-muted)]">
+                <li><a href="#" className="hover:text-[var(--gold)] transition-colors">{t('blog')}</a></li>
+                <li><a href="#" className="hover:text-[var(--gold)] transition-colors">{t('creatorStories')}</a></li>
+                <li><a href="#" className="hover:text-[var(--gold)] transition-colors">{t('partners')}</a></li>
+                <li><a href="#" className="hover:text-[var(--gold)] transition-colors">{t('contactUs')}</a></li>
               </ul>
             </div>
           </div>
-
-          {/* Bottom Bar */}
-          <div className="mt-12 pt-8 border-t border-neutral-200 flex flex-col md:flex-row justify-between items-center gap-4">
-            <p className="text-sm text-neutral-500">
-              {t('allRightsReserved')}
-            </p>
-            <div className="flex gap-6 text-sm text-neutral-500">
-              <Link href="/privacy" className="hover:text-neutral-900 transition-colors">{t('privacyPolicy')}</Link>
-              <Link href="/terms" className="hover:text-neutral-900 transition-colors">{t('termsOfService')}</Link>
-              <Link href="/cookies" className="hover:text-neutral-900 transition-colors">{t('cookieSettings')}</Link>
+          <div className="divider my-12" />
+          <div className="flex flex-col md:flex-row justify-between items-center gap-4 text-sm text-[var(--text-muted)]">
+            <p>{t('allRightsReserved')}</p>
+            <div className="flex gap-6">
+              <Link href="/privacy" className="hover:text-[var(--gold)] transition-colors">{t('privacyPolicy')}</Link>
+              <Link href="/terms" className="hover:text-[var(--gold)] transition-colors">{t('termsOfService')}</Link>
             </div>
           </div>
         </div>
@@ -568,11 +409,7 @@ function HomeContent() {
 
 export default function Home() {
   return (
-    <Suspense fallback={
-      <div className="min-h-screen bg-neutral-50 flex justify-center items-center">
-        <div className="text-neutral-500">Loading...</div>
-      </div>
-    }>
+    <Suspense fallback={<div className="min-h-screen bg-[var(--ink)] flex items-center justify-center text-[var(--text-muted)]">Loading...</div>}>
       <HomeContent />
     </Suspense>
   );

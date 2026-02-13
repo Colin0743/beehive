@@ -1,4 +1,4 @@
-import type { Project, User, ProjectLog, ProjectParticipation, ProjectFollow, StorageResult } from '@/types';
+import type { Project, User, ProjectLog, ProjectParticipation, ProjectFollow, StorageResult, Task, TaskAcceptance, Notification, Achievement } from '@/types';
 
 // Storage键名常量
 const STORAGE_KEYS = {
@@ -8,10 +8,13 @@ const STORAGE_KEYS = {
   USER_PROJECTS: (userId: string) => `userProjects_${userId}`,
   FOLLOWED_PROJECTS: (userId: string) => `followedProjects_${userId}`,
   PARTICIPATED_PROJECTS: (userId: string) => `participatedProjects_${userId}`,
+  TASK_ACCEPTANCES: (taskId: string) => `taskAcceptances_${taskId}`,
+  NOTIFICATIONS: (userId: string) => `notifications_${userId}`,
+  ACHIEVEMENTS: 'achievements',
 } as const;
 
 // 存储配额检查（localStorage通常限制为5-10MB）
-const STORAGE_LIMIT = 5 * 1024 * 1024; // 5MB
+const STORAGE_LIMIT = 10 * 1024 * 1024; // 10MB
 
 /**
  * 检查localStorage可用空间
@@ -41,7 +44,7 @@ function safeSetItem(key: string, value: string): StorageResult<void> {
   try {
     const quota = checkStorageQuota();
     const itemSize = key.length + value.length;
-    
+
     if (!quota.available && quota.used + itemSize > STORAGE_LIMIT) {
       return {
         success: false,
@@ -149,7 +152,7 @@ export const userStorage = {
     }
 
     const users = usersResult.data || [];
-    
+
     // 检查邮箱是否已存在
     if (users.some(u => u.email === user.email)) {
       return { success: false, error: '该邮箱已被注册' };
@@ -203,7 +206,7 @@ export const userStorage = {
 
     const users = usersResult.data || [];
     const userIndex = users.findIndex(u => u.id === userId);
-    
+
     if (userIndex === -1) {
       return { success: false, error: '用户不存在' };
     }
@@ -228,7 +231,7 @@ export const userStorage = {
 
     const users = usersResult.data || [];
     const filteredUsers = users.filter(u => u.id !== userId);
-    
+
     const saveResult = safeSetItem(STORAGE_KEYS.REGISTERED_USERS, JSON.stringify(filteredUsers));
     if (!saveResult.success) {
       return { success: false, error: saveResult.error };
@@ -281,7 +284,7 @@ export const projectStorage = {
     }
 
     const projects = projectsResult.data || [];
-    
+
     // 检查ID是否已存在
     if (projects.some(p => p.id === project.id)) {
       return { success: false, error: '项目ID已存在' };
@@ -290,13 +293,15 @@ export const projectStorage = {
     projects.push(project);
     const saveResult = safeSetItem(STORAGE_KEYS.PROJECTS, JSON.stringify(projects));
     if (!saveResult.success) {
+      // 保存失败，回滚内存数组
+      projects.pop();
       return { success: false, error: saveResult.error };
     }
 
     // 更新用户项目列表
     const userProjectsResult = safeGetItem(STORAGE_KEYS.USER_PROJECTS(project.creatorId));
     if (userProjectsResult.success) {
-      const userProjects = userProjectsResult.data 
+      const userProjects = userProjectsResult.data
         ? (JSON.parse(userProjectsResult.data) as Project[])
         : [];
       userProjects.push(project);
@@ -317,7 +322,7 @@ export const projectStorage = {
 
     const projects = projectsResult.data || [];
     const index = projects.findIndex(p => p.id === id);
-    
+
     if (index === -1) {
       return { success: false, error: '项目不存在' };
     }
@@ -362,7 +367,7 @@ export const projectStorage = {
 
     const projects = projectsResult.data || [];
     const filteredProjects = projects.filter(p => p.id !== id);
-    
+
     const saveResult = safeSetItem(STORAGE_KEYS.PROJECTS, JSON.stringify(filteredProjects));
     if (!saveResult.success) {
       return { success: false, error: saveResult.error };
@@ -397,13 +402,13 @@ export const projectRelationStorage = {
   followProject(userId: string, projectId: string): StorageResult<void> {
     const key = STORAGE_KEYS.FOLLOWED_PROJECTS(userId);
     const result = safeGetItem(key);
-    
+
     if (!result.success) {
       return { success: false, error: result.error };
     }
 
     const follows = result.data ? (JSON.parse(result.data) as ProjectFollow[]) : [];
-    
+
     if (follows.some(f => f.id === projectId)) {
       return { success: false, error: '已经关注过该项目' };
     }
@@ -418,14 +423,14 @@ export const projectRelationStorage = {
   unfollowProject(userId: string, projectId: string): StorageResult<void> {
     const key = STORAGE_KEYS.FOLLOWED_PROJECTS(userId);
     const result = safeGetItem(key);
-    
+
     if (!result.success) {
       return { success: false, error: result.error };
     }
 
     const follows = result.data ? (JSON.parse(result.data) as ProjectFollow[]) : [];
     const updated = follows.filter(f => f.id !== projectId);
-    
+
     return safeSetItem(key, JSON.stringify(updated));
   },
 
@@ -435,14 +440,14 @@ export const projectRelationStorage = {
   isFollowing(userId: string, projectId: string): StorageResult<boolean> {
     const key = STORAGE_KEYS.FOLLOWED_PROJECTS(userId);
     const result = safeGetItem(key);
-    
+
     if (!result.success) {
       return { success: false, error: result.error };
     }
 
     const follows = result.data ? (JSON.parse(result.data) as ProjectFollow[]) : [];
     const isFollowing = follows.some(f => f.id === projectId);
-    
+
     return { success: true, data: isFollowing };
   },
 
@@ -452,7 +457,7 @@ export const projectRelationStorage = {
   getFollowedProjectIds(userId: string): StorageResult<string[]> {
     const key = STORAGE_KEYS.FOLLOWED_PROJECTS(userId);
     const result = safeGetItem(key);
-    
+
     if (!result.success) {
       return { success: false, error: result.error };
     }
@@ -471,15 +476,15 @@ export const projectRelationStorage = {
   ): StorageResult<void> {
     const key = STORAGE_KEYS.PARTICIPATED_PROJECTS(userId);
     const result = safeGetItem(key);
-    
+
     if (!result.success) {
       return { success: false, error: result.error };
     }
 
-    const participations = result.data 
+    const participations = result.data
       ? (JSON.parse(result.data) as ProjectParticipation[])
       : [];
-    
+
     if (participations.some(p => p.id === projectId)) {
       return { success: false, error: '已经参与过该项目' };
     }
@@ -513,16 +518,16 @@ export const projectRelationStorage = {
   isParticipating(userId: string, projectId: string): StorageResult<boolean> {
     const key = STORAGE_KEYS.PARTICIPATED_PROJECTS(userId);
     const result = safeGetItem(key);
-    
+
     if (!result.success) {
       return { success: false, error: result.error };
     }
 
-    const participations = result.data 
+    const participations = result.data
       ? (JSON.parse(result.data) as ProjectParticipation[])
       : [];
     const isParticipating = participations.some(p => p.id === projectId);
-    
+
     return { success: true, data: isParticipating };
   },
 
@@ -532,15 +537,464 @@ export const projectRelationStorage = {
   getParticipatedProjectIds(userId: string): StorageResult<string[]> {
     const key = STORAGE_KEYS.PARTICIPATED_PROJECTS(userId);
     const result = safeGetItem(key);
-    
+
     if (!result.success) {
       return { success: false, error: result.error };
     }
 
-    const participations = result.data 
+    const participations = result.data
       ? (JSON.parse(result.data) as ProjectParticipation[])
       : [];
     return { success: true, data: participations.map(p => p.id) };
+  },
+};
+
+// ==================== 任务操作 ====================
+
+const MAX_TASKS_PER_PROJECT = 10;
+
+export const taskStorage = {
+  /**
+   * 获取项目的所有任务
+   */
+  getTasksByProject(projectId: string): StorageResult<Task[]> {
+    const projectResult = projectStorage.getProjectById(projectId);
+    if (!projectResult.success) {
+      return { success: false, error: projectResult.error };
+    }
+    if (!projectResult.data) {
+      return { success: false, error: '项目不存在' };
+    }
+    const tasks = projectResult.data.tasks || [];
+    return { success: true, data: tasks };
+  },
+
+  /**
+   * 创建任务（含 10 个上限校验）
+   */
+  createTask(projectId: string, task: Task): StorageResult<Task> {
+    const projectResult = projectStorage.getProjectById(projectId);
+    if (!projectResult.success) {
+      return { success: false, error: projectResult.error };
+    }
+    if (!projectResult.data) {
+      return { success: false, error: '项目不存在' };
+    }
+
+    const project = projectResult.data;
+    const tasks = project.tasks || [];
+
+    // 检查任务数量上限
+    if (tasks.length >= MAX_TASKS_PER_PROJECT) {
+      return { success: false, error: '每个项目最多只能创建 10 个任务' };
+    }
+
+    tasks.push(task);
+    const updateResult = projectStorage.updateProject(projectId, { tasks });
+    if (!updateResult.success) {
+      return { success: false, error: updateResult.error };
+    }
+
+    return { success: true, data: task };
+  },
+
+  /**
+   * 更新任务
+   */
+  updateTask(projectId: string, taskId: string, updates: Partial<Task>): StorageResult<Task> {
+    const projectResult = projectStorage.getProjectById(projectId);
+    if (!projectResult.success) {
+      return { success: false, error: projectResult.error };
+    }
+    if (!projectResult.data) {
+      return { success: false, error: '项目不存在' };
+    }
+
+    const project = projectResult.data;
+    const tasks = project.tasks || [];
+    const taskIndex = tasks.findIndex(t => t.id === taskId);
+
+    if (taskIndex === -1) {
+      return { success: false, error: '任务不存在' };
+    }
+
+    tasks[taskIndex] = { ...tasks[taskIndex], ...updates };
+    const updateResult = projectStorage.updateProject(projectId, { tasks });
+    if (!updateResult.success) {
+      return { success: false, error: updateResult.error };
+    }
+
+    return { success: true, data: tasks[taskIndex] };
+  },
+
+  /**
+   * 删除任务
+   */
+  deleteTask(projectId: string, taskId: string): StorageResult<void> {
+    const projectResult = projectStorage.getProjectById(projectId);
+    if (!projectResult.success) {
+      return { success: false, error: projectResult.error };
+    }
+    if (!projectResult.data) {
+      return { success: false, error: '项目不存在' };
+    }
+
+    const project = projectResult.data;
+    const tasks = project.tasks || [];
+    const filteredTasks = tasks.filter(t => t.id !== taskId);
+
+    if (filteredTasks.length === tasks.length) {
+      return { success: false, error: '任务不存在' };
+    }
+
+    const updateResult = projectStorage.updateProject(projectId, { tasks: filteredTasks });
+    if (!updateResult.success) {
+      return { success: false, error: updateResult.error };
+    }
+
+    return { success: true };
+  },
+
+  /**
+   * 重排序任务
+   */
+  reorderTasks(projectId: string, taskIds: string[]): StorageResult<void> {
+    const projectResult = projectStorage.getProjectById(projectId);
+    if (!projectResult.success) {
+      return { success: false, error: projectResult.error };
+    }
+    if (!projectResult.data) {
+      return { success: false, error: '项目不存在' };
+    }
+
+    const project = projectResult.data;
+    const tasks = project.tasks || [];
+
+    // 按照 taskIds 的顺序重排任务，并更新 order 字段
+    const taskMap = new Map(tasks.map(t => [t.id, t]));
+    const reorderedTasks: Task[] = [];
+
+    for (let i = 0; i < taskIds.length; i++) {
+      const task = taskMap.get(taskIds[i]);
+      if (task) {
+        reorderedTasks.push({ ...task, order: i });
+      }
+    }
+
+    // 保留不在 taskIds 中的任务（追加到末尾）
+    for (const task of tasks) {
+      if (!taskIds.includes(task.id)) {
+        reorderedTasks.push({ ...task, order: reorderedTasks.length });
+      }
+    }
+
+    const updateResult = projectStorage.updateProject(projectId, { tasks: reorderedTasks });
+    if (!updateResult.success) {
+      return { success: false, error: updateResult.error };
+    }
+
+    return { success: true };
+  },
+
+  /**
+   * 获取所有已发布任务（聚合所有项目）
+   */
+  getAllPublishedTasks(): StorageResult<(Task & { projectId: string; projectName: string; projectCategory: string })[]> {
+    const projectsResult = projectStorage.getAllProjects();
+    if (!projectsResult.success) {
+      return { success: false, error: projectsResult.error };
+    }
+
+    const projects = projectsResult.data || [];
+    const publishedTasks: (Task & { projectId: string; projectName: string; projectCategory: string })[] = [];
+
+    for (const project of projects) {
+      const tasks = project.tasks || [];
+      for (const task of tasks) {
+        if (task.status === 'published') {
+          publishedTasks.push({
+            ...task,
+            projectId: project.id,
+            projectName: project.title,
+            projectCategory: project.category,
+          });
+        }
+      }
+    }
+
+    return { success: true, data: publishedTasks };
+  },
+};
+
+// ==================== 任务接受记录操作 ====================
+
+export const taskAcceptanceStorage = {
+  /**
+   * 记录用户接受任务
+   */
+  acceptTask(taskId: string, userId: string): StorageResult<TaskAcceptance> {
+    const key = STORAGE_KEYS.TASK_ACCEPTANCES(taskId);
+    const result = safeGetItem(key);
+    if (!result.success) {
+      return { success: false, error: result.error };
+    }
+
+    let acceptances: TaskAcceptance[] = [];
+    try {
+      acceptances = result.data ? (JSON.parse(result.data) as TaskAcceptance[]) : [];
+    } catch (error) {
+      return { success: false, error: '任务接受记录数据格式错误' };
+    }
+
+    // 检查用户是否已接受过该任务
+    const existing = acceptances.find(a => a.userId === userId);
+    if (existing) {
+      // 已接受过，直接返回已有记录
+      return { success: true, data: existing };
+    }
+
+    const acceptance: TaskAcceptance = {
+      id: `${taskId}_${userId}_${Date.now()}`,
+      taskId,
+      userId,
+      acceptedAt: new Date().toISOString(),
+    };
+
+    acceptances.push(acceptance);
+    const saveResult = safeSetItem(key, JSON.stringify(acceptances));
+    if (!saveResult.success) {
+      return { success: false, error: saveResult.error };
+    }
+
+    return { success: true, data: acceptance };
+  },
+
+  /**
+   * 获取任务的所有接受记录
+   */
+  getAcceptances(taskId: string): StorageResult<TaskAcceptance[]> {
+    const key = STORAGE_KEYS.TASK_ACCEPTANCES(taskId);
+    const result = safeGetItem(key);
+    if (!result.success) {
+      return { success: false, error: result.error };
+    }
+
+    try {
+      const acceptances = result.data ? (JSON.parse(result.data) as TaskAcceptance[]) : [];
+      return { success: true, data: acceptances };
+    } catch (error) {
+      return { success: false, error: '任务接受记录数据格式错误' };
+    }
+  },
+
+  /**
+   * 检查用户是否已接受任务
+   */
+  hasUserAccepted(taskId: string, userId: string): StorageResult<boolean> {
+    const acceptancesResult = this.getAcceptances(taskId);
+    if (!acceptancesResult.success) {
+      return { success: false, error: acceptancesResult.error };
+    }
+
+    const acceptances = acceptancesResult.data || [];
+    const hasAccepted = acceptances.some(a => a.userId === userId);
+    return { success: true, data: hasAccepted };
+  },
+
+  /**
+   * 获取用户接受的所有任务ID
+   * 需要遍历所有项目的任务来查找
+   */
+  getUserAcceptedTaskIds(userId: string): StorageResult<string[]> {
+    // 获取所有项目以收集所有任务ID
+    const projectsResult = projectStorage.getAllProjects();
+    if (!projectsResult.success) {
+      return { success: false, error: projectsResult.error };
+    }
+
+    const projects = projectsResult.data || [];
+    const acceptedTaskIds: string[] = [];
+
+    // 遍历所有项目的所有任务
+    for (const project of projects) {
+      const tasks = project.tasks || [];
+      for (const task of tasks) {
+        const acceptanceResult = this.hasUserAccepted(task.id, userId);
+        if (acceptanceResult.success && acceptanceResult.data) {
+          acceptedTaskIds.push(task.id);
+        }
+      }
+    }
+
+    return { success: true, data: acceptedTaskIds };
+  },
+};
+
+// ==================== 通知操作 ====================
+
+export const notificationStorage = {
+  /**
+   * 获取用户的所有通知（按创建时间倒序排列，最新的在前）
+   */
+  getNotifications(userId: string): StorageResult<Notification[]> {
+    const key = STORAGE_KEYS.NOTIFICATIONS(userId);
+    const result = safeGetItem(key);
+    if (!result.success) {
+      return { success: false, error: result.error };
+    }
+
+    try {
+      const notifications = result.data ? (JSON.parse(result.data) as Notification[]) : [];
+      // 按 createdAt 降序排列（最新的在前）
+      notifications.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+      return { success: true, data: notifications };
+    } catch (error) {
+      return { success: false, error: '通知数据格式错误' };
+    }
+  },
+
+  /**
+   * 创建通知
+   */
+  createNotification(userId: string, notification: Notification): StorageResult<Notification> {
+    const key = STORAGE_KEYS.NOTIFICATIONS(userId);
+    const result = safeGetItem(key);
+    if (!result.success) {
+      return { success: false, error: result.error };
+    }
+
+    let notifications: Notification[] = [];
+    try {
+      notifications = result.data ? (JSON.parse(result.data) as Notification[]) : [];
+    } catch (error) {
+      return { success: false, error: '通知数据格式错误' };
+    }
+
+    notifications.push(notification);
+    const saveResult = safeSetItem(key, JSON.stringify(notifications));
+    if (!saveResult.success) {
+      return { success: false, error: saveResult.error };
+    }
+
+    return { success: true, data: notification };
+  },
+
+  /**
+   * 标记通知为已读
+   */
+  markAsRead(userId: string, notificationId: string): StorageResult<void> {
+    const key = STORAGE_KEYS.NOTIFICATIONS(userId);
+    const result = safeGetItem(key);
+    if (!result.success) {
+      return { success: false, error: result.error };
+    }
+
+    let notifications: Notification[] = [];
+    try {
+      notifications = result.data ? (JSON.parse(result.data) as Notification[]) : [];
+    } catch (error) {
+      return { success: false, error: '通知数据格式错误' };
+    }
+
+    const notificationIndex = notifications.findIndex(n => n.id === notificationId);
+    if (notificationIndex === -1) {
+      return { success: false, error: '通知不存在' };
+    }
+
+    notifications[notificationIndex] = { ...notifications[notificationIndex], isRead: true };
+    const saveResult = safeSetItem(key, JSON.stringify(notifications));
+    if (!saveResult.success) {
+      return { success: false, error: saveResult.error };
+    }
+
+    return { success: true };
+  },
+
+  /**
+   * 获取用户未读通知数量
+   */
+  getUnreadCount(userId: string): StorageResult<number> {
+    const key = STORAGE_KEYS.NOTIFICATIONS(userId);
+    const result = safeGetItem(key);
+    if (!result.success) {
+      return { success: false, error: result.error };
+    }
+
+    try {
+      const notifications = result.data ? (JSON.parse(result.data) as Notification[]) : [];
+      const unreadCount = notifications.filter(n => !n.isRead).length;
+      return { success: true, data: unreadCount };
+    } catch (error) {
+      return { success: false, error: '通知数据格式错误' };
+    }
+  },
+};
+
+// ==================== 成就记录操作 ====================
+
+export const achievementStorage = {
+  /**
+   * 创建成就记录
+   */
+  createAchievement(achievement: Achievement): StorageResult<Achievement> {
+    const key = STORAGE_KEYS.ACHIEVEMENTS;
+    const result = safeGetItem(key);
+    if (!result.success) {
+      return { success: false, error: result.error };
+    }
+
+    let achievements: Achievement[] = [];
+    try {
+      achievements = result.data ? (JSON.parse(result.data) as Achievement[]) : [];
+    } catch (error) {
+      return { success: false, error: '成就记录数据格式错误' };
+    }
+
+    achievements.push(achievement);
+    const saveResult = safeSetItem(key, JSON.stringify(achievements));
+    if (!saveResult.success) {
+      return { success: false, error: saveResult.error };
+    }
+
+    return { success: true, data: achievement };
+  },
+
+  /**
+   * 按项目获取成就记录
+   */
+  getByProject(projectId: string): StorageResult<Achievement[]> {
+    const key = STORAGE_KEYS.ACHIEVEMENTS;
+    const result = safeGetItem(key);
+    if (!result.success) {
+      return { success: false, error: result.error };
+    }
+
+    try {
+      const achievements = result.data ? (JSON.parse(result.data) as Achievement[]) : [];
+      const filtered = achievements.filter(a => a.projectId === projectId);
+      return { success: true, data: filtered };
+    } catch (error) {
+      return { success: false, error: '成就记录数据格式错误' };
+    }
+  },
+
+  /**
+   * 按贡献者获取成就记录
+   */
+  getByContributor(contributorName: string): StorageResult<Achievement[]> {
+    const key = STORAGE_KEYS.ACHIEVEMENTS;
+    const result = safeGetItem(key);
+    if (!result.success) {
+      return { success: false, error: result.error };
+    }
+
+    try {
+      const achievements = result.data ? (JSON.parse(result.data) as Achievement[]) : [];
+      const filtered = achievements.filter(a => a.contributorName === contributorName);
+      return { success: true, data: filtered };
+    } catch (error) {
+      return { success: false, error: '成就记录数据格式错误' };
+    }
   },
 };
 

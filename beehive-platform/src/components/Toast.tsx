@@ -1,6 +1,7 @@
 'use client';
 
 import React, { createContext, useContext, useState, useCallback, ReactNode } from 'react';
+import { useTranslation } from 'react-i18next';
 
 export type ToastType = 'success' | 'error' | 'warning' | 'info';
 
@@ -66,6 +67,7 @@ function ToastContainer({ toasts, removeToast }: { toasts: Toast[]; removeToast:
 }
 
 function ToastItem({ toast, onClose }: { toast: Toast; onClose: () => void }) {
+  const { t } = useTranslation('common');
   const bgColors = {
     success: 'bg-green-500',
     error: 'bg-red-500',
@@ -90,7 +92,7 @@ function ToastItem({ toast, onClose }: { toast: Toast; onClose: () => void }) {
       <button
         onClick={onClose}
         className="text-white hover:text-gray-200 font-bold text-xl"
-        aria-label="关闭提示"
+        aria-label={t('closeToast')}
       >
         ×
       </button>

@@ -2,12 +2,15 @@
 
 import React, { useState, useEffect } from 'react';
 import AdminLayout from '@/components/AdminLayout';
-import { projectStorage } from '@/lib/storage';
+import { projectStorage } from '@/lib/api';
 import { Project } from '@/types';
 import { useToast } from '@/components/Toast';
 import Link from 'next/link';
+import { useTranslation } from 'react-i18next';
+import '@/lib/i18n';
 
 export default function AdminProjectsPage() {
+  const { t } = useTranslation('common');
   const [projects, setProjects] = useState<Project[]>([]);
   const [filteredProjects, setFilteredProjects] = useState<Project[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
@@ -25,9 +28,9 @@ export default function AdminProjectsPage() {
     filterProjects();
   }, [projects, searchQuery, statusFilter, categoryFilter]);
 
-  const loadProjects = () => {
+  const loadProjects = async () => {
     setLoading(true);
-    const result = projectStorage.getAllProjects();
+    const result = await projectStorage.getAllProjects();
     if (result.success && result.data) {
       const sortedProjects = result.data.sort(
         (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
@@ -65,24 +68,24 @@ export default function AdminProjectsPage() {
     setFilteredProjects(filtered);
   };
 
-  const handleDelete = (projectId: string) => {
-    const result = projectStorage.deleteProject(projectId);
+  const handleDelete = async (projectId: string) => {
+    const result = await projectStorage.deleteProject(projectId);
     if (result.success) {
-      showToast('success', '项目已删除');
-      loadProjects();
+      showToast('success', t('admin.projectDeleted'));
+      await loadProjects();
       setDeleteConfirm(null);
     } else {
-      showToast('error', result.error || '删除失败');
+      showToast('error', result.error || t('admin.deleteFailed'));
     }
   };
 
-  const handleStatusChange = (projectId: string, newStatus: Project['status']) => {
-    const result = projectStorage.updateProject(projectId, { status: newStatus });
+  const handleStatusChange = async (projectId: string, newStatus: Project['status']) => {
+    const result = await projectStorage.updateProject(projectId, { status: newStatus });
     if (result.success) {
-      showToast('success', '项目状态已更新');
-      loadProjects();
+      showToast('success', t('admin.projectStatusUpdated'));
+      await loadProjects();
     } else {
-      showToast('error', result.error || '更新失败');
+      showToast('error', result.error || t('admin.updateFailed'));
     }
   };
 
@@ -92,7 +95,7 @@ export default function AdminProjectsPage() {
     return (
       <AdminLayout>
         <div className="flex justify-center items-center h-64">
-          <div className="text-gray-500">加载中...</div>
+          <div className="text-[var(--text-secondary)]">{t('loading')}</div>
         </div>
       </AdminLayout>
     );
@@ -102,48 +105,50 @@ export default function AdminProjectsPage() {
     <AdminLayout>
       <div className="px-4 py-6 sm:px-0">
         <div className="flex justify-between items-center mb-6">
-          <h1 className="text-3xl font-bold text-gray-900">项目管理</h1>
-          <div className="text-sm text-gray-500">
-            共 {filteredProjects.length} 个项目
+          <h1 className="text-3xl font-bold text-[var(--text-primary)]" style={{ fontFamily: 'var(--font-display)' }}>
+            {t('admin.projectManagement')}
+          </h1>
+          <div className="text-sm text-[var(--text-secondary)]">
+            {t('admin.totalProjectsCount', { count: filteredProjects.length })}
           </div>
         </div>
 
         {/* 筛选和搜索 */}
-        <div className="bg-white shadow rounded-lg p-4 mb-6">
+        <div className="card p-4 mb-6">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">搜索</label>
+              <label className="block text-sm font-medium text-[var(--text-secondary)] mb-1">{t('admin.search')}</label>
               <input
                 type="text"
-                placeholder="搜索项目名称、描述或创建者..."
+                placeholder={t('admin.searchProjectsPlaceholder')}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-yellow-500"
+                className="input w-full"
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">状态</label>
+              <label className="block text-sm font-medium text-[var(--text-secondary)] mb-1">{t('admin.status')}</label>
               <select
                 value={statusFilter}
                 onChange={(e) => setStatusFilter(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-yellow-500"
+                className="w-full px-3 py-2 bg-[var(--ink-lighter)] border border-[var(--ink-border)] text-[var(--text-primary)] rounded-md focus:outline-none focus:border-[var(--gold)] focus:shadow-[0_0_0_3px_var(--gold-muted)]"
               >
-                <option value="all">全部状态</option>
-                <option value="active">活跃</option>
-                <option value="completed">已完成</option>
-                <option value="paused">已暂停</option>
+                <option value="all" className="bg-[var(--ink-lighter)]">{t('admin.allStatuses')}</option>
+                <option value="active" className="bg-[var(--ink-lighter)]">{t('admin.statusActive')}</option>
+                <option value="completed" className="bg-[var(--ink-lighter)]">{t('admin.statusCompleted')}</option>
+                <option value="paused" className="bg-[var(--ink-lighter)]">{t('admin.statusPaused')}</option>
               </select>
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">分类</label>
+              <label className="block text-sm font-medium text-[var(--text-secondary)] mb-1">{t('admin.category')}</label>
               <select
                 value={categoryFilter}
                 onChange={(e) => setCategoryFilter(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-yellow-500"
+                className="w-full px-3 py-2 bg-[var(--ink-lighter)] border border-[var(--ink-border)] text-[var(--text-primary)] rounded-md focus:outline-none focus:border-[var(--gold)] focus:shadow-[0_0_0_3px_var(--gold-muted)]"
               >
-                <option value="all">全部分类</option>
+                <option value="all" className="bg-[var(--ink-lighter)]">{t('admin.allCategories')}</option>
                 {categories.map(cat => (
-                  <option key={cat} value={cat}>{cat}</option>
+                  <option key={cat} value={cat} className="bg-[var(--ink-lighter)]">{cat}</option>
                 ))}
               </select>
             </div>
@@ -151,39 +156,39 @@ export default function AdminProjectsPage() {
         </div>
 
         {/* 项目列表 */}
-        <div className="bg-white shadow rounded-lg overflow-hidden">
+        <div className="card overflow-hidden">
           {filteredProjects.length === 0 ? (
-            <div className="px-4 py-12 text-center text-gray-500">
-              没有找到项目
+            <div className="px-4 py-12 text-center text-[var(--text-muted)]">
+              {t('admin.noProjectsFound')}
             </div>
           ) : (
             <div className="overflow-x-auto">
-              <table className="min-w-full divide-y divide-gray-200">
-                <thead className="bg-gray-50">
+              <table className="min-w-full divide-y divide-[var(--ink-border)]">
+                <thead className="bg-[var(--ink-lighter)]">
                   <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      项目信息
+                    <th className="px-6 py-3 text-left text-xs font-medium text-[var(--text-muted)] uppercase tracking-wider">
+                      {t('admin.projectInfo')}
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      创建者
+                    <th className="px-6 py-3 text-left text-xs font-medium text-[var(--text-muted)] uppercase tracking-wider">
+                      {t('admin.creator')}
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      状态
+                    <th className="px-6 py-3 text-left text-xs font-medium text-[var(--text-muted)] uppercase tracking-wider">
+                      {t('admin.status')}
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      参与人数
+                    <th className="px-6 py-3 text-left text-xs font-medium text-[var(--text-muted)] uppercase tracking-wider">
+                      {t('admin.participantsCountLabel')}
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      创建时间
+                    <th className="px-6 py-3 text-left text-xs font-medium text-[var(--text-muted)] uppercase tracking-wider">
+                      {t('admin.createdTime')}
                     </th>
-                    <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      操作
+                    <th className="px-6 py-3 text-right text-xs font-medium text-[var(--text-muted)] uppercase tracking-wider">
+                      {t('admin.actions')}
                     </th>
                   </tr>
                 </thead>
-                <tbody className="bg-white divide-y divide-gray-200">
+                <tbody className="divide-y divide-[var(--ink-border)]">
                   {filteredProjects.map((project) => (
-                    <tr key={project.id} className="hover:bg-gray-50">
+                    <tr key={project.id} className="hover:bg-[var(--ink-lighter)] transition-colors">
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="flex items-center">
                           <div className="flex-shrink-0 h-12 w-12">
@@ -194,70 +199,70 @@ export default function AdminProjectsPage() {
                             />
                           </div>
                           <div className="ml-4">
-                            <div className="text-sm font-medium text-gray-900">
-                              <Link href={`/projects/${project.id}`} className="hover:text-yellow-600">
+                            <div className="text-sm font-medium text-[var(--text-primary)]">
+                              <Link href={`/projects/${project.id}`} className="hover:text-[var(--gold)] transition-colors">
                                 {project.title}
                               </Link>
                             </div>
-                            <div className="text-sm text-gray-500">{project.category}</div>
+                            <div className="text-sm text-[var(--text-secondary)]">{project.category}</div>
                           </div>
                         </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm text-gray-900">{project.creatorName}</div>
+                        <div className="text-sm text-[var(--text-primary)]">{project.creatorName}</div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <select
                           value={project.status}
                           onChange={(e) => handleStatusChange(project.id, e.target.value as Project['status'])}
-                          className="text-sm border border-gray-300 rounded px-2 py-1 focus:outline-none focus:ring-2 focus:ring-yellow-500"
+                          className="text-sm px-2 py-1 bg-[var(--ink-lighter)] border border-[var(--ink-border)] text-[var(--text-primary)] rounded focus:outline-none focus:border-[var(--gold)] focus:shadow-[0_0_0_3px_var(--gold-muted)]"
                         >
-                          <option value="active">活跃</option>
-                          <option value="completed">已完成</option>
-                          <option value="paused">已暂停</option>
+                          <option value="active" className="bg-[var(--ink-lighter)]">{t('admin.statusActive')}</option>
+                          <option value="completed" className="bg-[var(--ink-lighter)]">{t('admin.statusCompleted')}</option>
+                          <option value="paused" className="bg-[var(--ink-lighter)]">{t('admin.statusPaused')}</option>
                         </select>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-[var(--text-secondary)]">
                         {project.participantsCount || 0}
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-[var(--text-secondary)]">
                         {new Date(project.createdAt).toLocaleDateString()}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                         <div className="flex justify-end space-x-2">
                           <Link
                             href={`/projects/${project.id}`}
-                            className="text-yellow-600 hover:text-yellow-900"
+                            className="text-[var(--gold)] hover:text-[var(--gold-light)] transition-colors"
                           >
-                            查看
+                            {t('admin.view')}
                           </Link>
                           <Link
                             href={`/projects/edit/${project.id}`}
-                            className="text-blue-600 hover:text-blue-900"
+                            className="text-[var(--gold)] hover:text-[var(--gold-light)] transition-colors"
                           >
-                            编辑
+                            {t('admin.edit')}
                           </Link>
                           {deleteConfirm === project.id ? (
                             <>
                               <button
                                 onClick={() => handleDelete(project.id)}
-                                className="text-red-600 hover:text-red-900"
+                                className="text-[var(--error)] hover:opacity-80 transition-colors"
                               >
-                                确认
+                                {t('admin.confirmAction')}
                               </button>
                               <button
                                 onClick={() => setDeleteConfirm(null)}
-                                className="text-gray-600 hover:text-gray-900"
+                                className="text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors"
                               >
-                                取消
+                                {t('admin.cancelAction')}
                               </button>
                             </>
                           ) : (
                             <button
                               onClick={() => setDeleteConfirm(project.id)}
-                              className="text-red-600 hover:text-red-900"
+                              className="text-[var(--error)] hover:opacity-80 transition-colors"
                             >
-                              删除
+                              {t('admin.delete')}
                             </button>
                           )}
                         </div>
@@ -273,4 +278,3 @@ export default function AdminProjectsPage() {
     </AdminLayout>
   );
 }
-

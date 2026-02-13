@@ -1,15 +1,29 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { useTranslation } from 'react-i18next';
 import LayoutSimple from '@/components/LayoutSimple';
 import { useAuth } from '@/contexts/AuthContext';
 import Link from 'next/link';
-import { Project, ProjectLog } from '@/types';
-import { projectStorage, projectRelationStorage } from '@/lib/storage';
-import { ErrorHandler } from '@/lib/errorHandler';
+import { Project, ProjectLog, Task } from '@/types';
+import { projectStorage, taskStorage, taskAcceptanceStorage, achievementStorage, balanceStorage } from '@/lib/api';
+import { completeTask } from '@/lib/taskActions';
 import { useToast } from '@/components/Toast';
+import TaskForm from '@/components/TaskForm';
+import TaskCard from '@/components/TaskCard';
+import TaskDetailModal from '@/components/TaskDetailModal';
+import AchievementList from '@/components/AchievementList';
+import type { Achievement } from '@/types';
+import InlineEditText from '@/components/InlineEditText';
+import InlineEditRichText from '@/components/InlineEditRichText';
+import InlineEditSelect from '@/components/InlineEditSelect';
+import MediaCarousel from '@/components/MediaCarousel';
+import ProgressSidebar from '@/components/ProgressSidebar';
+import { isAdmin } from '@/lib/admin';
+import { validateTitle } from '@/lib/validators';
+import { clickTracker } from '@/lib/api';
+import LoadingSpinner from '@/components/LoadingSpinner';
 
 export default function ProjectDetailPage() {
   const params = useParams();
@@ -19,262 +33,393 @@ export default function ProjectDetailPage() {
   const { t } = useTranslation('common');
   const [project, setProject] = useState<Project | null>(null);
   const [loading, setLoading] = useState(true);
-  const [isParticipating, setIsParticipating] = useState(false);
   const [showLogModal, setShowLogModal] = useState(false);
   const [logContent, setLogContent] = useState('');
   const [logType, setLogType] = useState<'update' | 'milestone' | 'announcement'>('update');
 
+  // 任务相关状态
+  const [tasks, setTasks] = useState<Task[]>([]);
+  const [showTaskForm, setShowTaskForm] = useState(false);
+  const [editingTask, setEditingTask] = useState<Task | undefined>(undefined);
+  const [taskFormMode, setTaskFormMode] = useState<'create' | 'edit'>('create');
+  const [acceptedTaskIds, setAcceptedTaskIds] = useState<string[]>([]);
+  const [achievements, setAchievements] = useState<Achievement[]>([]);
+  const [showCompleteModal, setShowCompleteModal] = useState(false);
+  const [completingTaskId, setCompletingTaskId] = useState<string>('');
+  const [contributorNameInput, setContributorNameInput] = useState('');
+  
+  // 任务详情弹窗状态
+  const [selectedTask, setSelectedTask] = useState<Task | null>(null);
+  const [showInsufficientModal, setShowInsufficientModal] = useState(false);
+  const [publishFeeYuan, setPublishFeeYuan] = useState<string>('1.00');
+  const [submittingTask, setSubmittingTask] = useState(false);
+  const [completingTask, setCompletingTask] = useState(false);
+
   const projectId = params.id as string;
 
+  // 加载项目数据
   useEffect(() => {
+    const loadProject = async () => {
+      const result = await projectStorage.getProjectById(projectId);
+      if (result.success && result.data) {
+        setProject(result.data);
+        setTasks(result.data.tasks || []);
+      }
+      setLoading(false);
+    };
     loadProject();
-    if (user) {
-      checkParticipationStatus();
+  }, [projectId]);
+
+  // 记录项目点击（用于排序算法的热度计算）
+  useEffect(() => {
+    if (projectId) {
+      // 传入用户ID用于5分钟去重（如已登录）
+      clickTracker.recordClick(projectId);
     }
+  }, [projectId]);
+
+  // 加载成就和接受记录
+  useEffect(() => {
+    const loadAchievementsAndAcceptances = async () => {
+      const achResult = await achievementStorage.getByProject(projectId);
+      if (achResult.success && achResult.data) setAchievements(achResult.data);
+
+      if (user) {
+        const acceptedResult = await taskAcceptanceStorage.getUserAcceptedTaskIds(user.id);
+        if (acceptedResult.success && acceptedResult.data) setAcceptedTaskIds(acceptedResult.data);
+      }
+    };
+    loadAchievementsAndAcceptances();
   }, [projectId, user]);
 
-  const loadProject = () => {
-    const result = projectStorage.getProjectById(projectId);
+  const isOwner = user && project && user.id === project.creatorId;
+
+  // 加载发布费用（项目创建者）
+  useEffect(() => {
+    if (isOwner) {
+      balanceStorage.getBalance().then((r) => {
+        if (r.success && r.data) setPublishFeeYuan(r.data.task_publish_fee_yuan);
+      });
+    }
+  }, [isOwner]);
+  const isAdminUser = isAdmin(user);
+  const canEdit = !!(isOwner || isAdminUser);
+
+  // 分类选项
+  const categories = [
+    { value: '电影', label: t('film') },
+    { value: '动画', label: t('animation') },
+    { value: '商业制作', label: t('commercial') },
+    { value: '公益', label: t('publicWelfare') },
+    { value: '其他', label: t('other') },
+  ];
+
+  // 通用字段保存处理函数
+  const handleFieldSave = async (field: string, value: any): Promise<boolean> => {
+    const result = await projectStorage.updateProject(projectId, { [field]: value });
     if (result.success && result.data) {
       setProject(result.data);
-    } else if (!result.success) {
-      ErrorHandler.logError(new Error(result.error || '加载项目失败'));
+      showToast('success', t('saved'));
+      return true;
     }
-    setLoading(false);
+    showToast('error', result.error || t('saveFailed'));
+    return false;
   };
 
-  const checkParticipationStatus = () => {
-    if (!user) return;
-    
-    const result = projectRelationStorage.isParticipating(user.id, projectId);
-    if (result.success && result.data !== undefined) {
-      setIsParticipating(result.data);
-    }
+  // 刷新任务列表
+  const refreshTasks = async () => {
+    const result = await taskStorage.getTasksByProject(projectId);
+    if (result.success && result.data) setTasks(result.data);
   };
 
-  // 加入项目 - 跳转到 Telegram 群组并增加参与者数量
-  const handleJoinProject = () => {
-    if (!project) return;
+  // 刷新成就
+  const refreshAchievements = async () => {
+    const achResult = await achievementStorage.getByProject(projectId);
+    if (achResult.success && achResult.data) setAchievements(achResult.data);
+  };
 
-    // 检查是否有 Telegram 群组链接
-    if (!project.telegramGroup) {
-      showToast('error', t('noTelegramGroup'));
-      return;
-    }
-
-    // 如果用户已登录且未参与过，增加参与者数量
-    if (isLoggedIn && user && !isParticipating) {
-      const result = projectRelationStorage.participateInProject(user.id, projectId, 'worker_bee');
+  // 创建/编辑任务提交
+  const handleTaskSubmit = async (taskData: Partial<Task>) => {
+    setSubmittingTask(true);
+    try {
+    if (taskFormMode === 'create') {
+      const newTask: Task = {
+        id: `task_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
+        prompt: taskData.prompt || '',
+        referenceImages: taskData.referenceImages || [],
+        requirements: taskData.requirements || '',
+        creatorEmail: taskData.creatorEmail || '',
+        status: taskData.status || 'published', // 使用表单传来的status,默认published
+        duration: taskData.duration || 10,
+        order: tasks.length,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      };
+      const result = await taskStorage.createTask(projectId, newTask);
       if (result.success) {
-        setIsParticipating(true);
-        // 更新项目参与者数量
-        const updatedProject = { ...project, participantsCount: (project.participantsCount || 0) + 1 };
-        setProject(updatedProject);
-        // 同时更新存储中的项目数据
-        projectStorage.updateProject(projectId, { participantsCount: updatedProject.participantsCount });
+        showToast('success', t('taskCreated'));
+        await refreshTasks();
+      } else {
+        showToast('error', result.error || t('createFailed'));
+        if (result.error && (result.error.includes('余额不足') || result.error.includes('请先充值'))) {
+          router.push('/recharge');
+        }
+      }
+    } else if (editingTask) {
+      const result = await taskStorage.updateTask(projectId, editingTask.id, {
+        ...taskData,
+        updatedAt: new Date().toISOString(),
+      });
+      if (result.success) {
+        showToast('success', t('taskUpdated'));
+        await refreshTasks();
       }
     }
-
-    // 打开 Telegram 群组链接
-    window.open(project.telegramGroup, '_blank', 'noopener,noreferrer');
-    showToast('success', '正在跳转到 Telegram 群组...');
+    } finally {
+      setSubmittingTask(false);
+      setShowTaskForm(false);
+      setEditingTask(undefined);
+    }
   };
 
-  const handleParticipate = () => {
+  // 编辑任务
+  const handleEditTask = useCallback((task: Task) => {
+    setEditingTask(task);
+    setTaskFormMode('edit');
+    setShowTaskForm(true);
+  }, []);
+
+  // 删除任务
+  const handleDeleteTask = useCallback(async (taskId: string) => {
+    if (!confirm(t('confirmDeleteTask'))) return;
+    const result = await taskStorage.deleteTask(projectId, taskId);
+    if (result.success) {
+      showToast('success', t('taskDeleted'));
+      await refreshTasks();
+    }
+  }, [projectId, t, showToast]);
+
+  // 发布任务
+  const handlePublishTask = useCallback(async (taskId: string) => {
+    const balanceRes = await balanceStorage.getBalance();
+    if (balanceRes.success && balanceRes.data) {
+      if (balanceRes.data.balance_cents < balanceRes.data.task_publish_fee_cents) {
+        setShowInsufficientModal(true);
+        return;
+      }
+    }
+    const result = await taskStorage.updateTask(projectId, taskId, {
+      status: 'published',
+      updatedAt: new Date().toISOString(),
+    });
+    if (result.success) {
+      showToast('success', t('taskPublishedSuccess'));
+      await refreshTasks();
+    } else {
+      showToast('error', result.error || t('updateFailed'));
+      if (result.error && (result.error.includes('余额不足') || result.error.includes('请先充值'))) {
+        setShowInsufficientModal(true);
+      }
+    }
+  }, [projectId, t, showToast]);
+
+  // 打开完成任务模态框
+  const handleOpenComplete = useCallback((taskId: string) => {
+    setCompletingTaskId(taskId);
+    setContributorNameInput('');
+    setShowCompleteModal(true);
+  }, []);
+
+  // 确认完成任务
+  const handleConfirmComplete = async () => {
+    if (!contributorNameInput.trim() || !project) return;
+    const task = tasks.find(t => t.id === completingTaskId);
+    if (!task) return;
+
+    setCompletingTask(true);
+    const result = await completeTask(
+      projectId, completingTaskId, contributorNameInput.trim(),
+      project.title, task.prompt.slice(0, 50),
+    );
+    if (result.success) {
+      showToast('success', t('taskCompletedSuccess'));
+      await refreshTasks();
+      await refreshAchievements();
+      setShowCompleteModal(false);
+    }
+    setCompletingTask(false);
+  };
+
+  // 接受任务
+  const handleAcceptTask = async (task: Task) => {
     if (!isLoggedIn || !user) {
       router.push('/auth/login');
       return;
     }
-
-    const result = projectRelationStorage.participateInProject(user.id, projectId, 'worker_bee');
-    
+    const result = await taskAcceptanceStorage.acceptTask(task.id, user.id);
     if (result.success) {
-      setIsParticipating(true);
-      if (project) {
-        setProject({ ...project, participantsCount: (project.participantsCount || 0) + 1 });
-      }
-      showToast('success', '已加入项目');
-    } else {
-      ErrorHandler.logError(new Error(result.error || '参与操作失败'));
-      showToast('error', result.error || '操作失败');
+      setAcceptedTaskIds(prev => [...prev, task.id]);
+      showToast('success', t('taskAccepted'));
     }
   };
 
-  const handleAddLog = () => {
+  // 管理员删除项目
+  const handleDeleteProject = async () => {
+    if (!confirm(t('confirmDeleteProject', '确定要删除此项目吗？此操作不可撤销。'))) return;
+    const result = await projectStorage.deleteProject(projectId);
+    if (result.success) {
+      showToast('success', t('projectDeleted', '项目已删除'));
+      router.push('/');
+    } else {
+      showToast('error', result.error || t('deleteFailed', '删除失败'));
+    }
+  };
+
+  // 添加日志
+  const handleAddLog = async () => {
     if (!logContent.trim() || !user) return;
-
     const newLog: ProjectLog = {
-      id: `log_${Date.now()}`,
-      type: logType,
-      content: logContent.trim(),
-      createdAt: new Date().toISOString(),
-      creatorName: user.name
+      id: `log_${Date.now()}`, type: logType, content: logContent.trim(),
+      createdAt: new Date().toISOString(), creatorName: user.name
     };
-
-    const result = projectStorage.addProjectLog(projectId, newLog);
-    
-    if (result.success && result.data) {
-      if (project) {
-        setProject({ ...project, logs: [...(project.logs || []), result.data!] });
-      }
-      setShowLogModal(false);
-      setLogContent('');
-      setLogType('update');
-      showToast('success', '日志发布成功');
-    } else {
-      ErrorHandler.logError(new Error(result.error || '添加日志失败'));
-      showToast('error', result.error || '发布失败');
+    const result = await projectStorage.addProjectLog(projectId, newLog);
+    if (result.success && result.data && project) {
+      setProject({ ...project, logs: [...(project.logs || []), result.data] });
+      setShowLogModal(false); setLogContent(''); setLogType('update');
     }
   };
-
-  const isOwner = user && project && user.id === project.creatorId;
 
   if (loading) {
-    return <LayoutSimple><div className="text-center py-12">{t('loading')}</div></LayoutSimple>;
-  }
-
-  if (!project) {
     return (
       <LayoutSimple>
-        <div className="text-center py-16">
-          <div className="text-6xl mb-4 opacity-30">⚠️</div>
-          <h3 className="text-xl font-medium mb-2" style={{ color: '#111827' }}>{t('projectNotFound')}</h3>
-          <p className="text-sm mb-6" style={{ color: '#6B7280' }}>{t('projectNotFoundDesc')}</p>
-          <Link 
-            href="/" 
-            className="inline-block px-6 py-3 rounded-lg font-semibold text-sm transition-all"
-            style={{ backgroundColor: '#FFD700', color: '#111827' }}
-          >
-            {t('backToHome')}
-          </Link>
+        <div className="flex flex-col items-center justify-center py-32 gap-4">
+          <LoadingSpinner size="lg" />
+          <span className="text-[var(--text-muted)]">{t('loading')}</span>
         </div>
       </LayoutSimple>
     );
   }
 
-  const progress = Math.min((project.currentDuration / project.targetDuration) * 100, 100);
-  const remainingDuration = Math.max(0, project.targetDuration - project.currentDuration);
+  if (!project) {
+    return (
+      <LayoutSimple>
+        <div className="text-center py-20">
+          <h2 className="text-2xl text-[var(--text-primary)] mb-4">{t('projectNotFound')}</h2>
+          <p className="text-[var(--text-muted)] mb-8">{t('projectNotFoundDesc')}</p>
+          <Link href="/"><button className="btn-primary">{t('backToHome')}</button></Link>
+        </div>
+      </LayoutSimple>
+    );
+  }
+
+  const sortedTasks = [...tasks]
+    .filter((t) => t.status !== 'completed')
+    .sort((a, b) => a.order - b.order);
 
   return (
     <LayoutSimple>
-      <div className="max-w-7xl mx-auto">
-        {/* 顶部媒体展示 - 全宽 */}
-        {(project.coverImage || (project as any).videoFile) && (
-          <div className="mb-6 rounded-lg overflow-hidden shadow-lg bg-black">
-            {(project as any).videoFile ? (
-              <video 
-                src={(project as any).videoFile} 
-                controls 
-                controlsList="nodownload"
-                onContextMenu={(e) => e.preventDefault()}
-                className="w-full h-auto max-h-[600px] object-contain"
-                poster={project.coverImage}
+      <div className="max-w-7xl mx-auto px-4">
+        {/* 顶部：分类 + 标题 + 创建者信息 */}
+        <div className="mb-8 animate-fade-up">
+          <div className="flex items-start justify-between gap-4 mb-4">
+            <div className="flex items-center gap-4">
+              <InlineEditSelect
+                value={project.category}
+                options={categories}
+                onSave={(v) => handleFieldSave('category', v)}
+                canEdit={canEdit}
               />
-            ) : project.coverImage ? (
-              <img 
-                src={project.coverImage} 
-                alt={project.title}
-                className="w-full h-auto max-h-[600px] object-cover"
-              />
-            ) : null}
-          </div>
-        )}
-
-        {/* 主要内容区域 - 左右分栏布局 */}
-        <div className="flex flex-col lg:flex-row gap-6">
-          {/* 左侧主要内容区 */}
-          <div className="flex-1 space-y-6">
-            {/* 项目标题和基本信息 - Figma 设计风格 */}
-            <div 
-              className="rounded-xl p-6 lg:p-8"
-              style={{
-                backgroundColor: '#ffffff',
-                border: '1px solid #E5E7EB',
-                boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)',
-              }}
-            >
-              <div className="mb-4">
-                <div className="flex items-center gap-3 mb-3">
-                  {(() => {
-                    const categoryColors: { [key: string]: { bg: string; text: string } } = {
-                      '科幻': { bg: '#EDE9FE', text: '#5B21B6' },
-                      '动画': { bg: '#FEF3C7', text: '#92400E' },
-                      '纪录片': { bg: '#D1FAE5', text: '#065F46' },
-                      '教育': { bg: '#DBEAFE', text: '#1E40AF' },
-                      '其他': { bg: '#FCE7F3', text: '#831843' },
-                    };
-                    const style = categoryColors[project.category] || categoryColors['其他'];
-                    return (
-                      <span 
-                        className="inline-block px-4 py-1.5 rounded-md text-sm font-medium"
-                        style={{ backgroundColor: style.bg, color: style.text }}
-                      >
-                        {project.category}
-                      </span>
-                    );
-                  })()}
-                  {isOwner && (
-                    <Link
-                      href={`/projects/edit/${project.id}`}
-                      className="text-sm flex items-center gap-1 transition-colors"
-                      style={{ color: '#6B7280' }}
-                      onMouseEnter={(e) => e.currentTarget.style.color = '#111827'}
-                      onMouseLeave={(e) => e.currentTarget.style.color = '#6B7280'}
-                    >
-                      <span>✏️</span>
-                      <span>{t('editProject')}</span>
-                    </Link>
-                  )}
-                </div>
-                <h1 
-                  className="text-3xl lg:text-4xl font-medium mb-3 leading-tight"
-                  style={{ color: '#111827' }}
-                >
-                  {project.title}
-                </h1>
-                <p className="text-base" style={{ color: '#6B7280' }}>
-                  {t('createdBy')} <span className="font-medium" style={{ color: '#111827' }}>{project.creatorName}</span> 发起
-                  <span className="mx-2">·</span>
-                  <span>{new Date(project.createdAt).toLocaleDateString('zh-CN', { year: 'numeric', month: 'long', day: 'numeric' })}</span>
-                </p>
+            </div>
+            
+            {/* 右侧：创建者信息 */}
+            <div className="flex items-center gap-4 text-sm text-[var(--text-muted)]">
+              <div className="flex items-center gap-2">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
+                </svg>
+                <span>{t('createdBy')} <span className="text-[var(--text-primary)]">{project.creatorName}</span></span>
               </div>
+              <span>·</span>
+              <span>{new Date(project.createdAt).toLocaleDateString('zh-CN', { year: 'numeric', month: 'long', day: 'numeric' })}</span>
             </div>
+          </div>
+          
+          <div className="flex items-center gap-4">
+            <InlineEditText
+              value={project.title}
+              onSave={(v) => handleFieldSave('title', v)}
+              canEdit={canEdit}
+              validate={validateTitle}
+              displayClassName="text-3xl lg:text-5xl text-[var(--text-primary)] font-bold"
+            />
+            
+            {isAdminUser && (
+              <button
+                onClick={handleDeleteProject}
+                className="px-3 py-1.5 text-xs rounded-lg bg-red-600 hover:bg-red-700 text-white transition-colors whitespace-nowrap"
+              >
+                {t('deleteProject', '删除项目')}
+              </button>
+            )}
+          </div>
+        </div>
 
-            {/* 项目描述 - Figma 设计风格 */}
-            <div 
-              className="rounded-xl p-6 lg:p-8"
-              style={{
-                backgroundColor: '#ffffff',
-                border: '1px solid #E5E7EB',
-                boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)',
-              }}
-            >
-              <h2 className="text-xl font-medium mb-4" style={{ color: '#111827' }}>{t('aboutThisProject')}</h2>
-              <div 
-                className="prose max-w-none rich-text-content"
-                dangerouslySetInnerHTML={{ __html: project.description }}
+        {/* 主体区域:左侧媒体 + 右侧进度 */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-12">
+          {/* 左侧:媒体展示区域(占2/3宽度) */}
+          <div className="lg:col-span-2">
+            {/* 媒体容器 - 自适应高度 */}
+            <MediaCarousel
+              coverImage={project.coverImage}
+              videoFile={project.videoFile}
+              canEdit={canEdit}
+              onSaveCover={(v) => handleFieldSave('coverImage', v)}
+              onSaveVideo={(v) => handleFieldSave('videoFile', v)}
+            />
+          </div>
+
+          {/* 右侧：项目进度信息卡片（占1/3宽度） */}
+          <div className="lg:col-span-1">
+            <div className="lg:sticky lg:top-24">
+              <ProgressSidebar
+                project={project}
+                tasks={tasks}
+                achievementsCount={achievements.length}
+                canEdit={canEdit}
+                onFieldSave={handleFieldSave}
+              />
+            </div>
+          </div>
+        </div>
+
+        {/* 下方内容区域：左右两栏 */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          {/* 左侧：项目描述 + 成就 + 动态 */}
+          <div className="space-y-8">
+            {/* 项目描述 */}
+            <div className="card p-8 animate-fade-up">
+              <h2 className="text-2xl text-[var(--text-primary)] mb-4">{t('aboutThisProject')}</h2>
+              <InlineEditRichText
+                value={project.description}
+                onSave={(v) => handleFieldSave('description', v)}
+                canEdit={canEdit}
               />
             </div>
 
-            {/* 项目日志 - Figma 设计风格 */}
-            <div 
-              className="rounded-xl p-6 lg:p-8"
-              style={{
-                backgroundColor: '#ffffff',
-                border: '1px solid #E5E7EB',
-                boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)',
-              }}
-            >
+            {/* 成就区域 */}
+            {achievements.length > 0 && (
+              <div className="card p-8 animate-fade-up delay-1">
+                <h2 className="text-2xl text-[var(--text-primary)] mb-6">{t('achievements')}</h2>
+                <AchievementList achievements={achievements} mode="project" />
+              </div>
+            )}
+
+            {/* 项目动态 */}
+            <div className="card p-8 animate-fade-up delay-2">
               <div className="flex justify-between items-center mb-6">
-                <h2 className="text-xl font-medium" style={{ color: '#111827' }}>{t('projectUpdates')}</h2>
+                <h2 className="text-2xl text-[var(--text-primary)]">{t('projectUpdates')}</h2>
                 {isOwner && (
-                  <button
-                    onClick={() => setShowLogModal(true)}
-                    className="px-5 py-2.5 rounded-lg font-semibold text-sm transition-all"
-                    style={{ backgroundColor: '#FFD700', color: '#111827' }}
-                    onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#E6C200'}
-                    onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#FFD700'}
-                  >
+                  <button onClick={() => setShowLogModal(true)} className="btn-primary h-10 px-4 text-sm">
                     {t('publishUpdate')}
                   </button>
                 )}
@@ -282,198 +427,201 @@ export default function ProjectDetailPage() {
 
               {project.logs && project.logs.length > 0 ? (
                 <div className="space-y-6">
-                  {project.logs.sort((a, b) => 
-                    new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-                  ).map((log) => (
-                    <div key={log.id} className="border-l-4 pl-6 pb-6 last:pb-0" style={{ borderColor: '#FFD700' }}>
-                      <div className="flex items-start gap-3 mb-2">
-                        <span className="text-3xl">
-                          {log.type === 'milestone' ? '🏆' : log.type === 'announcement' ? '📢' : '📝'}
+                  {project.logs.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()).map((log) => (
+                    <div key={log.id} className="border-l-2 border-[var(--gold)] pl-6">
+                      <div className="flex items-center gap-3 mb-2">
+                        <span className="font-medium text-[var(--text-primary)]">{log.creatorName}</span>
+                        <span className="text-sm text-[var(--text-muted)]">
+                          {new Date(log.createdAt).toLocaleDateString('zh-CN', { month: 'short', day: 'numeric' })}
                         </span>
-                        <div className="flex-1">
-                          <div className="flex items-center gap-3 mb-2">
-                            <span className="font-semibold text-gray-900">{log.creatorName}</span>
-                            <span className="text-sm text-gray-500">
-                              {new Date(log.createdAt).toLocaleDateString('zh-CN', { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
-                            </span>
-                            {log.type === 'milestone' && (
-                              <span className="bg-yellow-100 text-yellow-800 px-2 py-0.5 rounded text-xs font-medium">
-                                {t('milestone')}
-                              </span>
-                            )}
-                            {log.type === 'announcement' && (
-                              <span className="bg-blue-100 text-blue-800 px-2 py-0.5 rounded text-xs font-medium">
-                                {t('announcement')}
-                              </span>
-                            )}
-                          </div>
-                          <p className="text-gray-700 leading-relaxed whitespace-pre-wrap">{log.content}</p>
-                        </div>
+                        {log.type !== 'update' && <span className="tag tag-gold text-xs">{log.type === 'milestone' ? t('milestone') : t('announcement')}</span>}
                       </div>
+                      <p className="text-[var(--text-secondary)] whitespace-pre-wrap">{log.content}</p>
                     </div>
                   ))}
                 </div>
               ) : (
-                <div className="text-center py-12 text-gray-500">
-                  <div className="text-6xl mb-4">📝</div>
-                  <p className="text-lg">{t('noUpdatesYet')}</p>
-                  {isOwner && (
-                    <p className="text-sm mt-2">{t('clickToPublishFirst')}</p>
-                  )}
-                </div>
+                <p className="text-center py-12 text-[var(--text-muted)]">{t('noUpdatesYet')}</p>
               )}
             </div>
           </div>
 
-          {/* 右侧固定栏 - 进度和行动 */}
-          <div className="lg:w-80 flex-shrink-0">
-            <div className="sticky top-6 space-y-6">
-              {/* 时长进度卡片 - Figma 设计风格 */}
-              <div 
-                className="rounded-xl p-6"
-                style={{
-                  backgroundColor: '#ffffff',
-                  border: '2px solid #FFD700',
-                  boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)',
-                }}
-              >
-                <div className="mb-6">
-                  <div className="flex items-baseline gap-2 mb-2">
-                    <span className="text-4xl font-medium" style={{ color: '#111827' }}>{project.currentDuration}</span>
-                    <span className="text-lg" style={{ color: '#6B7280' }}>{t('minutes')}</span>
-                  </div>
-                  <p className="text-sm mb-4" style={{ color: '#6B7280' }}>
-                    {t('target')} <span className="font-medium" style={{ color: '#111827' }}>{project.targetDuration} {t('minutes')}</span>
-                  </p>
-                  
-                  {/* 进度条 */}
-                  <div className="mb-4">
-                    <div 
-                      className="w-full rounded-full h-2 overflow-hidden"
-                      style={{ backgroundColor: '#E5E7EB' }}
-                    >
-                      <div 
-                        className="h-full rounded-full transition-all duration-500"
-                        style={{ 
-                          width: `${progress}%`,
-                          backgroundColor: '#10B981'
-                        }}
-                      />
-                    </div>
-                    <div className="flex justify-between text-xs mt-2" style={{ color: '#6B7280' }}>
-                      <span>{progress.toFixed(1)}% {t('completedStatus')}</span>
-                      {remainingDuration > 0 && (
-                        <span>{t('stillNeed')} {remainingDuration} {t('minutes')}</span>
-                      )}
-                    </div>
-                  </div>
-                </div>
-
-                {/* 统计信息 */}
-                <div className="pt-4 space-y-3" style={{ borderTop: '1px solid #E5E7EB' }}>
-                  <div className="flex justify-between items-center">
-                    <span style={{ color: '#6B7280' }}>{t('participants')}</span>
-                    <span className="font-medium" style={{ color: '#111827' }}>{project.participantsCount || 0} {t('people')}</span>
-                  </div>
-                </div>
+          {/* 右侧：任务列表 */}
+          <div>
+            <div className="card p-8 animate-fade-up">
+              <div className="flex justify-between items-center mb-6">
+                <h2 className="text-2xl text-[var(--text-primary)]">{t('tasks')}</h2>
+                {isOwner && tasks.length < 10 && (
+                  <button
+                    onClick={() => { setTaskFormMode('create'); setEditingTask(undefined); setShowTaskForm(true); }}
+                    className="btn-primary h-10 px-4 text-sm"
+                  >
+                    {t('publishTaskWithFee', { fee: publishFeeYuan })}
+                  </button>
+                )}
+                {isOwner && tasks.length >= 10 && (
+                  <span className="text-xs text-[var(--text-muted)]">{t('maxTasksReached')}</span>
+                )}
               </div>
 
-              {/* 行动按钮卡片 - Figma 设计风格 */}
-              <div 
-                className="rounded-xl p-6"
-                style={{
-                  backgroundColor: '#ffffff',
-                  border: '1px solid #E5E7EB',
-                  boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)',
-                }}
-              >
-                <button
-                  onClick={handleJoinProject}
-                  className="w-full py-4 px-6 rounded-lg text-lg font-semibold transition-all"
-                  style={{
-                    backgroundColor: '#FFD700',
-                    color: '#111827',
-                  }}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.backgroundColor = '#E6C200';
-                    e.currentTarget.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.15)';
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.backgroundColor = '#FFD700';
-                    e.currentTarget.style.boxShadow = 'none';
-                  }}
-                >
-                  {t('joinProject')}
-                </button>
-              </div>
+              {sortedTasks.length > 0 ? (
+                <div className="space-y-2">
+                  {sortedTasks.map((task) => (
+                    <TaskCard
+                      key={task.id}
+                      task={task}
+                      projectId={projectId}
+                      isCreator={!!isOwner}
+                      isLoggedIn={isLoggedIn}
+                      currentUserId={user?.id}
+                      hasAccepted={acceptedTaskIds.includes(task.id)}
+                      onClick={(task) => setSelectedTask(task)}
+                      onEdit={isOwner ? handleEditTask : undefined}
+                      onDelete={isOwner ? handleDeleteTask : undefined}
+                      onPublish={isOwner ? handlePublishTask : undefined}
+                      onComplete={isOwner ? handleOpenComplete : undefined}
+                    />
+                  ))}
+                </div>
+              ) : (
+                <p className="text-center py-12 text-[var(--text-muted)]">{t('noTasks')}</p>
+              )}
             </div>
           </div>
         </div>
       </div>
 
+      {/* 任务表单模态框 */}
+      <TaskForm
+        isOpen={showTaskForm}
+        onClose={() => { setShowTaskForm(false); setEditingTask(undefined); }}
+        onSubmit={handleTaskSubmit}
+        initialData={editingTask}
+        mode={taskFormMode}
+        defaultCreatorEmail={user?.email || ''}
+      />
+
+      {/* 完成任务模态框 - 输入贡献者名称 */}
+      {showCompleteModal && (
+        <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4" onClick={() => setShowCompleteModal(false)}>
+          <div className="card max-w-md w-full animate-scale-in" onClick={e => e.stopPropagation()}>
+            <div className="p-6 border-b border-[var(--ink-border)]">
+              <h3 className="text-xl text-[var(--text-primary)]">{t('completeTask')}</h3>
+            </div>
+            <div className="p-6">
+              <label className="block text-sm text-[var(--text-secondary)] mb-2">{t('contributorName')}</label>
+              <input
+                type="text"
+                value={contributorNameInput}
+                onChange={e => setContributorNameInput(e.target.value)}
+                placeholder={t('enterContributorName')}
+                className="input"
+                name="contributorName"
+                autoFocus
+              />
+            </div>
+            <div className="p-6 border-t border-[var(--ink-border)] flex gap-3">
+              <button onClick={() => setShowCompleteModal(false)} className="btn-secondary flex-1" disabled={completingTask}>{t('cancel')}</button>
+              <button
+                onClick={handleConfirmComplete}
+                disabled={!contributorNameInput.trim() || completingTask}
+                className="btn-primary flex-1 disabled:opacity-50 inline-flex items-center justify-center gap-2"
+              >
+                {completingTask ? (
+                  <>
+                    <LoadingSpinner size="sm" />
+                    {t('loading')}
+                  </>
+                ) : (
+                  t('confirm')
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* 发布日志模态框 */}
       {showLogModal && (
-        <div 
-          className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50 p-4"
-          onClick={() => setShowLogModal(false)}
-        >
-          <div 
-            className="bg-white rounded-xl shadow-2xl max-w-lg w-full mx-4 transform transition-all"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="p-6 border-b">
-              <h3 className="text-2xl font-bold text-gray-900">{t('publishProjectUpdate')}</h3>
-              <p className="text-gray-600 text-sm mt-1">{t('shareProgressDesc')}</p>
+        <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4" onClick={() => setShowLogModal(false)}>
+          <div className="card max-w-lg w-full animate-scale-in" onClick={e => e.stopPropagation()}>
+            <div className="p-6 border-b border-[var(--ink-border)]">
+              <h3 className="text-xl text-[var(--text-primary)]">{t('publishProjectUpdate')}</h3>
             </div>
-            
-            <div className="p-6 space-y-5">
+            <div className="p-6 space-y-4">
               <div>
-                <label className="block text-gray-700 font-semibold mb-2">{t('updateType')}</label>
-                <select
-                  value={logType}
-                  onChange={(e) => setLogType(e.target.value as any)}
-                  className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:border-yellow-400"
-                >
-                  <option value="update">📝 {t('progressUpdate')}</option>
-                  <option value="milestone">🏆 {t('milestone')}</option>
-                  <option value="announcement">📢 {t('announcement')}</option>
+                <label className="block text-sm text-[var(--text-secondary)] mb-2">{t('updateType')}</label>
+                <select value={logType} onChange={e => setLogType(e.target.value as any)} className="input">
+                  <option value="update">{t('progressUpdate')}</option>
+                  <option value="milestone">{t('milestone')}</option>
+                  <option value="announcement">{t('announcement')}</option>
                 </select>
               </div>
-
               <div>
-                <label className="block text-gray-700 font-semibold mb-2">{t('updateContent')}</label>
+                <label className="block text-sm text-[var(--text-secondary)] mb-2">{t('updateContent')}</label>
                 <textarea
-                  placeholder={t('shareProgressPlaceholder')}
                   value={logContent}
-                  onChange={(e) => setLogContent(e.target.value)}
-                  rows={8}
-                  className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:border-yellow-400 resize-none"
+                  onChange={e => setLogContent(e.target.value)}
+                  placeholder={t('shareProgressPlaceholder')}
+                  rows={6}
+                  className="input resize-none py-3"
                 />
               </div>
             </div>
-
-            <div className="p-6 border-t bg-gray-50 flex gap-3">
-              <button
-                onClick={() => setShowLogModal(false)}
-                className="flex-1 px-4 py-3 border-2 border-gray-300 rounded-lg hover:bg-gray-100 font-semibold text-gray-700 transition-colors"
-              >
-                {t('cancel')}
-              </button>
-              <button
-                onClick={handleAddLog}
-                disabled={!logContent.trim()}
-                className={`flex-1 px-4 py-3 rounded-lg font-semibold transition-all ${
-                  logContent.trim()
-                    ? 'text-gray-900 shadow-md hover:shadow-lg'
-                    : 'bg-gray-300 cursor-not-allowed text-gray-500'
-                }`}
-                style={logContent.trim() ? { background: '#FFD700' } : {}}
-              >
+            <div className="p-6 border-t border-[var(--ink-border)] flex gap-3">
+              <button onClick={() => setShowLogModal(false)} className="btn-secondary flex-1">{t('cancel')}</button>
+              <button onClick={handleAddLog} disabled={!logContent.trim()} className="btn-primary flex-1 disabled:opacity-50">
                 {t('publishUpdateButton')}
               </button>
             </div>
           </div>
         </div>
+      )}
+
+      {/* 余额不足弹窗 */}
+      {showInsufficientModal && (
+        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-[60] p-4" onClick={() => setShowInsufficientModal(false)}>
+          <div className="card max-w-sm w-full animate-scale-in" onClick={e => e.stopPropagation()}>
+            <div className="p-6">
+              <h3 className="text-lg font-semibold text-[var(--text-primary)] mb-4">{t('insufficientBalanceTitle')}</h3>
+              <button
+                onClick={() => { setShowInsufficientModal(false); router.push('/recharge'); }}
+                className="btn-primary w-full"
+              >
+                {t('goToRecharge')}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 任务详情弹窗 */}
+      {selectedTask && project && (
+        <TaskDetailModal
+          task={selectedTask}
+          projectName={project.title}
+          projectCategory={project.category}
+          isCreator={!!isOwner}
+          isLoggedIn={isLoggedIn}
+          hasAccepted={acceptedTaskIds.includes(selectedTask.id)}
+          onClose={() => setSelectedTask(null)}
+          onEdit={(task) => {
+            setSelectedTask(null);
+            handleEditTask(task);
+          }}
+          onDelete={(taskId) => {
+            setSelectedTask(null);
+            handleDeleteTask(taskId);
+          }}
+          onPublish={(taskId) => {
+            handlePublishTask(taskId);
+          }}
+          onComplete={(taskId) => {
+            setSelectedTask(null);
+            handleOpenComplete(taskId);
+          }}
+          onAccept={handleAcceptTask}
+        />
       )}
     </LayoutSimple>
   );

@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useRef, useEffect, useState, useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 
 interface RichTextEditorProps {
   value: string;
@@ -15,9 +16,10 @@ let editorIdCounter = 0;
 export default function RichTextEditor({
   value,
   onChange,
-  placeholder = '开始编辑...',
+  placeholder = '',
   error = false,
 }: RichTextEditorProps) {
+  const { t } = useTranslation('common');
   const editorRef = useRef<HTMLDivElement>(null);
   const quillInstanceRef = useRef<any>(null);
   const isInitializingRef = useRef<boolean>(false);
@@ -142,7 +144,7 @@ export default function RichTextEditor({
             if (!file) return;
 
             if (file.size > 5 * 1024 * 1024) {
-              alert('图片大小不能超过5MB');
+              alert(t('imageTooLarge'));
               return;
             }
 
@@ -157,8 +159,8 @@ export default function RichTextEditor({
                 }
               }
             } catch (error) {
-              console.error('图片处理失败:', error);
-              alert('图片处理失败，请重试');
+              console.error('Image processing failed:', error);
+              alert(t('imageProcessFailed'));
             }
           };
         };
@@ -166,7 +168,7 @@ export default function RichTextEditor({
         // 创建Quill实例
         const quill = new Quill(editorRef.current, {
           theme: 'snow',
-          placeholder: placeholder,
+          placeholder: placeholder || t('startEditing'),
           modules: {
             toolbar: {
               container: [
@@ -210,7 +212,7 @@ export default function RichTextEditor({
         setIsLoaded(true);
         isInitializingRef.current = false;
       } catch (error) {
-        console.error('初始化Quill失败:', error);
+        console.error('Failed to initialize Quill:', error);
         isInitializingRef.current = false;
       }
     };
@@ -271,25 +273,27 @@ export default function RichTextEditor({
         .rich-text-editor .ql-editor {
           min-height: 300px;
           line-height: 1.6;
+          color: var(--text-primary);
         }
         
         .rich-text-editor .ql-editor.ql-blank::before {
-          color: #999;
+          color: var(--text-muted);
           font-style: normal;
         }
         
         .rich-text-editor .ql-toolbar {
           border-top-left-radius: 0.5rem;
           border-top-right-radius: 0.5rem;
-          border: 1px solid #e5e7eb;
-          background-color: #f9fafb;
+          border: 1px solid var(--ink-border);
+          background-color: var(--ink-lighter);
         }
         
         .rich-text-editor .ql-container {
           border-bottom-left-radius: 0.5rem;
           border-bottom-right-radius: 0.5rem;
-          border: 1px solid #e5e7eb;
+          border: 1px solid var(--ink-border);
           border-top: none;
+          background-color: var(--ink-light);
         }
         
         .rich-text-editor.error .ql-toolbar,
@@ -298,11 +302,24 @@ export default function RichTextEditor({
         }
         
         .rich-text-editor .ql-toolbar .ql-stroke {
-          stroke: #374151;
+          stroke: var(--text-secondary);
         }
         
         .rich-text-editor .ql-toolbar .ql-fill {
-          fill: #374151;
+          fill: var(--text-secondary);
+        }
+        
+        .rich-text-editor .ql-toolbar .ql-picker-label {
+          color: var(--text-secondary);
+        }
+        
+        .rich-text-editor .ql-toolbar .ql-picker-options {
+          background-color: var(--ink-light);
+          border-color: var(--ink-border);
+        }
+        
+        .rich-text-editor .ql-toolbar .ql-picker-item {
+          color: var(--text-secondary);
         }
         
         .rich-text-editor .ql-toolbar button:hover,
@@ -348,25 +365,27 @@ export default function RichTextEditor({
         }
         
         .rich-text-editor .ql-editor blockquote {
-          border-left: 4px solid #FFD700;
+          border-left: 4px solid var(--gold);
           padding-left: 1rem;
           margin: 1rem 0;
-          color: #666;
+          color: var(--text-muted);
           font-style: italic;
         }
         
         .rich-text-editor .ql-editor code {
-          background-color: #f3f4f6;
+          background-color: var(--ink-lighter);
           padding: 0.2rem 0.4rem;
           border-radius: 0.25rem;
           font-family: monospace;
+          color: var(--text-primary);
         }
         
         .rich-text-editor .ql-editor pre {
-          background-color: #f3f4f6;
+          background-color: var(--ink-lighter);
           padding: 1rem;
           border-radius: 0.5rem;
           overflow-x: auto;
+          color: var(--text-primary);
         }
       `}</style>
     </div>

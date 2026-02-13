@@ -5,12 +5,12 @@ import { useSearchParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useTranslation } from 'react-i18next';
 import { Project } from '@/types';
-import { projectStorage } from '@/lib/storage';
+import { projectStorage } from '@/lib/api';
 import { useAuth } from '@/contexts/AuthContext';
 import Logo from '@/components/Logo';
 import LanguageSwitcher from '@/components/LanguageSwitcher';
 
-function Button({ children, variant = "primary", size = "medium", onClick, className = "" }: { 
+function Button({ children, variant = "primary", size = "medium", onClick, className = "" }: {
   children: React.ReactNode; variant?: "primary" | "secondary" | "text"; size?: "small" | "medium" | "large"; onClick?: () => void; className?: string;
 }) {
   const baseStyles = "font-semibold rounded-lg transition-all active:scale-[0.98]";
@@ -30,10 +30,10 @@ function Button({ children, variant = "primary", size = "medium", onClick, class
 
 function ProjectCard({ project, daysLeft, t }: { project: Project; daysLeft: number; t: (key: string) => string }) {
   const categoryColors: { [key: string]: { bg: string; text: string } } = {
-    科幻: { bg: "#EDE9FE", text: "#5B21B6" },
+    电影: { bg: "#EDE9FE", text: "#5B21B6" },
     动画: { bg: "#FEF3C7", text: "#92400E" },
-    纪录片: { bg: "#D1FAE5", text: "#065F46" },
-    教育: { bg: "#DBEAFE", text: "#1E40AF" },
+    商业制作: { bg: "#D1FAE5", text: "#065F46" },
+    公益: { bg: "#DBEAFE", text: "#1E40AF" },
     其他: { bg: "#FCE7F3", text: "#831843" },
   };
 
@@ -63,9 +63,9 @@ function ProjectCard({ project, daysLeft, t }: { project: Project; daysLeft: num
           <p className="text-sm text-[#4B5563] mb-4 line-clamp-2 leading-relaxed">{plainDescription}</p>
           <div className="mb-1">
             <span className="text-3xl text-[#111827]">{project.currentDuration}</span>
-            <span className="text-sm text-[#6B7280] ml-1">{t('minutes')}</span>
+            <span className="text-sm text-[#6B7280] ml-1">{t('seconds')}</span>
           </div>
-          <div className="text-sm text-[#6B7280] mb-3">{t('target')} {project.targetDuration} {t('minutes')}</div>
+          <div className="text-sm text-[#6B7280] mb-3">{t('target')} {project.targetDuration} {t('seconds')}</div>
           <div className="h-0.5 bg-neutral-200 rounded-full mb-4 overflow-hidden">
             <div className="h-full bg-[#10B981] rounded-full transition-all duration-500" style={{ width: `${progress}%` }} />
           </div>
@@ -96,19 +96,22 @@ function SearchContent() {
 
   const categories = [
     { key: 'all', label: t('all'), value: '全部' },
-    { key: 'sciFi', label: t('sciFi'), value: '科幻' },
+    { key: 'film', label: t('film'), value: '电影' },
     { key: 'animation', label: t('animation'), value: '动画' },
-    { key: 'documentary', label: t('documentary'), value: '纪录片' },
-    { key: 'education', label: t('education'), value: '教育' },
+    { key: 'commercial', label: t('commercial'), value: '商业制作' },
+    { key: 'publicWelfare', label: t('publicWelfare'), value: '公益' },
     { key: 'other', label: t('other'), value: '其他' },
   ];
   const keyword = searchParams.get('keyword') || '';
 
   useEffect(() => {
-    const result = projectStorage.getAllProjects();
-    if (result.success && result.data) {
-      setProjects(result.data);
-    }
+    const loadProjects = async () => {
+      const result = await projectStorage.getAllProjects();
+      if (result.success && result.data) {
+        setProjects(result.data);
+      }
+    };
+    loadProjects();
   }, []);
 
   useEffect(() => {
@@ -122,7 +125,7 @@ function SearchContent() {
 
     if (keyword.trim()) {
       const query = keyword.toLowerCase();
-      filtered = filtered.filter(p => 
+      filtered = filtered.filter(p =>
         p.title.toLowerCase().includes(query) ||
         p.description.toLowerCase().includes(query)
       );
@@ -227,11 +230,10 @@ function SearchContent() {
             <button
               key={category.key}
               onClick={() => setSelectedCategory(category.key)}
-              className={`px-4 py-2 rounded-full text-sm transition-all ${
-                selectedCategory === category.key
+              className={`px-4 py-2 rounded-full text-sm transition-all ${selectedCategory === category.key
                   ? "bg-[#FFD700] text-[#111827]"
                   : "bg-white border border-neutral-300 text-neutral-600 hover:border-[#FFD700]"
-              }`}
+                }`}
             >
               {category.label}
             </button>
@@ -255,17 +257,16 @@ function SearchContent() {
                 >
                   {t('previousPage')}
                 </button>
-                
+
                 <div className="flex gap-2">
                   {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
                     <button
                       key={page}
                       onClick={() => handlePageChange(page)}
-                      className={`w-10 h-10 rounded-lg font-medium transition-all ${
-                        currentPage === page
+                      className={`w-10 h-10 rounded-lg font-medium transition-all ${currentPage === page
                           ? 'bg-[#FFD700] text-[#111827]'
                           : 'border border-neutral-300 text-neutral-600 hover:bg-neutral-50'
-                      }`}
+                        }`}
                     >
                       {page}
                     </button>

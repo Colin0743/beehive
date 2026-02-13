@@ -39,3 +39,22 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# logs
+*.log
+server.log
+dev-output.log
+
+# test results
+/test-results/
+/playwright-report/
+
+# temporary files
+*.tmp
+*.temp
+
+# host info (contains SSH credentials)
+host info.md
+
+# deployment archives
+*.zip

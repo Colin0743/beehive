@@ -19,10 +19,10 @@ const enResources = {
     
     // Categories
     all: 'All',
-    sciFi: 'Sci-Fi',
+    film: 'Film',
     animation: 'Animation',
-    documentary: 'Documentary',
-    education: 'Education',
+    commercial: 'Commercial',
+    publicWelfare: 'Public Welfare',
     other: 'Other',
     
     // Hero Section
@@ -34,6 +34,7 @@ const enResources = {
     completed: 'completed',
     days: 'days',
     minutes: 'minutes',
+    seconds: 'seconds',
     target: 'Target',
     completedBadge: 'Completed',
     
@@ -52,9 +53,15 @@ const enResources = {
     firstProjectCTA: 'Be the first creator to create an AI video project on the Bee Studio!',
     createFirstProject: 'Create First Project',
     
+    // My Works
+    myWorks: 'My Works',
+    viewAllWorks: 'View All Works',
+
     // Featured Projects
     featuredProjects: 'Featured Projects',
     categoryProjects: '{{category}} Projects',
+    viewAllProjects: 'View All',
+    allProjectsTitle: 'All Projects',
     
     // Footer
     footerDescription: 'AI video creators collaboration platform, let creativity bloom in the Bee Studio',
@@ -76,6 +83,7 @@ const enResources = {
     
     // Loading
     loading: 'Loading...',
+    loadingText: 'Loading',
     
     // Common Actions
     save: 'Save',
@@ -85,6 +93,104 @@ const enResources = {
     edit: 'Edit',
     view: 'View',
     share: 'Share',
+    retry: 'Retry',
+    
+    // Error Pages
+    somethingWentWrong: 'Something went wrong',
+    errorDetails: 'Error details (dev mode)',
+    backToHomePage: 'Back to Home',
+    
+    // Inline Edit
+    notSelected: 'Not selected',
+    noDescription: 'No description',
+    editDescription: 'Edit description',
+    savingText: 'Saving...',
+    clickToUploadInline: 'Click to upload',
+    uploadingText: 'Uploading...',
+    uploadingPleaseWait: 'Uploading, please wait...',
+    noCoverImage: 'No cover image',
+    noVideo: 'No video',
+    changeImage: 'Change image',
+    changeVideo: 'Change video',
+    unsupportedImageFormat: 'Unsupported image format, please upload JPG, PNG or GIF',
+    unsupportedVideoFormat: 'Unsupported video format, please upload MP4 or MOV',
+    fileSizeExceeded: 'File size exceeds limit (max {{size}})',
+    saveFailed: 'Save failed, please retry',
+    fileProcessFailed: 'File processing failed, please retry',
+    inputDescPlaceholder: 'Enter project description...',
+    
+    // Task Form
+    taskDurationLabel: 'Task Duration (seconds)',
+    taskDurationHint: 'seconds (5 - 30)',
+    
+    // Categories Page
+    categoryProjectsTitle: '{{category}} Projects',
+    foundProjectsCount: 'Found {{count}} projects',
+    backToCategories: '← Back to Categories',
+    noCategoryProjectsTitle: 'No {{category}} projects',
+    noCategoryProjectsDesc: 'No one has created {{category}} projects yet',
+    createFirstCategoryProject: 'Create first {{category}} project',
+    categoryBrowseTitle: '📁 Browse Categories',
+    categoryBrowseDesc: 'Browse different categories of AI video projects and discover what interests you',
+    totalProjectsInCategory: '{{count}} projects in total',
+    viewAll: 'View All →',
+    completedLabel: 'Completed',
+    percentCompleted: '{{percent}}% completed',
+    progress: 'Progress',
+    
+    // Sorting
+    sortHot: 'Hot',
+    sortNewest: 'Newest',
+    sortFastest: 'Fastest Progress',
+    sortMostParticipants: 'Most Participants',
+    
+    // Media
+    coverPreview: 'Cover preview',
+    
+    // Inline Edit - Number
+    invalidNumber: 'Please enter a valid number',
+    valueTooSmall: 'Value cannot be less than {{min}}',
+    valueTooLarge: 'Value cannot be greater than {{max}}',
+    notSet: 'Not set',
+    
+    // Toast
+    closeToast: 'Close notification',
+    
+    // Rich Text Editor
+    startEditing: 'Start editing...',
+    imageTooLarge: 'Image size cannot exceed 5MB',
+    imageProcessFailed: 'Image processing failed, please retry',
+    
+    // Terms Page
+    termsTitle: 'Terms of Service',
+    termsLastUpdated: 'Last updated: January 2025',
+    'terms.section1Title': '1. Service Description',
+    'terms.section1Content': 'Beehive is an AI video creator collaboration platform that provides users with project publishing, browsing and participation features. By using this platform, you agree to comply with the following terms.',
+    'terms.section2Title': '2. User Accounts',
+    'terms.section2Item1': 'You must provide accurate and complete registration information',
+    'terms.section2Item2': 'You are responsible for protecting your account security and must not share your account with others',
+    'terms.section2Item3': 'You are responsible for all activities under your account',
+    'terms.section2Item4': 'If you discover unauthorized use, please notify us immediately',
+    'terms.section3Title': '3. User Conduct',
+    'terms.section3Intro': 'When using this platform, you agree not to:',
+    'terms.section3Item1': 'Post illegal, harmful, threatening, abusive, or harassing content',
+    'terms.section3Item2': 'Infringe on others\' intellectual property or privacy rights',
+    'terms.section3Item3': 'Post false or misleading information',
+    'terms.section3Item4': 'Interfere with or disrupt the normal operation of the platform',
+    'terms.section3Item5': 'Collect other users\' information without authorization',
+    'terms.section4Title': '4. Content Ownership',
+    'terms.section4Content': 'You retain ownership of original content you post on the platform. However, you grant Beehive a non-exclusive, royalty-free license to display and distribute your content on the platform. You ensure you have the right to post all submitted content.',
+    'terms.section5Title': '5. Disclaimer',
+    'terms.section5Item1': 'The platform is provided "as is" without any express or implied warranties',
+    'terms.section5Item2': 'We are not responsible for the results of collaboration between users',
+    'terms.section5Item3': 'We are not responsible for the content of third-party links (such as Telegram groups)',
+    'terms.section5Item4': 'We do not guarantee that the service will be uninterrupted or error-free',
+    'terms.section6Title': '6. Limitation of Liability',
+    'terms.section6Content': 'To the maximum extent permitted by law, Beehive and its affiliates shall not be liable for any indirect, incidental, special, consequential, or punitive damages.',
+    'terms.section7Title': '7. Modification of Terms',
+    'terms.section7Content': 'We reserve the right to modify these terms at any time. Modified terms will be published on the platform, and continued use of the service constitutes acceptance of the modified terms.',
+    'terms.section8Title': '8. Contact Information',
+    'terms.section8Content': 'If you have any questions, please contact us at contact@beehive.ai.',
     
     // Search Page
     searchResults: 'Search Results',
@@ -181,6 +287,10 @@ const enResources = {
     registerSuccess: 'Registration successful',
     
     // Profile Page
+    clickToChangeAvatar: 'Click to change avatar',
+    nickname: 'Nickname',
+    enterNickname: 'Enter your nickname',
+    emailNotEditable: 'Email cannot be changed',
     createdProjectsTab: 'Created Projects',
     participatedProjectsTab: 'Participated Projects',
     projects: 'projects',
@@ -201,7 +311,7 @@ const enResources = {
     projectDescriptionTip: 'Tip: Supports headings, bold, lists, images and more. Images are automatically compressed.',
     projectCategory: 'Project Category',
     selectCategory: 'Select a category',
-    targetDurationLabel: 'Target Duration (minutes)',
+    targetDurationLabel: 'Target Duration (seconds)',
     targetDurationPlaceholder: 'e.g., 5',
     coverImage: 'Cover Image',
     clickToUpload: 'Click to upload',
@@ -219,7 +329,7 @@ const enResources = {
     descriptionMinLength: 'Description must be at least 20 characters (excluding formatting)',
     categoryRequired: 'Please select a category',
     durationRequired: 'Please enter target duration',
-    invalidDuration: 'Please enter a valid duration (minutes)',
+    invalidDuration: 'Please enter a valid duration (seconds)',
     coverRequired: 'Please upload a cover image',
     createFailed: 'Failed to create project, please try again',
     createSuccess: 'Project created successfully',
@@ -234,7 +344,7 @@ const enResources = {
     
     // Edit Project Page
     editProjectTitle: 'Edit Project',
-    currentDurationLabel: 'Current Duration (minutes)',
+    currentDurationLabel: 'Current Duration (seconds)',
     currentDurationError: 'Please enter a valid current duration',
     currentDurationExceedsTarget: 'Current duration cannot exceed target duration',
     updateFailed: 'Failed to update project, please try again',
@@ -243,6 +353,224 @@ const enResources = {
     saveChanges: 'Save Changes',
     coverUploadSuccess: 'Cover image uploaded successfully',
     videoUploadSuccess: 'Video uploaded successfully',
+    
+    // Task System
+    taskHall: 'Task Hall',
+    tasks: 'Tasks',
+    createTask: 'Create Task',
+    editTask: 'Edit Task',
+    deleteTask: 'Delete Task',
+    publishTask: 'Publish Task',
+    completeTask: 'Complete Task',
+    completeTaskShort: 'Complete',
+    acceptTask: 'Accept Task',
+    taskPrompt: 'Prompt',
+    taskRequirements: 'Task Requirements',
+    taskReferenceImages: 'Reference Images',
+    creatorEmail: 'Creator Email',
+    taskStatus: 'Task Status',
+    taskDraft: 'Draft',
+    taskPublished: 'Published',
+    taskCompleted: 'Completed',
+    contributorName: 'Contributor Name',
+    enterContributorName: 'Please enter contributor name',
+    taskCreated: 'Task created successfully',
+    taskUpdated: 'Task updated successfully',
+    taskDeleted: 'Task deleted successfully',
+    taskPublishedSuccess: 'Task published successfully',
+    taskCompletedSuccess: 'Task completed successfully',
+    taskAccepted: 'Task accepted successfully',
+    emailCopied: 'Email copied to clipboard',
+    maxTasksReached: 'Each project can have a maximum of 10 tasks',
+    promptRequired: 'Please enter a prompt',
+    emailRequiredTask: 'Please enter an email',
+    invalidEmailFormat: 'Please enter a valid email address',
+    confirmDeleteTask: 'Are you sure you want to delete this task?',
+    noTasks: 'No tasks yet',
+    noPublishedTasks: 'No published tasks yet',
+    viewAllTasks: 'View All Tasks',
+    taskOf: "'s Tasks",
+    taskOrder: 'Task Order',
+    clickToUploadRef: 'Click to upload reference images',
+    refImageRequirements: 'Supports JPG, PNG formats',
+    refImageFormatError: 'Please select JPG or PNG format images',
+    taskPromptPlaceholder: 'Enter the prompt for AI video generation...',
+    taskRequirementsPlaceholder: 'Describe specific requirements such as video style, duration, resolution, etc...',
+    emailPlaceholderTask: 'For receiving video submissions from contributors',
+
+    // Notifications
+    notifications: 'Notifications',
+    noNotifications: 'No notifications',
+    markAllRead: 'Mark All Read',
+    taskCompletedNotification: 'Task "{{taskName}}" has been completed by {{contributorName}}',
+    contributionAcceptedNotification: 'Congratulations! Your contribution to task "{{taskName}}" has been accepted!',
+
+    // Achievements
+    achievements: 'Achievements',
+    noAchievements: 'No achievements yet',
+    achievementDesc: 'Accept tasks in the Task Hall and contribute your computing power',
+    completedBy: 'Completed by',
+    completedOn: 'Completed on',
+
+    // Profile - My Projects & Achievements
+    myProjects: 'My Projects',
+    myAchievements: 'My Achievements',
+
+    // Task Hall Page
+    taskHallTitle: 'Task Hall',
+    taskHallDesc: 'Browse all published tasks and contribute your computing power',
+    filterByCategory: 'Filter by Category',
+    allCategories: 'All Categories',
+    recentTasks: 'Recent Tasks',
+
+    // User Dropdown
+    'userDropdown.profile': 'My Profile',
+    'userDropdown.myProjects': 'My Projects',
+    'userDropdown.balance': 'Balance',
+    'userDropdown.recharge': 'Recharge',
+    'userDropdown.logout': 'Log Out',
+
+    balance: 'Balance',
+    recharge: 'Recharge',
+    balanceYuan: '¥{{amount}}',
+    insufficientBalance: 'Insufficient balance. Recharge to publish tasks.',
+    rechargeToPublish: 'Recharge to publish',
+    rechargeTitle: 'Recharge Balance',
+    rechargeDesc: 'Publish tasks costs {{fee}} per task. Recharge to continue.',
+    selectAmount: 'Select amount',
+    mockPayConfirm: 'Simulate payment success',
+    payNow: 'Pay now',
+    rechargeSuccess: 'Recharge successful',
+    paymentChannel: 'Payment channel',
+    paymentChannelAlipayPc: 'Alipay (PC)',
+    paymentChannelAlipayWap: 'Alipay (Mobile)',
+    paymentChannelWxPub: 'WeChat Pay',
+    paymentChannelWxNative: 'WeChat Pay (Scan QR)',
+    redirectingToPay: 'Redirecting to payment...',
+    paymentReturnSuccess: 'Payment successful! Balance updated.',
+    paymentReturnPending: 'Waiting for payment confirmation...',
+    wechatScanQrHint: 'Please scan the QR code with WeChat to complete payment',
+    taskPublishFeeNotice: 'Publishing this task will deduct ¥{{fee}} from your balance.',
+    taskCurrentBalanceNotice: 'Current balance: ¥{{balance}}',
+    publishTaskWithFee: 'Publish Task (¥{{fee}})',
+    insufficientBalanceTitle: 'Insufficient balance',
+    goToRecharge: 'Go to Recharge',
+    downloadAllImages: 'Download All Images',
+    copy: 'Copy',
+    copyEmail: 'Copy Email',
+    copyEmailAndAccept: 'Copy Email & Accept',
+    copiedAndAccepted: 'Copied & Accepted',
+    copiedToClipboard: '{{label}} copied to clipboard',
+    copyFailed: 'Copy failed',
+
+    // Task Hall Redesign
+    searchTasks: 'Search tasks...',
+    totalTasks: 'Total Tasks',
+    hotProjects: 'Hot Projects',
+    noHotProjects: 'No hot projects yet',
+    justNow: 'Just now',
+    minutesAgo: '{{count}} min ago',
+    hoursAgo: '{{count}} hr ago',
+    daysAgo: '{{count}} days ago',
+    longAgo: 'Long time ago',
+    taskDuration: 'Duration',
+    clearSearch: 'Clear Search',
+    tryOtherKeywords: 'Try other keywords',
+
+    // Task Wall Redesign - 任务墙重新设计
+    refreshCountdown: 'Next refresh in',
+    manualRefresh: 'Refresh now',
+    taskTitle: 'Task Title',
+    taskPromptPreview: 'Prompt Preview',
+    viewOtherCategories: 'Try other categories',
+    noImage: 'No Image',
+    taskDetailTitle: 'Task Details',
+    fullPrompt: 'Full Prompt',
+    projectInfo: 'Project',
+    closeModal: 'Close',
+
+    // Admin System
+    'admin.systemTitle': 'Beehive Admin',
+    'admin.dashboard': 'Dashboard',
+    'admin.projectManagement': 'Project Management',
+    'admin.userManagement': 'User Management',
+    'admin.backToHome': 'Back to Home',
+    'admin.noPermission': 'You do not have permission to access the admin system',
+
+    // Admin Dashboard
+    'admin.totalProjects': 'Total Projects',
+    'admin.activeProjects': 'Active Projects',
+    'admin.totalUsers': 'Total Users',
+    'admin.totalParticipants': 'Total Participants',
+    'admin.completedProjects': 'Completed Projects',
+    'admin.pausedProjects': 'Paused Projects',
+    'admin.totalDuration': 'Total Duration',
+    'admin.recentProjects': 'Recent Projects',
+    'admin.recentUsers': 'Recent Users',
+    'admin.noProjectsYet': 'No projects yet',
+    'admin.noUsersYet': 'No users yet',
+    'admin.viewAllProjects': 'View All Projects',
+    'admin.viewAllUsers': 'View All Users',
+    'admin.statusActive': 'Active',
+    'admin.statusCompleted': 'Completed',
+    'admin.statusPaused': 'Paused',
+    'admin.statusDisabled': 'Disabled',
+    'admin.durationSeconds': '{{count}}s',
+    'admin.durationMinSec': '{{min}}m{{sec}}s',
+    'admin.durationMinutes': '{{min}} minutes',
+
+    // Admin Projects Page
+    'admin.totalProjectsCount': '{{count}} projects in total',
+    'admin.search': 'Search',
+    'admin.searchProjectsPlaceholder': 'Search project name, description or creator...',
+    'admin.status': 'Status',
+    'admin.allStatuses': 'All Statuses',
+    'admin.category': 'Category',
+    'admin.allCategories': 'All Categories',
+    'admin.projectInfo': 'Project Info',
+    'admin.creator': 'Creator',
+    'admin.participantsCountLabel': 'Participants',
+    'admin.createdTime': 'Created Time',
+    'admin.actions': 'Actions',
+    'admin.view': 'View',
+    'admin.edit': 'Edit',
+    'admin.confirmAction': 'Confirm',
+    'admin.cancelAction': 'Cancel',
+    'admin.delete': 'Delete',
+    'admin.noProjectsFound': 'No projects found',
+    'admin.projectDeleted': 'Project deleted',
+    'admin.projectStatusUpdated': 'Project status updated',
+    'admin.deleteFailed': 'Delete failed',
+    'admin.updateFailed': 'Update failed',
+
+    // Admin Users Page
+    'admin.totalUsersCount': '{{count}} users in total',
+    'admin.searchUsersPlaceholder': 'Search username or email...',
+    'admin.role': 'Role',
+    'admin.allRoles': 'All Roles',
+    'admin.roleUser': 'User',
+    'admin.roleAdmin': 'Admin',
+    'admin.roleSuperAdmin': 'Super Admin',
+    'admin.userInfo': 'User Info',
+    'admin.projectCount': 'Projects',
+    'admin.registrationTime': 'Registration Time',
+    'admin.details': 'Details',
+    'admin.noUsersFound': 'No users found',
+    'admin.userStatusUpdated': 'User status updated',
+    'admin.userRoleUpdated': 'User role updated',
+    'admin.userDeleted': 'User deleted',
+    'admin.confirmDeleteUser': 'Are you sure you want to delete this user? This action cannot be undone.',
+
+    // Admin User Detail Page
+    'admin.backToUserList': '← Back to User List',
+    'admin.userRole': 'User Role',
+    'admin.accountStatus': 'Account Status',
+    'admin.activeStatus': '✓ Active',
+    'admin.disabledStatus': '✗ Disabled',
+    'admin.createdProjects': 'Created Projects',
+    'admin.createdProjectsCount': 'Created Projects ({{count}})',
+    'admin.noUserProjects': 'This user has not created any projects yet',
+    'admin.userNotFound': 'User not found',
   }
 };
 
@@ -264,10 +592,10 @@ const zhResources = {
     
     // Categories
     all: '全部',
-    sciFi: '科幻',
+    film: '电影',
     animation: '动画',
-    documentary: '纪录片',
-    education: '教育',
+    commercial: '商业制作',
+    publicWelfare: '公益',
     other: '其他',
     
     // Hero Section
@@ -279,6 +607,7 @@ const zhResources = {
     completed: '完成',
     days: '天',
     minutes: '分钟',
+    seconds: '秒',
     target: '目标',
     completedBadge: '已完成',
     
@@ -297,9 +626,15 @@ const zhResources = {
     firstProjectCTA: '成为第一个在蜜蜂AI电影制片厂创建AI视频项目的创作者！',
     createFirstProject: '创建第一个项目',
     
+    // 我的作品
+    myWorks: '我的作品',
+    viewAllWorks: '查看全部作品',
+
     // Featured Projects
     featuredProjects: '精选项目',
     categoryProjects: '{{category}}项目',
+    viewAllProjects: '查看全部',
+    allProjectsTitle: '全部项目',
     
     // Footer
     footerDescription: 'AI视频创作者的协作平台，让创意在蜜蜂AI电影制片厂中绽放',
@@ -321,6 +656,7 @@ const zhResources = {
     
     // Loading
     loading: '加载中...',
+    loadingText: '加载中',
     
     // Common Actions
     save: '保存',
@@ -330,6 +666,104 @@ const zhResources = {
     edit: '编辑',
     view: '查看',
     share: '分享',
+    retry: '重试',
+    
+    // Error Pages
+    somethingWentWrong: '出错了',
+    errorDetails: '错误详情（开发模式）',
+    backToHomePage: '返回首页',
+    
+    // Inline Edit
+    notSelected: '未选择',
+    noDescription: '暂无描述',
+    editDescription: '编辑描述',
+    savingText: '保存中...',
+    clickToUploadInline: '点击上传',
+    uploadingText: '上传中...',
+    uploadingPleaseWait: '上传中，请稍候...',
+    noCoverImage: '暂无封面图片',
+    noVideo: '暂无视频',
+    changeImage: '更换图片',
+    changeVideo: '更换视频',
+    unsupportedImageFormat: '不支持的图片格式，请上传 JPG、PNG 或 GIF',
+    unsupportedVideoFormat: '不支持的视频格式，请上传 MP4 或 MOV',
+    fileSizeExceeded: '文件大小超过限制（最大 {{size}}）',
+    saveFailed: '保存失败，请重试',
+    fileProcessFailed: '文件处理失败，请重试',
+    inputDescPlaceholder: '输入项目描述...',
+    
+    // Task Form
+    taskDurationLabel: '任务时长（秒）',
+    taskDurationHint: '秒（5 - 30）',
+    
+    // Categories Page
+    categoryProjectsTitle: '{{category}}项目',
+    foundProjectsCount: '共找到 {{count}} 个项目',
+    backToCategories: '← 返回分类浏览',
+    noCategoryProjectsTitle: '暂无{{category}}项目',
+    noCategoryProjectsDesc: '还没有人创建{{category}}类型的项目',
+    createFirstCategoryProject: '创建第一个{{category}}项目',
+    categoryBrowseTitle: '📁 分类浏览',
+    categoryBrowseDesc: '浏览不同类别的AI视频项目，发现你感兴趣的创作',
+    totalProjectsInCategory: '共 {{count}} 个项目',
+    viewAll: '查看全部 →',
+    completedLabel: '已完成',
+    percentCompleted: '{{percent}}% 已完成',
+    progress: '进度',
+    
+    // Sorting
+    sortHot: '热门',
+    sortNewest: '最新',
+    sortFastest: '进度最快',
+    sortMostParticipants: '参与者最多',
+    
+    // Media
+    coverPreview: '封面预览',
+    
+    // Inline Edit - Number
+    invalidNumber: '请输入有效的数字',
+    valueTooSmall: '数值不能小于 {{min}}',
+    valueTooLarge: '数值不能大于 {{max}}',
+    notSet: '未设置',
+    
+    // Toast
+    closeToast: '关闭提示',
+    
+    // Rich Text Editor
+    startEditing: '开始编辑...',
+    imageTooLarge: '图片大小不能超过5MB',
+    imageProcessFailed: '图片处理失败，请重试',
+    
+    // Terms Page
+    termsTitle: '服务条款',
+    termsLastUpdated: '最后更新日期：2025年1月',
+    'terms.section1Title': '1. 服务说明',
+    'terms.section1Content': '蜂巢是一个AI视频创作者协作平台，为用户提供项目发布、浏览和参与的功能。使用本平台即表示您同意遵守以下条款。',
+    'terms.section2Title': '2. 用户账户',
+    'terms.section2Item1': '您必须提供准确、完整的注册信息',
+    'terms.section2Item2': '您有责任保护账户安全，不得与他人共享账户',
+    'terms.section2Item3': '您对账户下的所有活动负责',
+    'terms.section2Item4': '如发现未授权使用，请立即通知我们',
+    'terms.section3Title': '3. 用户行为规范',
+    'terms.section3Intro': '使用本平台时，您同意不会：',
+    'terms.section3Item1': '发布违法、有害、威胁、辱骂、骚扰性内容',
+    'terms.section3Item2': '侵犯他人知识产权或隐私权',
+    'terms.section3Item3': '发布虚假或误导性信息',
+    'terms.section3Item4': '干扰或破坏平台的正常运行',
+    'terms.section3Item5': '未经授权收集其他用户的信息',
+    'terms.section4Title': '4. 内容所有权',
+    'terms.section4Content': '您保留您在平台上发布的原创内容的所有权。但您授予蜂巢非独占、免版税的许可，允许我们在平台上展示、分发您的内容。您确保您有权发布所提交的所有内容。',
+    'terms.section5Title': '5. 免责声明',
+    'terms.section5Item1': '平台按"现状"提供，不提供任何明示或暗示的保证',
+    'terms.section5Item2': '我们不对用户之间的协作结果负责',
+    'terms.section5Item3': '我们不对第三方链接（如Telegram群组）的内容负责',
+    'terms.section5Item4': '我们不保证服务不会中断或无错误',
+    'terms.section6Title': '6. 责任限制',
+    'terms.section6Content': '在法律允许的最大范围内，蜂巢及其关联方不对任何间接、附带、特殊、后果性或惩罚性损害承担责任。',
+    'terms.section7Title': '7. 条款修改',
+    'terms.section7Content': '我们保留随时修改本条款的权利。修改后的条款将在平台上公布，继续使用服务即表示您接受修改后的条款。',
+    'terms.section8Title': '8. 联系方式',
+    'terms.section8Content': '如有任何问题，请通过 contact@beehive.ai 联系我们。',
     
     // Search Page
     searchResults: '搜索结果',
@@ -426,6 +860,10 @@ const zhResources = {
     registerSuccess: '注册成功',
     
     // Profile Page
+    clickToChangeAvatar: '点击更换头像',
+    nickname: '昵称',
+    enterNickname: '输入你的昵称',
+    emailNotEditable: '邮箱不可修改',
     createdProjectsTab: '发起的项目',
     participatedProjectsTab: '参与的项目',
     projects: '个项目',
@@ -439,14 +877,14 @@ const zhResources = {
     // New Project Page
     createNewProject: '创建新项目',
     projectTitle: '项目标题',
-    projectTitlePlaceholder: '例如：科幻短片：未来城市',
+    projectTitlePlaceholder: '例如：动画短片：未来城市',
     projectDescriptionLabel: '项目描述',
     projectDescriptionHelp: '使用富文本编辑器添加标题、章节、加粗文字和图片，让项目描述更加丰富生动',
     projectDescriptionPlaceholder: '详细描述你的项目创意、目标和需求...',
     projectDescriptionTip: '提示：支持标题、加粗、列表、图片等功能。图片会自动压缩并嵌入到内容中。',
     projectCategory: '项目分类',
     selectCategory: '请选择分类',
-    targetDurationLabel: '目标时长（分钟）',
+    targetDurationLabel: '目标时长（秒）',
     targetDurationPlaceholder: '例如：5',
     coverImage: '项目封面图片',
     clickToUpload: '点击上传',
@@ -464,7 +902,7 @@ const zhResources = {
     descriptionMinLength: '描述至少需要20个字符（不包括格式）',
     categoryRequired: '请选择项目分类',
     durationRequired: '请输入目标时长',
-    invalidDuration: '请输入有效的时长（分钟）',
+    invalidDuration: '请输入有效的时长（秒）',
     coverRequired: '请上传项目封面图片',
     createFailed: '创建项目失败，请重试',
     createSuccess: '项目创建成功',
@@ -479,7 +917,7 @@ const zhResources = {
     
     // Edit Project Page
     editProjectTitle: '编辑项目',
-    currentDurationLabel: '当前时长（分钟）',
+    currentDurationLabel: '当前时长（秒）',
     currentDurationError: '请输入有效的当前时长',
     currentDurationExceedsTarget: '当前时长不能超过目标时长',
     updateFailed: '更新项目失败，请重试',
@@ -488,6 +926,224 @@ const zhResources = {
     saveChanges: '保存更改',
     coverUploadSuccess: '封面图片上传成功',
     videoUploadSuccess: '视频上传成功',
+    
+    // Task System - 任务系统
+    taskHall: '任务大厅',
+    tasks: '任务',
+    createTask: '创建任务',
+    editTask: '编辑任务',
+    deleteTask: '删除任务',
+    publishTask: '发布任务',
+    completeTask: '完成任务',
+    completeTaskShort: '完成',
+    acceptTask: '接受任务',
+    taskPrompt: '提示词',
+    taskRequirements: '任务需求',
+    taskReferenceImages: '参考图片',
+    creatorEmail: '创建者邮箱',
+    taskStatus: '任务状态',
+    taskDraft: '草稿',
+    taskPublished: '已发布',
+    taskCompleted: '已完成',
+    contributorName: '贡献者名称',
+    enterContributorName: '请输入贡献者名称',
+    taskCreated: '任务创建成功',
+    taskUpdated: '任务更新成功',
+    taskDeleted: '任务删除成功',
+    taskPublishedSuccess: '任务发布成功',
+    taskCompletedSuccess: '任务完成成功',
+    taskAccepted: '任务接受成功',
+    emailCopied: '邮箱已复制到剪贴板',
+    maxTasksReached: '每个项目最多只能创建10个任务',
+    promptRequired: '请输入提示词',
+    emailRequiredTask: '请输入邮箱',
+    invalidEmailFormat: '请输入有效的邮箱地址',
+    confirmDeleteTask: '确定要删除这个任务吗？',
+    noTasks: '暂无任务',
+    noPublishedTasks: '暂无已发布的任务',
+    viewAllTasks: '查看全部任务',
+    taskOf: '的任务',
+    taskOrder: '任务顺序',
+    clickToUploadRef: '点击上传参考图片',
+    refImageRequirements: '支持JPG、PNG格式',
+    refImageFormatError: '请选择 JPG 或 PNG 格式的图片',
+    taskPromptPlaceholder: '输入AI视频生成的提示词...',
+    taskRequirementsPlaceholder: '描述任务的具体要求，如视频风格、时长、分辨率等...',
+    emailPlaceholderTask: '用于接收算力支持者提交的视频',
+
+    // Notifications - 通知
+    notifications: '通知',
+    noNotifications: '暂无通知',
+    markAllRead: '全部已读',
+    taskCompletedNotification: '任务「{{taskName}}」已完成，完成者：{{contributorName}}',
+    contributionAcceptedNotification: '恭喜！你对任务「{{taskName}}」的贡献已被采纳！',
+
+    // Achievements - 成就
+    achievements: '成就',
+    noAchievements: '暂无成就记录',
+    achievementDesc: '在任务大厅接受任务，贡献你的算力',
+    completedBy: '完成者',
+    completedOn: '完成于',
+
+    // Profile - 个人主页
+    myProjects: '我的项目',
+    myAchievements: '我的成就',
+
+    // Task Hall Page - 任务大厅
+    taskHallTitle: '任务大厅',
+    taskHallDesc: '浏览所有已发布的任务，贡献你的算力',
+    filterByCategory: '按分类筛选',
+    allCategories: '全部分类',
+    recentTasks: '最新任务',
+
+    // User Dropdown - 用户下拉菜单
+    'userDropdown.profile': '个人主页',
+    'userDropdown.myProjects': '我的项目',
+    'userDropdown.balance': '余额',
+    'userDropdown.recharge': '充值',
+    'userDropdown.logout': '退出登录',
+
+    balance: '余额',
+    recharge: '充值',
+    balanceYuan: '¥{{amount}}',
+    insufficientBalance: '余额不足，请充值后再发布任务',
+    rechargeToPublish: '去充值',
+    rechargeTitle: '余额充值',
+    rechargeDesc: '发布任务每次需支付 {{fee}} 元，请先充值',
+    selectAmount: '选择金额',
+    mockPayConfirm: '模拟支付成功',
+    payNow: '立即支付',
+    rechargeSuccess: '充值成功',
+    paymentChannel: '支付渠道',
+    paymentChannelAlipayPc: '支付宝（电脑）',
+    paymentChannelAlipayWap: '支付宝（手机）',
+    paymentChannelWxPub: '微信支付',
+    paymentChannelWxNative: '微信扫码支付',
+    redirectingToPay: '正在跳转支付...',
+    paymentReturnSuccess: '支付成功！余额已更新。',
+    paymentReturnPending: '等待支付确认中...',
+    wechatScanQrHint: '请使用微信扫描二维码完成支付',
+    taskPublishFeeNotice: '发布该任务将从余额扣除 ¥{{fee}}',
+    taskCurrentBalanceNotice: '当前余额：¥{{balance}}',
+    publishTaskWithFee: '发布任务 (¥{{fee}})',
+    insufficientBalanceTitle: '余额不足请充值',
+    goToRecharge: '前往充值',
+    downloadAllImages: '下载全部图片',
+    copy: '复制',
+    copyEmail: '复制邮箱',
+    copyEmailAndAccept: '复制邮箱并接受',
+    copiedAndAccepted: '已接受（邮箱已复制）',
+    copiedToClipboard: '{{label}} 已复制到剪贴板',
+    copyFailed: '复制失败',
+
+    // Task Hall Redesign - 任务大厅重设计
+    searchTasks: '搜索任务...',
+    totalTasks: '任务总数',
+    hotProjects: '热门项目',
+    noHotProjects: '暂无热门项目',
+    justNow: '刚刚',
+    minutesAgo: '{{count}}分钟前',
+    hoursAgo: '{{count}}小时前',
+    daysAgo: '{{count}}天前',
+    longAgo: '很久以前',
+    taskDuration: '任务时长',
+    clearSearch: '清除搜索',
+    tryOtherKeywords: '尝试其他关键词',
+
+    // Task Wall Redesign - 任务墙重新设计
+    refreshCountdown: '距离下次刷新还剩',
+    manualRefresh: '立即刷新',
+    taskTitle: '任务标题',
+    taskPromptPreview: '提示词预览',
+    viewOtherCategories: '试试其他分类',
+    noImage: '暂无图片',
+    taskDetailTitle: '任务详情',
+    fullPrompt: '完整提示词',
+    projectInfo: '所属项目',
+    closeModal: '关闭',
+
+    // Admin System - 管理系统
+    'admin.systemTitle': '蜂巢管理系统',
+    'admin.dashboard': '数据统计',
+    'admin.projectManagement': '项目管理',
+    'admin.userManagement': '用户管理',
+    'admin.backToHome': '返回首页',
+    'admin.noPermission': '您没有权限访问管理系统',
+
+    // Admin Dashboard - 管理仪表盘
+    'admin.totalProjects': '总项目数',
+    'admin.activeProjects': '活跃项目',
+    'admin.totalUsers': '总用户数',
+    'admin.totalParticipants': '总参与人数',
+    'admin.completedProjects': '已完成项目',
+    'admin.pausedProjects': '已暂停项目',
+    'admin.totalDuration': '总时长',
+    'admin.recentProjects': '最近创建的项目',
+    'admin.recentUsers': '最近注册的用户',
+    'admin.noProjectsYet': '暂无项目',
+    'admin.noUsersYet': '暂无用户',
+    'admin.viewAllProjects': '查看全部项目',
+    'admin.viewAllUsers': '查看全部用户',
+    'admin.statusActive': '活跃',
+    'admin.statusCompleted': '已完成',
+    'admin.statusPaused': '已暂停',
+    'admin.statusDisabled': '已禁用',
+    'admin.durationSeconds': '{{count}}秒',
+    'admin.durationMinSec': '{{min}}分{{sec}}秒',
+    'admin.durationMinutes': '{{min}}分钟',
+
+    // Admin Projects Page - 项目管理页面
+    'admin.totalProjectsCount': '共 {{count}} 个项目',
+    'admin.search': '搜索',
+    'admin.searchProjectsPlaceholder': '搜索项目名称、描述或创建者...',
+    'admin.status': '状态',
+    'admin.allStatuses': '全部状态',
+    'admin.category': '分类',
+    'admin.allCategories': '全部分类',
+    'admin.projectInfo': '项目信息',
+    'admin.creator': '创建者',
+    'admin.participantsCountLabel': '参与人数',
+    'admin.createdTime': '创建时间',
+    'admin.actions': '操作',
+    'admin.view': '查看',
+    'admin.edit': '编辑',
+    'admin.confirmAction': '确认',
+    'admin.cancelAction': '取消',
+    'admin.delete': '删除',
+    'admin.noProjectsFound': '没有找到项目',
+    'admin.projectDeleted': '项目已删除',
+    'admin.projectStatusUpdated': '项目状态已更新',
+    'admin.deleteFailed': '删除失败',
+    'admin.updateFailed': '更新失败',
+
+    // Admin Users Page - 用户管理页面
+    'admin.totalUsersCount': '共 {{count}} 个用户',
+    'admin.searchUsersPlaceholder': '搜索用户名或邮箱...',
+    'admin.role': '角色',
+    'admin.allRoles': '全部角色',
+    'admin.roleUser': '普通用户',
+    'admin.roleAdmin': '管理员',
+    'admin.roleSuperAdmin': '超级管理员',
+    'admin.userInfo': '用户信息',
+    'admin.projectCount': '项目数',
+    'admin.registrationTime': '注册时间',
+    'admin.details': '详情',
+    'admin.noUsersFound': '没有找到用户',
+    'admin.userStatusUpdated': '用户状态已更新',
+    'admin.userRoleUpdated': '用户角色已更新',
+    'admin.userDeleted': '用户已删除',
+    'admin.confirmDeleteUser': '确定要删除此用户吗？此操作不可恢复。',
+
+    // Admin User Detail Page - 用户详情页面
+    'admin.backToUserList': '← 返回用户列表',
+    'admin.userRole': '用户角色',
+    'admin.accountStatus': '账号状态',
+    'admin.activeStatus': '✓ 活跃',
+    'admin.disabledStatus': '✗ 已禁用',
+    'admin.createdProjects': '创建的项目',
+    'admin.createdProjectsCount': '创建的项目 ({{count}})',
+    'admin.noUserProjects': '该用户还没有创建项目',
+    'admin.userNotFound': '用户不存在',
   }
 };
 
@@ -511,6 +1167,9 @@ if (typeof window !== 'undefined') {
       
       interpolation: {
         escapeValue: false,
+      },
+      react: {
+        useSuspense: false,
       },
     });
 }

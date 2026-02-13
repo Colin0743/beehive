@@ -2,11 +2,14 @@
 
 import React, { useState, useEffect } from 'react';
 import AdminLayout from '@/components/AdminLayout';
-import { projectStorage, userStorage } from '@/lib/storage';
+import { projectStorage, userStorage } from '@/lib/api';
 import { Project, User } from '@/types';
 import Link from 'next/link';
+import { useTranslation } from 'react-i18next';
+import '@/lib/i18n';
 
 export default function AdminDashboard() {
+  const { t } = useTranslation('common');
   const [stats, setStats] = useState({
     totalProjects: 0,
     activeProjects: 0,
@@ -25,15 +28,15 @@ export default function AdminDashboard() {
     loadStats();
   }, []);
 
-  const loadStats = () => {
+  const loadStats = async () => {
     setLoading(true);
-    
+
     // 加载项目数据
-    const projectsResult = projectStorage.getAllProjects();
+    const projectsResult = await projectStorage.getAllProjects();
     const projects = projectsResult.success ? (projectsResult.data || []) : [];
-    
+
     // 加载用户数据
-    const usersResult = userStorage.getAllUsers();
+    const usersResult = await userStorage.getAllUsers();
     const users = usersResult.success ? (usersResult.data || []) : [];
 
     // 计算统计数据
@@ -70,31 +73,43 @@ export default function AdminDashboard() {
     setLoading(false);
   };
 
-  const formatDuration = (minutes: number) => {
-    if (minutes < 60) return `${minutes}分钟`;
-    const hours = Math.floor(minutes / 60);
-    const mins = minutes % 60;
-    return mins > 0 ? `${hours}小时${mins}分钟` : `${hours}小时`;
+  const formatDuration = (seconds: number) => {
+    if (seconds < 60) return t('admin.durationSeconds', { count: seconds });
+    const minutes = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return secs > 0
+      ? t('admin.durationMinSec', { min: minutes, sec: secs })
+      : t('admin.durationMinutes', { min: minutes });
   };
 
   if (loading) {
     return (
       <AdminLayout>
         <div className="flex justify-center items-center h-64">
-          <div className="text-gray-500">加载中...</div>
+          <div className="text-[var(--text-secondary)]">{t('loading')}</div>
         </div>
       </AdminLayout>
     );
   }
 
+  // 计算项目完成进度百分比
+  const completionPercent = stats.totalProjects > 0
+    ? Math.round((stats.completedProjects / stats.totalProjects) * 100)
+    : 0;
+
   return (
     <AdminLayout>
       <div className="px-4 py-6 sm:px-0">
-        <h1 className="text-3xl font-bold text-gray-900 mb-6">数据统计</h1>
+        <h1
+          className="text-3xl font-bold text-[var(--text-primary)] mb-6"
+          style={{ fontFamily: 'var(--font-display)' }}
+        >
+          {t('admin.dashboard')}
+        </h1>
 
         {/* 统计卡片 */}
         <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4 mb-8">
-          <div className="bg-white overflow-hidden shadow rounded-lg">
+          <div className="card overflow-hidden animate-fade-up delay-1">
             <div className="p-5">
               <div className="flex items-center">
                 <div className="flex-shrink-0">
@@ -102,15 +117,19 @@ export default function AdminDashboard() {
                 </div>
                 <div className="ml-5 w-0 flex-1">
                   <dl>
-                    <dt className="text-sm font-medium text-gray-500 truncate">总项目数</dt>
-                    <dd className="text-2xl font-semibold text-gray-900">{stats.totalProjects}</dd>
+                    <dt className="text-sm font-medium text-[var(--text-secondary)] truncate">
+                      {t('admin.totalProjects')}
+                    </dt>
+                    <dd className="text-2xl font-semibold text-[var(--text-primary)]">
+                      {stats.totalProjects}
+                    </dd>
                   </dl>
                 </div>
               </div>
             </div>
           </div>
 
-          <div className="bg-white overflow-hidden shadow rounded-lg">
+          <div className="card overflow-hidden animate-fade-up delay-2">
             <div className="p-5">
               <div className="flex items-center">
                 <div className="flex-shrink-0">
@@ -118,15 +137,19 @@ export default function AdminDashboard() {
                 </div>
                 <div className="ml-5 w-0 flex-1">
                   <dl>
-                    <dt className="text-sm font-medium text-gray-500 truncate">活跃项目</dt>
-                    <dd className="text-2xl font-semibold text-green-600">{stats.activeProjects}</dd>
+                    <dt className="text-sm font-medium text-[var(--text-secondary)] truncate">
+                      {t('admin.activeProjects')}
+                    </dt>
+                    <dd className="text-2xl font-semibold text-[var(--success)]">
+                      {stats.activeProjects}
+                    </dd>
                   </dl>
                 </div>
               </div>
             </div>
           </div>
 
-          <div className="bg-white overflow-hidden shadow rounded-lg">
+          <div className="card overflow-hidden animate-fade-up delay-3">
             <div className="p-5">
               <div className="flex items-center">
                 <div className="flex-shrink-0">
@@ -134,15 +157,19 @@ export default function AdminDashboard() {
                 </div>
                 <div className="ml-5 w-0 flex-1">
                   <dl>
-                    <dt className="text-sm font-medium text-gray-500 truncate">总用户数</dt>
-                    <dd className="text-2xl font-semibold text-gray-900">{stats.totalUsers}</dd>
+                    <dt className="text-sm font-medium text-[var(--text-secondary)] truncate">
+                      {t('admin.totalUsers')}
+                    </dt>
+                    <dd className="text-2xl font-semibold text-[var(--text-primary)]">
+                      {stats.totalUsers}
+                    </dd>
                   </dl>
                 </div>
               </div>
             </div>
           </div>
 
-          <div className="bg-white overflow-hidden shadow rounded-lg">
+          <div className="card overflow-hidden animate-fade-up delay-4">
             <div className="p-5">
               <div className="flex items-center">
                 <div className="flex-shrink-0">
@@ -150,8 +177,12 @@ export default function AdminDashboard() {
                 </div>
                 <div className="ml-5 w-0 flex-1">
                   <dl>
-                    <dt className="text-sm font-medium text-gray-500 truncate">总参与人数</dt>
-                    <dd className="text-2xl font-semibold text-yellow-600">{stats.totalParticipants}</dd>
+                    <dt className="text-sm font-medium text-[var(--text-secondary)] truncate">
+                      {t('admin.totalParticipants')}
+                    </dt>
+                    <dd className="text-2xl font-semibold text-[var(--gold)]">
+                      {stats.totalParticipants}
+                    </dd>
                   </dl>
                 </div>
               </div>
@@ -161,22 +192,46 @@ export default function AdminDashboard() {
 
         {/* 项目状态统计 */}
         <div className="grid grid-cols-1 gap-5 sm:grid-cols-3 mb-8">
-          <div className="bg-white overflow-hidden shadow rounded-lg">
+          <div className="card overflow-hidden animate-fade-up delay-1">
             <div className="p-5">
-              <div className="text-sm font-medium text-gray-500">已完成项目</div>
-              <div className="text-2xl font-semibold text-blue-600">{stats.completedProjects}</div>
+              <div className="text-sm font-medium text-[var(--text-secondary)]">
+                {t('admin.completedProjects')}
+              </div>
+              <div className="text-2xl font-semibold text-[var(--gold)]">
+                {stats.completedProjects}
+              </div>
+              {/* 完成进度条 */}
+              <div className="mt-3">
+                <div className="progress-track">
+                  <div
+                    className="progress-fill"
+                    style={{ width: `${completionPercent}%` }}
+                  />
+                </div>
+                <div className="text-xs text-[var(--text-muted)] mt-1">
+                  {completionPercent}%
+                </div>
+              </div>
             </div>
           </div>
-          <div className="bg-white overflow-hidden shadow rounded-lg">
+          <div className="card overflow-hidden animate-fade-up delay-2">
             <div className="p-5">
-              <div className="text-sm font-medium text-gray-500">已暂停项目</div>
-              <div className="text-2xl font-semibold text-gray-600">{stats.pausedProjects}</div>
+              <div className="text-sm font-medium text-[var(--text-secondary)]">
+                {t('admin.pausedProjects')}
+              </div>
+              <div className="text-2xl font-semibold text-[var(--text-primary)]">
+                {stats.pausedProjects}
+              </div>
             </div>
           </div>
-          <div className="bg-white overflow-hidden shadow rounded-lg">
+          <div className="card overflow-hidden animate-fade-up delay-3">
             <div className="p-5">
-              <div className="text-sm font-medium text-gray-500">总时长</div>
-              <div className="text-2xl font-semibold text-purple-600">{formatDuration(stats.totalDuration)}</div>
+              <div className="text-sm font-medium text-[var(--text-secondary)]">
+                {t('admin.totalDuration')}
+              </div>
+              <div className="text-2xl font-semibold text-[var(--text-primary)]">
+                {formatDuration(stats.totalDuration)}
+              </div>
             </div>
           </div>
         </div>
@@ -184,33 +239,51 @@ export default function AdminDashboard() {
         {/* 最近项目和用户 */}
         <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
           {/* 最近项目 */}
-          <div className="bg-white shadow rounded-lg">
-            <div className="px-4 py-5 sm:px-6 border-b border-gray-200">
-              <h3 className="text-lg leading-6 font-medium text-gray-900">最近创建的项目</h3>
+          <div className="card overflow-hidden">
+            <div className="px-4 py-5 sm:px-6 border-b border-[var(--ink-border)]">
+              <h3
+                className="text-lg leading-6 font-medium text-[var(--text-primary)]"
+                style={{ fontFamily: 'var(--font-display)' }}
+              >
+                {t('admin.recentProjects')}
+              </h3>
             </div>
-            <div className="divide-y divide-gray-200">
+            <div>
               {recentProjects.length === 0 ? (
-                <div className="px-4 py-5 text-gray-500 text-center">暂无项目</div>
+                <div className="px-4 py-5 text-[var(--text-muted)] text-center">
+                  {t('admin.noProjectsYet')}
+                </div>
               ) : (
-                recentProjects.map((project) => (
-                  <div key={project.id} className="px-4 py-4 hover:bg-gray-50">
+                recentProjects.map((project, index) => (
+                  <div
+                    key={project.id}
+                    className={`px-4 py-4 hover:bg-[var(--ink-lighter)] transition-colors ${index < recentProjects.length - 1 ? 'border-b border-[var(--ink-border)]' : ''
+                      }`}
+                  >
                     <Link href={`/projects/${project.id}`} className="block">
                       <div className="flex items-center justify-between">
                         <div className="flex-1 min-w-0">
-                          <p className="text-sm font-medium text-gray-900 truncate">{project.title}</p>
-                          <p className="text-sm text-gray-500">
+                          <p className="text-sm font-medium text-[var(--text-primary)] truncate">
+                            {project.title}
+                          </p>
+                          <p className="text-sm text-[var(--text-secondary)]">
                             {project.creatorName} · {new Date(project.createdAt).toLocaleDateString()}
                           </p>
                         </div>
                         <div className="ml-4">
-                          <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                            project.status === 'active' ? 'bg-green-100 text-green-800' :
-                            project.status === 'completed' ? 'bg-blue-100 text-blue-800' :
-                            'bg-gray-100 text-gray-800'
-                          }`}>
-                            {project.status === 'active' ? '活跃' :
-                             project.status === 'completed' ? '已完成' : '已暂停'}
-                          </span>
+                          {project.status === 'active' ? (
+                            <span className="tag tag-gold">
+                              {t('admin.statusActive')}
+                            </span>
+                          ) : project.status === 'completed' ? (
+                            <span className="tag" style={{ background: 'rgba(74,222,128,0.15)', borderColor: 'transparent', color: 'var(--success)' }}>
+                              {t('admin.statusCompleted')}
+                            </span>
+                          ) : (
+                            <span className="tag">
+                              {t('admin.statusPaused')}
+                            </span>
+                          )}
                         </div>
                       </div>
                     </Link>
@@ -219,25 +292,36 @@ export default function AdminDashboard() {
               )}
             </div>
             {recentProjects.length > 0 && (
-              <div className="px-4 py-3 bg-gray-50 border-t border-gray-200">
-                <Link href="/admin/projects" className="text-sm text-yellow-600 hover:text-yellow-800">
-                  查看全部项目 →
+              <div className="px-4 py-3 border-t border-[var(--ink-border)]">
+                <Link href="/admin/projects" className="text-sm text-[var(--gold)] hover:text-[var(--gold-light)]">
+                  {t('admin.viewAllProjects')} →
                 </Link>
               </div>
             )}
           </div>
 
           {/* 最近用户 */}
-          <div className="bg-white shadow rounded-lg">
-            <div className="px-4 py-5 sm:px-6 border-b border-gray-200">
-              <h3 className="text-lg leading-6 font-medium text-gray-900">最近注册的用户</h3>
+          <div className="card overflow-hidden">
+            <div className="px-4 py-5 sm:px-6 border-b border-[var(--ink-border)]">
+              <h3
+                className="text-lg leading-6 font-medium text-[var(--text-primary)]"
+                style={{ fontFamily: 'var(--font-display)' }}
+              >
+                {t('admin.recentUsers')}
+              </h3>
             </div>
-            <div className="divide-y divide-gray-200">
+            <div>
               {recentUsers.length === 0 ? (
-                <div className="px-4 py-5 text-gray-500 text-center">暂无用户</div>
+                <div className="px-4 py-5 text-[var(--text-muted)] text-center">
+                  {t('admin.noUsersYet')}
+                </div>
               ) : (
-                recentUsers.map((user) => (
-                  <div key={user.id} className="px-4 py-4 hover:bg-gray-50">
+                recentUsers.map((user, index) => (
+                  <div
+                    key={user.id}
+                    className={`px-4 py-4 hover:bg-[var(--ink-lighter)] transition-colors ${index < recentUsers.length - 1 ? 'border-b border-[var(--ink-border)]' : ''
+                      }`}
+                  >
                     <Link href={`/admin/users/${user.id}`} className="block">
                       <div className="flex items-center justify-between">
                         <div className="flex items-center">
@@ -245,16 +329,20 @@ export default function AdminDashboard() {
                             <img className="h-10 w-10 rounded-full" src={user.avatar} alt={user.name} />
                           </div>
                           <div className="ml-4">
-                            <p className="text-sm font-medium text-gray-900">{user.name}</p>
-                            <p className="text-sm text-gray-500">{user.email}</p>
+                            <p className="text-sm font-medium text-[var(--text-primary)]">{user.name}</p>
+                            <p className="text-sm text-[var(--text-secondary)]">{user.email}</p>
                           </div>
                         </div>
                         <div className="ml-4">
-                          <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                            user.isActive !== false ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
-                          }`}>
-                            {user.isActive !== false ? '活跃' : '已禁用'}
-                          </span>
+                          {user.isActive !== false ? (
+                            <span className="tag" style={{ background: 'rgba(74,222,128,0.15)', borderColor: 'transparent', color: 'var(--success)' }}>
+                              {t('admin.statusActive')}
+                            </span>
+                          ) : (
+                            <span className="tag" style={{ background: 'rgba(248,113,113,0.15)', borderColor: 'transparent', color: 'var(--error)' }}>
+                              {t('admin.statusDisabled')}
+                            </span>
+                          )}
                         </div>
                       </div>
                     </Link>
@@ -263,9 +351,9 @@ export default function AdminDashboard() {
               )}
             </div>
             {recentUsers.length > 0 && (
-              <div className="px-4 py-3 bg-gray-50 border-t border-gray-200">
-                <Link href="/admin/users" className="text-sm text-yellow-600 hover:text-yellow-800">
-                  查看全部用户 →
+              <div className="px-4 py-3 border-t border-[var(--ink-border)]">
+                <Link href="/admin/users" className="text-sm text-[var(--gold)] hover:text-[var(--gold-light)]">
+                  {t('admin.viewAllUsers')} →
                 </Link>
               </div>
             )}
@@ -275,4 +363,3 @@ export default function AdminDashboard() {
     </AdminLayout>
   );
 }
-

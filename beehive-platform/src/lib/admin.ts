@@ -1,5 +1,5 @@
 import { User, UserRole } from '@/types';
-import { userStorage } from './storage';
+import { userStorage } from './api';
 
 /**
  * 检查用户是否为管理员
@@ -44,9 +44,9 @@ export function getUserRoleName(role?: UserRole): string {
  * 初始化默认管理员账号
  * 如果不存在管理员账号，创建一个默认的超级管理员
  */
-export function initDefaultAdmin(): void {
+export async function initDefaultAdmin(): Promise<void> {
   const adminEmail = 'admin@beehive.local';
-  const result = userStorage.findUserByEmail(adminEmail);
+  const result = await userStorage.findUserByEmail(adminEmail);
   
   if (!result.success || !result.data) {
     // 创建默认管理员账号
@@ -61,7 +61,7 @@ export function initDefaultAdmin(): void {
     };
     
     // 注意：这里不设置passwordHash，管理员需要通过特殊方式设置密码
-    userStorage.registerUser(defaultAdmin);
+    await userStorage.registerUser(defaultAdmin);
     console.log('默认管理员账号已创建:', adminEmail);
   }
 }

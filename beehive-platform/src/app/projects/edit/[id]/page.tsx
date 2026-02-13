@@ -6,10 +6,13 @@ import { useTranslation } from 'react-i18next';
 import LayoutSimple from '@/components/LayoutSimple';
 import { useAuth } from '@/contexts/AuthContext';
 import { FormErrors } from '@/types';
-import { projectStorage } from '@/lib/storage';
+import { projectStorage } from '@/lib/api';
 import { ErrorHandler } from '@/lib/errorHandler';
 import { useToast } from '@/components/Toast';
 import RichTextEditor from '@/components/RichTextEditor';
+import { scrollToFirstError } from '@/lib/scrollToError';
+import { uploadFile } from '@/lib/upload';
+import LoadingSpinner from '@/components/LoadingSpinner';
 
 interface FormData {
   title: string;
@@ -35,6 +38,7 @@ export default function EditProjectPage() {
   const [videoPreview, setVideoPreview] = useState<string>('');
   const [errors, setErrors] = useState<FormErrors>({});
   const [loading, setLoading] = useState(false);
+  const [uploading, setUploading] = useState(false);
   const [initialLoading, setInitialLoading] = useState(true);
 
   const projectId = params.id as string;
@@ -44,8 +48,8 @@ export default function EditProjectPage() {
     loadProject();
   }, [isLoggedIn, projectId]);
 
-  const loadProject = () => {
-    const result = projectStorage.getProjectById(projectId);
+  const loadProject = async () => {
+    const result = await projectStorage.getProjectById(projectId);
     if (!result.success || !result.data) { router.push('/'); return; }
     const project = result.data;
     if (user && project.creatorId !== user.id) { router.push(`/projects/${projectId}`); return; }
@@ -60,10 +64,10 @@ export default function EditProjectPage() {
   };
 
   const categories = [
-    { value: '科幻', label: t('sciFi') },
+    { value: '电影', label: t('film') },
     { value: '动画', label: t('animation') },
-    { value: '纪录片', label: t('documentary') },
-    { value: '教育', label: t('education') },
+    { value: '商业制作', label: t('commercial') },
+    { value: '公益', label: t('publicWelfare') },
     { value: '其他', label: t('other') },
   ];
 
@@ -87,11 +91,11 @@ export default function EditProjectPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const formErrors = validateForm();
-    if (Object.keys(formErrors).length > 0) { setErrors(formErrors); return; }
+    if (Object.keys(formErrors).length > 0) { setErrors(formErrors); scrollToFirstError(Object.keys(formErrors)); return; }
     setLoading(true); setErrors({});
     try {
       await new Promise(resolve => setTimeout(resolve, 500));
-      const result = projectStorage.updateProject(projectId, {
+      const result = await projectStorage.updateProject(projectId, {
         title: formData.title.trim(), description: formData.description, category: formData.category,
         targetDuration: parseInt(formData.targetDuration), currentDuration: parseInt(formData.currentDuration),
         telegramGroup: formData.telegramGroup.trim(), coverImage: formData.coverImage, videoFile: formData.videoFile || undefined,
@@ -105,57 +109,26 @@ export default function EditProjectPage() {
     } finally { setLoading(false); }
   };
 
-  const compressImage = (file: File): Promise<string> => {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        const img = new Image();
-        img.onload = () => {
-          const canvas = document.createElement('canvas');
-          let width = img.width, height = img.height;
-          const maxSize = 1200;
-          if (width > height && width > maxSize) { height = (height * maxSize) / width; width = maxSize; }
-          else if (height > maxSize) { width = (width * maxSize) / height; height = maxSize; }
-          canvas.width = width; canvas.height = height;
-          const ctx = canvas.getContext('2d'); ctx?.drawImage(img, 0, 0, width, height);
-          resolve(canvas.toDataURL('image/jpeg', 0.7));
-        };
-        img.onerror = reject; img.src = e.target?.result as string;
-      };
-      reader.onerror = reject; reader.readAsDataURL(file);
-    });
-  };
-
+  // 文件上传：调用 uploadFile 上传到 Supabase Storage，获取公开 URL
   const handleFileUpload = async (file: File, type: 'cover' | 'video') => {
-    const maxSize = type === 'cover' ? 5 * 1024 * 1024 : 20 * 1024 * 1024;
-    const allowedTypes = type === 'cover' ? ['image/jpeg', 'image/png', 'image/gif'] : ['video/mp4', 'video/quicktime', 'video/x-msvideo'];
-    if (!allowedTypes.includes(file.type)) {
-      const errorMsg = type === 'cover' ? t('imageUploadError') : t('videoUploadError');
-      setErrors(prev => ({ ...prev, [type === 'cover' ? 'coverImage' : 'videoFile']: errorMsg })); showToast('error', errorMsg); return;
-    }
-    if (file.size > maxSize) {
-      const errorMsg = type === 'cover' ? t('imageSizeError') : t('videoSizeError');
-      setErrors(prev => ({ ...prev, [type === 'cover' ? 'coverImage' : 'videoFile']: errorMsg })); showToast('error', errorMsg); return;
-    }
+    const fieldKey = type === 'cover' ? 'coverImage' : 'videoFile';
+    setUploading(true);
     try {
+      const url = await uploadFile(file);
+      setFormData(prev => ({ ...prev, [fieldKey]: url }));
       if (type === 'cover') {
-        const compressedBase64 = await compressImage(file);
-        setFormData(prev => ({ ...prev, coverImage: compressedBase64 })); setCoverPreview(compressedBase64);
-        setErrors(prev => ({ ...prev, coverImage: undefined })); showToast('success', t('coverUploadSuccess'));
+        setCoverPreview(url);
       } else {
-        if (file.size > 10 * 1024 * 1024) { if (!window.confirm(t('storageFullVideoConfirm'))) return; }
-        const reader = new FileReader();
-        reader.onloadend = () => {
-          const base64String = reader.result as string;
-          setFormData(prev => ({ ...prev, videoFile: base64String })); setVideoPreview(base64String);
-          setErrors(prev => ({ ...prev, videoFile: undefined })); showToast('success', t('videoUploadSuccess'));
-        };
-        reader.readAsDataURL(file);
+        setVideoPreview(url);
       }
-    } catch (error) {
-      console.error('File processing failed:', error);
-      setErrors(prev => ({ ...prev, [type === 'cover' ? 'coverImage' : 'videoFile']: t('fileProcessError') }));
-      showToast('error', t('fileProcessError'));
+      setErrors(prev => ({ ...prev, [fieldKey]: undefined }));
+      showToast('success', type === 'cover' ? t('coverUploadSuccess') : t('videoUploadSuccess'));
+    } catch (err) {
+      const message = err instanceof Error ? err.message : '上传失败，请重试';
+      setErrors(prev => ({ ...prev, [fieldKey]: message }));
+      showToast('error', message);
+    } finally {
+      setUploading(false);
     }
   };
 
@@ -164,7 +137,16 @@ export default function EditProjectPage() {
     if (field in errors) { setErrors(prev => ({ ...prev, [field]: undefined })); }
   };
 
-  if (initialLoading) { return <LayoutSimple><div className="text-center py-12">{t('loading')}</div></LayoutSimple>; }
+  if (initialLoading) {
+    return (
+      <LayoutSimple>
+        <div className="flex flex-col items-center justify-center py-20 gap-4">
+          <LoadingSpinner size="lg" />
+          <span className="text-gray-600">{t('loading')}</span>
+        </div>
+      </LayoutSimple>
+    );
+  }
 
   return (
     <LayoutSimple title={t('editProjectTitle')}>
@@ -173,14 +155,14 @@ export default function EditProjectPage() {
           <form onSubmit={handleSubmit}>
             {errors.general && (<div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded mb-4">{errors.general}</div>)}
 
-            <div className="mb-4">
+            <div className="mb-4" data-field="title">
               <label className="block text-gray-700 font-medium mb-2">{t('projectTitle')} *</label>
-              <input type="text" placeholder={t('projectTitlePlaceholder')} value={formData.title} onChange={(e) => handleInputChange('title', e.target.value)}
+              <input type="text" name="title" placeholder={t('projectTitlePlaceholder')} value={formData.title} onChange={(e) => handleInputChange('title', e.target.value)}
                 className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 ${errors.title ? 'border-red-500 focus:ring-red-500' : 'border-gray-300 focus:ring-orange-500'}`} />
               {errors.title && (<p className="text-red-500 text-sm mt-1">{errors.title}</p>)}
             </div>
 
-            <div className="mb-6">
+            <div className="mb-6" data-field="description">
               <label className="block text-gray-700 font-semibold mb-3 text-lg">{t('projectDescriptionLabel')} *</label>
               <p className="text-sm text-gray-600 mb-3">{t('projectDescriptionHelp')}</p>
               <RichTextEditor value={formData.description} onChange={(value) => handleInputChange('description', value)} placeholder={t('projectDescriptionPlaceholder')} error={!!errors.description} />
@@ -188,9 +170,9 @@ export default function EditProjectPage() {
               <p className="text-xs text-gray-500 mt-2">{t('projectDescriptionTip')}</p>
             </div>
 
-            <div className="mb-4">
+            <div className="mb-4" data-field="category">
               <label className="block text-gray-700 font-medium mb-2">{t('projectCategory')} *</label>
-              <select value={formData.category} onChange={(e) => handleInputChange('category', e.target.value)}
+              <select name="category" value={formData.category} onChange={(e) => handleInputChange('category', e.target.value)}
                 className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 ${errors.category ? 'border-red-500 focus:ring-red-500' : 'border-gray-300 focus:ring-orange-500'}`}>
                 {categories.map(cat => (<option key={cat.value} value={cat.value}>{cat.label}</option>))}
               </select>
@@ -198,15 +180,15 @@ export default function EditProjectPage() {
             </div>
 
             <div className="grid grid-cols-2 gap-4 mb-4">
-              <div>
+              <div data-field="currentDuration">
                 <label className="block text-gray-700 font-medium mb-2">{t('currentDurationLabel')} *</label>
-                <input type="number" placeholder="0" value={formData.currentDuration} onChange={(e) => handleInputChange('currentDuration', e.target.value)}
+                <input type="number" name="currentDuration" placeholder="0" value={formData.currentDuration} onChange={(e) => handleInputChange('currentDuration', e.target.value)}
                   className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 ${errors.currentDuration ? 'border-red-500 focus:ring-red-500' : 'border-gray-300 focus:ring-orange-500'}`} />
                 {errors.currentDuration && (<p className="text-red-500 text-sm mt-1">{errors.currentDuration}</p>)}
               </div>
-              <div>
+              <div data-field="targetDuration">
                 <label className="block text-gray-700 font-medium mb-2">{t('targetDurationLabel')} *</label>
-                <input type="number" placeholder={t('targetDurationPlaceholder')} value={formData.targetDuration} onChange={(e) => handleInputChange('targetDuration', e.target.value)}
+                <input type="number" name="targetDuration" placeholder={t('targetDurationPlaceholder')} value={formData.targetDuration} onChange={(e) => handleInputChange('targetDuration', e.target.value)}
                   className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 ${errors.targetDuration ? 'border-red-500 focus:ring-red-500' : 'border-gray-300 focus:ring-orange-500'}`} />
                 {errors.targetDuration && (<p className="text-red-500 text-sm mt-1">{errors.targetDuration}</p>)}
               </div>
@@ -276,10 +258,22 @@ export default function EditProjectPage() {
             </div>
 
             <div className="flex gap-4">
-              <button type="submit" disabled={loading}
-                className={`flex-1 py-3 rounded-lg font-medium transition-colors ${loading ? 'cursor-not-allowed' : 'hover:opacity-90'}`}
-                style={loading ? { background: '#E5E5E5', color: '#999999' } : { background: '#FFD700', color: '#333333' }}>
-                {loading ? t('saving') : t('saveChanges')}
+              <button type="submit" disabled={loading || uploading}
+                className={`flex-1 py-3 rounded-lg font-medium transition-colors ${loading || uploading ? 'cursor-not-allowed' : 'hover:opacity-90'}`}
+                style={loading || uploading ? { background: '#E5E5E5', color: '#999999' } : { background: '#FFD700', color: '#333333' }}>
+                {loading ? (
+              <span className="inline-flex items-center gap-2">
+                <LoadingSpinner size="sm" />
+                {t('saving')}
+              </span>
+            ) : uploading ? (
+              <span className="inline-flex items-center gap-2">
+                <LoadingSpinner size="sm" />
+                {t('uploadingText')}
+              </span>
+            ) : (
+              t('saveChanges')
+            )}
               </button>
               <button type="button" onClick={() => router.push(`/projects/${projectId}`)} className="px-6 py-3 border border-gray-300 rounded-lg hover:bg-gray-50">
                 {t('cancel')}
