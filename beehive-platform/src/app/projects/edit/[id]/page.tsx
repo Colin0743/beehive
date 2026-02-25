@@ -82,6 +82,7 @@ export default function EditProjectPage() {
     const targetDuration = parseInt(formData.targetDuration);
     if (!formData.targetDuration) { newErrors.targetDuration = t('durationRequired'); }
     else if (isNaN(targetDuration) || targetDuration <= 0) { newErrors.targetDuration = t('invalidDuration'); }
+    else if (targetDuration > 300) { newErrors.targetDuration = t('durationTooLong'); }
     const currentDuration = parseInt(formData.currentDuration);
     if (formData.currentDuration && (isNaN(currentDuration) || currentDuration < 0)) { newErrors.currentDuration = t('currentDurationError'); }
     if (currentDuration > targetDuration) { newErrors.currentDuration = t('currentDurationExceedsTarget'); }
@@ -252,9 +253,10 @@ export default function EditProjectPage() {
             </div>
 
             <div className="mb-6">
-              <label className="block text-gray-700 font-medium mb-2">{t('telegramGroupLabel')}</label>
-              <input type="text" placeholder={t('telegramGroupPlaceholder')} value={formData.telegramGroup} onChange={(e) => handleInputChange('telegramGroup', e.target.value)}
+              <label className="block text-gray-700 font-medium mb-2">{t('contactGroupLabel')}</label>
+              <input type="text" placeholder={t('contactGroupPlaceholder')} value={formData.telegramGroup} onChange={(e) => handleInputChange('telegramGroup', e.target.value)}
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500" />
+              <p className="text-xs text-gray-500 mt-1">{t('contactGroupHint')}</p>
             </div>
 
             <div className="flex gap-4">

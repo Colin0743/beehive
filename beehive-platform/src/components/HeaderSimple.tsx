@@ -27,8 +27,9 @@ function HeaderContent() {
     <nav className="sticky top-0 z-50 bg-[var(--ink)]/95 backdrop-blur-md border-b border-[var(--ink-border)]">
       <div className="container">
         <div className="h-16 flex items-center justify-between">
-          <Link href="/">
-            <Logo size="medium" />
+          <Link href="/" className="flex-shrink-0">
+            <Logo size="medium" showText={false} className="sm:hidden" />
+            <Logo size="medium" className="hidden sm:flex" />
           </Link>
 
           <form onSubmit={handleSearch} className="flex-1 max-w-md mx-8 hidden md:block">
@@ -46,8 +47,8 @@ function HeaderContent() {
             </div>
           </form>
 
-          <div className="flex items-center gap-4">
-            <LanguageSwitcher />
+          <div className="flex items-center gap-2 sm:gap-4 flex-shrink-0">
+            <div className="hidden sm:block"><LanguageSwitcher /></div>
             {isLoggedIn && user && <NotificationBell userId={user.id} />}
             {isLoggedIn ? (
               <>

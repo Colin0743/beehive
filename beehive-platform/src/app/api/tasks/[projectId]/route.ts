@@ -35,9 +35,9 @@ async function deductPublishFee(
 /** 每个项目最多允许的任务数量 */
 const MAX_TASKS_PER_PROJECT = 10;
 
-/** 发布任务费用（分），默认 1 元，可通过环境变量 TASK_PUBLISH_FEE_CENTS 覆盖 */
+/** 发布任务费用（分），默认 0.5 元，可通过环境变量 TASK_PUBLISH_FEE_CENTS 覆盖 */
 const TASK_PUBLISH_FEE_CENTS = parseInt(
-  process.env.TASK_PUBLISH_FEE_CENTS ?? '100',
+  process.env.TASK_PUBLISH_FEE_CENTS ?? '50',
   10
 );
 

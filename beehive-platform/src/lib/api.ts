@@ -17,6 +17,7 @@ import type {
   TaskAcceptance,
   Notification,
   Achievement,
+  Feedback,
 } from '@/types';
 
 // ==================== 内部 fetch 封装 ====================
@@ -32,9 +33,12 @@ async function apiFetch<T>(
   options?: RequestInit
 ): Promise<StorageResult<T>> {
   try {
+    const isGet = !options?.method || options.method === 'GET';
     const res = await fetch(url, {
       ...options,
-      cache: 'no-store',
+      // GET 请求使用浏览器默认缓存策略（配合 API 层 Cache-Control）
+      // 非 GET 请求强制不缓存
+      ...(isGet ? {} : { cache: 'no-store' as RequestCache }),
       headers: {
         'Content-Type': 'application/json',
         ...options?.headers,
@@ -770,6 +774,71 @@ export const achievementStorage = {
     }
     const achievements = (result.data ?? []).map(mapDbAchievement);
     return { success: true, data: achievements };
+  },
+};
+
+// ==================== feedbackStorage 模块 ====================
+
+/**
+ * 将数据库 snake_case 的 feedback 记录转换为前端 Feedback 类型
+ */
+function mapDbFeedback(row: Record<string, unknown>): Feedback {
+  return {
+    id: row.id as string,
+    userId: row.user_id as string,
+    category: row.category as string,
+    description: row.description as string,
+    images: (row.images as string[]) ?? [],
+    status: row.status as Feedback['status'],
+    adminReply: (row.admin_reply as string) ?? null,
+    createdAt: row.created_at as string,
+    resolvedAt: (row.resolved_at as string) ?? null,
+    userName: (row.user_name as string) ?? undefined,
+    userEmail: (row.user_email as string) ?? undefined,
+    userAvatar: (row.user_avatar as string) ?? undefined,
+  };
+}
+
+export const feedbackStorage = {
+  /**
+   * 提交反馈
+   */
+  async submitFeedback(category: string, description: string, images: string[]): Promise<StorageResult<Feedback>> {
+    const result = await apiFetch<Record<string, unknown>>('/api/feedbacks', {
+      method: 'POST',
+      body: JSON.stringify({ category, description, images }),
+    });
+    if (!result.success) {
+      return { success: false, error: result.error };
+    }
+    return { success: true, data: result.data ? mapDbFeedback(result.data) : ({} as Feedback) };
+  },
+
+  /**
+   * 获取反馈列表（管理员获取全部，普通用户获取自己的）
+   */
+  async getFeedbacks(status?: string): Promise<StorageResult<Feedback[]>> {
+    const params = status ? `?status=${status}` : '';
+    const result = await apiFetch<Record<string, unknown>[]>(`/api/feedbacks${params}`);
+    if (!result.success) {
+      return { success: false, error: result.error };
+    }
+    const feedbacks = (result.data ?? []).map(mapDbFeedback);
+    return { success: true, data: feedbacks };
+  },
+
+  /**
+   * 管理员处理反馈
+   */
+  async resolveFeedback(feedbackId: string, adminReply?: string): Promise<StorageResult<Feedback>> {
+    const result = await apiFetch<Record<string, unknown>>('/api/feedbacks', {
+      method: 'PUT',
+      body: JSON.stringify({ feedback_id: feedbackId, admin_reply: adminReply }),
+    });
+    if (!result.success) {
+      return { success: false, error: result.error };
+    }
+    return { success: true, data: result.data ? mapDbFeedback(result.data) : ({} as Feedback) };
   },
 };
 

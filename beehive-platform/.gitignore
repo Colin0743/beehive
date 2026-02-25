@@ -58,3 +58,18 @@ host info.md
 
 # deployment archives
 *.zip
+
+# 本地 Node.js 二进制
+.node/
+
+# macOS 系统文件
+._*
+.DS_Store
+
+# 部署相关临时文件
+deploy_log.txt
+deploy_package.tar.gz
+deploy_with_expect.exp
+env.sh
+*.tar.gz
+*.exp

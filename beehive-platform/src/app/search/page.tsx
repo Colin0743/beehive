@@ -9,6 +9,7 @@ import { projectStorage } from '@/lib/api';
 import { useAuth } from '@/contexts/AuthContext';
 import Logo from '@/components/Logo';
 import LanguageSwitcher from '@/components/LanguageSwitcher';
+import MobileNav from '@/components/MobileNav';
 
 function Button({ children, variant = "primary", size = "medium", onClick, className = "" }: {
   children: React.ReactNode; variant?: "primary" | "secondary" | "text"; size?: "small" | "medium" | "large"; onClick?: () => void; className?: string;
@@ -175,10 +176,11 @@ function SearchContent() {
   return (
     <div className="min-h-screen bg-neutral-50">
       <nav className="bg-white border-b border-neutral-200 shadow-sm sticky top-0 z-50">
-        <div className="max-w-[1440px] mx-auto px-8">
-          <div className="h-16 flex items-center justify-between">
-            <Link href="/"><Logo size="medium" /></Link>
-            <div className="flex-1 max-w-[600px] mx-8">
+        <div className="max-w-[1440px] mx-auto px-4 md:px-8">
+          <div className="h-16 flex items-center justify-between gap-4">
+            <Link href="/" className="flex-shrink-0"><Logo size="medium" /></Link>
+            {/* 桌面端搜索栏 */}
+            <div className="flex-1 max-w-[600px] mx-4 hidden md:block">
               <form onSubmit={handleSearch} className="relative">
                 <svg className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-neutral-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <circle cx="11" cy="11" r="8" />
@@ -193,7 +195,8 @@ function SearchContent() {
                 />
               </form>
             </div>
-            <div className="flex items-center gap-6">
+            {/* 桌面端导航 */}
+            <div className="hidden md:flex items-center gap-6">
               {isLoggedIn ? (
                 <>
                   <Link href="/profile" className="flex items-center gap-2 text-sm text-neutral-600 hover:text-neutral-900">
@@ -211,13 +214,15 @@ function SearchContent() {
                 </>
               )}
             </div>
+            {/* 移动端导航 */}
+            <MobileNav initialSearchQuery={keyword} />
           </div>
         </div>
       </nav>
 
-      <div className="max-w-[1200px] mx-auto px-8 py-8">
-        <div className="mb-6">
-          <h1 className="text-2xl text-[#111827] mb-2">
+      <div className="max-w-[1200px] mx-auto px-4 md:px-8 py-6 md:py-8">
+        <div className="mb-4 md:mb-6">
+          <h1 className="text-xl md:text-2xl text-[#111827] mb-2">
             {t('searchResultsFor', { keyword })}
           </h1>
           <p className="text-sm text-[#6B7280]">
@@ -225,12 +230,12 @@ function SearchContent() {
           </p>
         </div>
 
-        <div className="flex gap-3 mb-8 flex-wrap">
+        <div className="flex gap-2 md:gap-3 mb-6 md:mb-8 flex-wrap">
           {categories.map((category) => (
             <button
               key={category.key}
               onClick={() => setSelectedCategory(category.key)}
-              className={`px-4 py-2 rounded-full text-sm transition-all ${selectedCategory === category.key
+              className={`px-3 md:px-4 py-2 rounded-full text-sm transition-all touch-manipulation ${selectedCategory === category.key
                   ? "bg-[#FFD700] text-[#111827]"
                   : "bg-white border border-neutral-300 text-neutral-600 hover:border-[#FFD700]"
                 }`}

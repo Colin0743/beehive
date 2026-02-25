@@ -1,13 +1,16 @@
 'use client';
 
+import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useTranslation } from 'react-i18next';
 import Logo from './Logo';
+import FeedbackModal from './FeedbackModal';
 
 export default function Footer() {
   const { t } = useTranslation('common');
   const router = useRouter();
+  const [feedbackOpen, setFeedbackOpen] = useState(false);
 
   const categories = [
     { key: 'film', label: t('film') },
@@ -32,7 +35,8 @@ export default function Footer() {
               <li><Link href="/about" className="hover:text-[var(--gold)] transition-colors">{t('aboutUs')}</Link></li>
               <li><Link href="/how-it-works" className="hover:text-[var(--gold)] transition-colors">{t('howItWorks')}</Link></li>
               <li><Link href="/guide" className="hover:text-[var(--gold)] transition-colors">{t('creationGuide')}</Link></li>
-              <li><Link href="/help" className="hover:text-[var(--gold)] transition-colors">{t('helpCenter')}</Link></li>
+              <li><Link href="/help" className="hover:text-[var(--gold)] transition-colors">{t('faq')}</Link></li>
+              <li><button onClick={() => setFeedbackOpen(true)} className="hover:text-[var(--gold)] transition-colors">{t('feedback.entry')}</button></li>
             </ul>
           </div>
           <div>
@@ -66,6 +70,8 @@ export default function Footer() {
           </div>
         </div>
       </div>
+      {/* 反馈模态框 */}
+      <FeedbackModal isOpen={feedbackOpen} onClose={() => setFeedbackOpen(false)} />
     </footer>
   );
 }

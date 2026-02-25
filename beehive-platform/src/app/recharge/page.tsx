@@ -7,6 +7,8 @@ import LayoutSimple from '@/components/LayoutSimple';
 import { useAuth } from '@/contexts/AuthContext';
 import { balanceStorage, rechargeStorage } from '@/lib/api';
 import LoadingSpinner from '@/components/LoadingSpinner';
+import { getAvailableProviders } from '@/lib/payment-unified';
+import { useRegion } from '@/hooks/useRegion';
 
 const AMOUNT_OPTIONS = [
   { cents: 100, label: '¥1' },
@@ -16,25 +18,43 @@ const AMOUNT_OPTIONS = [
   { cents: 10000, label: '¥100' },
 ];
 
-const CHANNEL_OPTIONS = [
-  { value: 'alipay_pc', labelKey: 'paymentChannelAlipayPc' },
-  { value: 'alipay_wap', labelKey: 'paymentChannelAlipayWap' },
-  { value: 'wx_native', labelKey: 'paymentChannelWxNative' },
-] as const;
+// 支付方式到渠道值的映射
+const PROVIDER_CHANNEL_MAP: Record<string, { value: string; labelKey: string }[]> = {
+  alipay: [{ value: 'alipay_pc', labelKey: 'paymentChannelAlipayPc' }],
+  wechat: [{ value: 'wx_native', labelKey: 'paymentChannelWxNative' }],
+  stripe: [{ value: 'stripe', labelKey: 'paymentChannelStripe' }],
+  paypal: [{ value: 'paypal', labelKey: 'paymentChannelPaypal' }],
+};
+
+const PENDING_ORDER_KEY = 'recharge_pending_out_trade_no';
 
 export default function RechargePage() {
   const { t } = useTranslation('common');
-  const { user, isLoggedIn } = useAuth();
+  const { user, isLoggedIn, loading: authLoading } = useAuth();
   const router = useRouter();
   const searchParams = useSearchParams();
+  const region = useRegion();
   const [balance, setBalance] = useState<{ balance_yuan: string; task_publish_fee_yuan: string } | null>(null);
   const [selectedCents, setSelectedCents] = useState<number | null>(null);
-  const [selectedChannel, setSelectedChannel] = useState<string>('alipay_pc');
+  const [selectedChannel, setSelectedChannel] = useState<string>('');
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
   const [pollingReturn, setPollingReturn] = useState(false);
   const [qrCodeUrl, setQrCodeUrl] = useState<string | null>(null);
   const [pollingOutTradeNo, setPollingOutTradeNo] = useState<string | null>(null);
+
+  // 根据区域动态获取可用支付渠道
+  const availableProviders = getAvailableProviders();
+  const channelOptions = availableProviders.flatMap(
+    (p) => PROVIDER_CHANNEL_MAP[p] || []
+  );
+
+  // 默认选中第一个可用渠道
+  useEffect(() => {
+    if (channelOptions.length > 0 && !selectedChannel) {
+      setSelectedChannel(channelOptions[0].value);
+    }
+  }, [channelOptions, selectedChannel]);
 
   const refreshBalance = useCallback(() => {
     balanceStorage.getBalance().then((r) => {
@@ -48,12 +68,13 @@ export default function RechargePage() {
   }, []);
 
   useEffect(() => {
+    if (authLoading) return; // 等待认证状态加载完成
     if (!isLoggedIn || !user) {
       router.push('/auth/login');
       return;
     }
     refreshBalance();
-  }, [isLoggedIn, user, router, refreshBalance]);
+  }, [authLoading, isLoggedIn, user, router, refreshBalance]);
 
   const runPolling = useCallback(
     async (outTradeNo: string) => {
@@ -81,11 +102,28 @@ export default function RechargePage() {
     const outTradeNo = searchParams.get('out_trade_no');
     if (returnFlag !== '1' || !outTradeNo) return;
 
+    localStorage.removeItem(PENDING_ORDER_KEY);
     setPollingReturn(true);
     setMessage({ type: 'success', text: t('paymentReturnPending') });
     runPolling(outTradeNo);
     window.history.replaceState({}, '', '/recharge');
   }, [searchParams, t, runPolling]);
+
+  // 手动返回时：检查 localStorage 中是否有待确认的订单
+  useEffect(() => {
+    if (authLoading || !isLoggedIn) return;
+    const returnFlag = searchParams.get('return');
+    if (returnFlag === '1') return; // 已由上方 useEffect 处理
+
+    const pendingNo = localStorage.getItem(PENDING_ORDER_KEY);
+    if (!pendingNo) return;
+
+    setPollingReturn(true);
+    setMessage({ type: 'success', text: '检测到未完成的充值订单，正在确认支付结果...' });
+    runPolling(pendingNo).then(() => {
+      localStorage.removeItem(PENDING_ORDER_KEY);
+    });
+  }, [authLoading, isLoggedIn, searchParams, runPolling]);
 
   // 微信扫码支付：展示二维码后轮询
   useEffect(() => {
@@ -110,6 +148,8 @@ export default function RechargePage() {
       const { out_trade_no, redirect_url, code_url } = orderRes.data;
 
       if (redirect_url) {
+        // 保存订单号到 localStorage，以便手动返回时恢复轮询
+        localStorage.setItem(PENDING_ORDER_KEY, out_trade_no);
         setMessage({ type: 'success', text: t('redirectingToPay') });
         window.location.href = redirect_url;
         return;
@@ -132,7 +172,7 @@ export default function RechargePage() {
     }
   };
 
-  if (!isLoggedIn || !user) return null;
+  if (authLoading || !isLoggedIn || !user) return null;
 
   return (
     <LayoutSimple>
@@ -178,7 +218,7 @@ export default function RechargePage() {
         <div className="mb-8 animate-fade-up">
           <p className="text-sm text-[var(--text-muted)] mb-4">{t('paymentChannel')}</p>
           <div className="flex flex-wrap gap-3">
-            {CHANNEL_OPTIONS.map((opt) => (
+            {channelOptions.map((opt) => (
               <button
                 key={opt.value}
                 type="button"

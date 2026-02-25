@@ -4,7 +4,7 @@ import { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 
 export default function DynamicTitle() {
-  const { t, i18n } = useTranslation();
+  const { t, i18n } = useTranslation('common');
 
   useEffect(() => {
     // 根据当前语言更新页面标题

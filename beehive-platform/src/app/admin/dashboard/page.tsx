@@ -31,12 +31,12 @@ export default function AdminDashboard() {
   const loadStats = async () => {
     setLoading(true);
 
-    // 加载项目数据
-    const projectsResult = await projectStorage.getAllProjects();
+    // 并行加载项目和用户数据
+    const [projectsResult, usersResult] = await Promise.all([
+      projectStorage.getAllProjects(),
+      userStorage.getAllUsers(),
+    ]);
     const projects = projectsResult.success ? (projectsResult.data || []) : [];
-
-    // 加载用户数据
-    const usersResult = await userStorage.getAllUsers();
     const users = usersResult.success ? (usersResult.data || []) : [];
 
     // 计算统计数据

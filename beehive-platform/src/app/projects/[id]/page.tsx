@@ -57,39 +57,39 @@ export default function ProjectDetailPage() {
 
   const projectId = params.id as string;
 
-  // 加载项目数据
+  // 并行加载项目数据 + 成就 + 接受记录
   useEffect(() => {
-    const loadProject = async () => {
-      const result = await projectStorage.getProjectById(projectId);
-      if (result.success && result.data) {
-        setProject(result.data);
-        setTasks(result.data.tasks || []);
-      }
-      setLoading(false);
-    };
-    loadProject();
-  }, [projectId]);
+    const loadAll = async () => {
+      const promises: Promise<void>[] = [
+        // 加载项目
+        projectStorage.getProjectById(projectId).then(result => {
+          if (result.success && result.data) {
+            setProject(result.data);
+            setTasks(result.data.tasks || []);
+          }
+          setLoading(false);
+        }),
+        // 加载成就
+        achievementStorage.getByProject(projectId).then(achResult => {
+          if (achResult.success && achResult.data) setAchievements(achResult.data);
+        }),
+      ];
 
-  // 记录项目点击（用于排序算法的热度计算）
-  useEffect(() => {
-    if (projectId) {
-      // 传入用户ID用于5分钟去重（如已登录）
-      clickTracker.recordClick(projectId);
-    }
-  }, [projectId]);
-
-  // 加载成就和接受记录
-  useEffect(() => {
-    const loadAchievementsAndAcceptances = async () => {
-      const achResult = await achievementStorage.getByProject(projectId);
-      if (achResult.success && achResult.data) setAchievements(achResult.data);
-
+      // 加载用户接受记录（需登录）
       if (user) {
-        const acceptedResult = await taskAcceptanceStorage.getUserAcceptedTaskIds(user.id);
-        if (acceptedResult.success && acceptedResult.data) setAcceptedTaskIds(acceptedResult.data);
+        promises.push(
+          taskAcceptanceStorage.getUserAcceptedTaskIds(user.id).then(acceptedResult => {
+            if (acceptedResult.success && acceptedResult.data) setAcceptedTaskIds(acceptedResult.data);
+          })
+        );
       }
+
+      await Promise.all(promises);
     };
-    loadAchievementsAndAcceptances();
+    loadAll();
+
+    // 记录项目点击（不阻塞，静默执行）
+    clickTracker.recordClick(projectId);
   }, [projectId, user]);
 
   const isOwner = user && project && user.id === project.creatorId;

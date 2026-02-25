@@ -44,8 +44,10 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
 
   const menuItems = [
     { href: '/admin/dashboard', label: t('admin.dashboard'), icon: '📊' },
+    { href: '/admin/review', label: t('admin.contentReview'), icon: '✅' },
     { href: '/admin/projects', label: t('admin.projectManagement'), icon: '📁' },
     { href: '/admin/users', label: t('admin.userManagement'), icon: '👥' },
+    { href: '/admin/feedbacks', label: t('admin.feedbackManagement'), icon: '💬' },
   ];
 
   return (

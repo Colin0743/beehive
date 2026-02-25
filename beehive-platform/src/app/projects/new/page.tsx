@@ -20,18 +20,19 @@ export default function NewProjectPage() {
     title: '', description: '', category: '', targetDuration: '',
     telegramGroup: '', coverImage: '', videoFile: ''
   });
+  const [agreedToTerms, setAgreedToTerms] = useState(false);
   const [coverPreview, setCoverPreview] = useState('');
   const [videoPreview, setVideoPreview] = useState('');
   const [errors, setErrors] = useState<FormErrors>({});
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
-  const { user, isLoggedIn } = useAuth();
+  const { user, isLoggedIn, loading: authLoading } = useAuth();
   const { showToast } = useToast();
   const router = useRouter();
 
   useEffect(() => {
-    if (!isLoggedIn) router.push('/auth/login');
-  }, [isLoggedIn, router]);
+    if (!authLoading && !isLoggedIn) router.push('/auth/login');
+  }, [authLoading, isLoggedIn, router]);
 
   const categories = [
     { value: '', label: t('selectCategory') },
@@ -56,8 +57,10 @@ export default function NewProjectPage() {
     const duration = parseInt(formData.targetDuration);
     if (!formData.targetDuration) newErrors.targetDuration = t('durationRequired');
     else if (isNaN(duration) || duration <= 0) newErrors.targetDuration = t('invalidDuration');
+    else if (duration > 300) newErrors.targetDuration = t('durationTooLong');
 
     if (!formData.coverImage) newErrors.coverImage = t('coverRequired');
+    if (!agreedToTerms) newErrors.terms = t('termsRequired');
     return newErrors;
   };
 
@@ -131,7 +134,7 @@ export default function NewProjectPage() {
     if (errors[field]) setErrors(p => ({ ...p, [field]: undefined }));
   };
 
-  if (!isLoggedIn) return null;
+  if (authLoading || !isLoggedIn) return null;
 
   return (
     <LayoutSimple>
@@ -195,18 +198,18 @@ export default function NewProjectPage() {
               {errors.targetDuration && <p className="text-red-400 text-sm mt-2">{errors.targetDuration}</p>}
             </div>
 
-            {/* Telegram */}
+            {/* 联系群号 */}
             <div>
-              <label className="block text-sm text-[var(--text-secondary)] mb-2">{t('telegramGroup')}</label>
+              <label className="block text-sm text-[var(--text-secondary)] mb-2">{t('contactGroupLabel')}</label>
               <input
-                type="url"
+                type="text"
                 name="telegramGroup"
                 value={formData.telegramGroup}
                 onChange={e => handleInputChange('telegramGroup', e.target.value)}
-                placeholder="https://t.me/your_group"
+                placeholder={t('contactGroupPlaceholder')}
                 className="input"
               />
-              <p className="text-xs text-[var(--text-muted)] mt-2">{t('telegramGroupHint')}</p>
+              <p className="text-xs text-[var(--text-muted)] mt-2">{t('contactGroupHint')}</p>
             </div>
           </div>
 
@@ -273,38 +276,61 @@ export default function NewProjectPage() {
             {/* 视频 */}
             <div>
               <label className="block text-sm text-[var(--text-secondary)] mb-2">{t('videoFile')}</label>
-              <div
-                className="border-2 border-dashed border-[var(--ink-border)] rounded-lg p-8 text-center transition-colors cursor-pointer hover:border-[var(--gold)]"
-                onClick={() => document.getElementById('video-input')?.click()}
-              >
-                {videoPreview ? (
-                  <div className="relative">
-                    <video src={videoPreview} controls className="max-h-64 mx-auto rounded-lg" />
+              
+              {videoPreview ? (
+                <div className="relative rounded-lg overflow-hidden bg-black/5 border border-[var(--ink-border)]">
+                  <video 
+                    src={videoPreview} 
+                    controls 
+                    className="max-h-64 mx-auto w-full object-contain bg-black" 
+                  />
+                  <div className="absolute top-2 right-2 flex gap-2 z-10">
                     <button
                       type="button"
-                      onClick={e => { e.stopPropagation(); setVideoPreview(''); setFormData(p => ({ ...p, videoFile: '' })); }}
-                      className="absolute top-2 right-2 w-8 h-8 bg-black/60 rounded-full flex items-center justify-center text-white hover:bg-black/80 transition-colors"
+                      disabled={uploading}
+                      onClick={() => document.getElementById('video-input')?.click()}
+                      className="bg-white/90 text-black px-3 py-1.5 rounded-full text-xs font-medium hover:bg-white transition-colors shadow-lg backdrop-blur-sm disabled:opacity-50 disabled:cursor-not-allowed"
                     >
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                      </svg>
+                      {t('replace', '更换')}
+                    </button>
+                    <button
+                      type="button"
+                      disabled={uploading}
+                      onClick={() => { 
+                        setVideoPreview(''); 
+                        setFormData(p => ({ ...p, videoFile: '' })); 
+                        // 重置 input value 允许重复选择同一文件
+                        const input = document.getElementById('video-input') as HTMLInputElement;
+                        if (input) input.value = '';
+                      }}
+                      className="bg-red-500/90 text-white px-3 py-1.5 rounded-full text-xs font-medium hover:bg-red-600 transition-colors shadow-lg backdrop-blur-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      {t('delete', '删除')}
                     </button>
                   </div>
-                ) : uploading ? (
-                  <div className="text-[var(--text-muted)] py-4 flex flex-col items-center gap-2">
-                    <LoadingSpinner size="lg" />
-                    <p>{t('uploadingPleaseWait')}</p>
-                  </div>
-                ) : (
-                  <div className="text-[var(--text-muted)]">
-                    <svg className="w-12 h-12 mx-auto mb-4 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
-                    </svg>
-                    <p className="mb-2">{t('clickToUploadVideo')}</p>
-                    <p className="text-xs">{t('videoRequirements')}</p>
-                  </div>
-                )}
-              </div>
+                </div>
+              ) : (
+                <div
+                  className={`border-2 border-dashed rounded-lg p-8 text-center transition-colors cursor-pointer hover:border-[var(--gold)] ${errors.videoFile ? 'border-red-500' : 'border-[var(--ink-border)]'}`}
+                  onClick={() => document.getElementById('video-input')?.click()}
+                >
+                  {uploading ? (
+                    <div className="text-[var(--text-muted)] py-4 flex flex-col items-center gap-2">
+                      <LoadingSpinner size="lg" />
+                      <p>{t('uploadingPleaseWait')}</p>
+                    </div>
+                  ) : (
+                    <div className="text-[var(--text-muted)]">
+                      <svg className="w-12 h-12 mx-auto mb-4 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                      </svg>
+                      <p className="mb-2">{t('clickToUploadVideo')}</p>
+                      <p className="text-xs">{t('videoRequirements')}</p>
+                    </div>
+                  )}
+                </div>
+              )}
+              
               <input
                 id="video-input"
                 type="file"
@@ -316,8 +342,27 @@ export default function NewProjectPage() {
             </div>
           </div>
 
+          {/* 条款 */}
+          <div className="card p-8 animate-fade-up delay-4" data-field="terms">
+            <label className="flex items-start gap-3 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={agreedToTerms}
+                onChange={e => {
+                  setAgreedToTerms(e.target.checked);
+                  if (errors.terms) setErrors(p => ({ ...p, terms: undefined }));
+                }}
+                className="mt-1 w-5 h-5 rounded border-[var(--ink-border)] text-[var(--gold)] focus:ring-[var(--gold)] cursor-pointer"
+              />
+              <span className="text-sm text-[var(--text-secondary)]">
+                {t('projectTermsText')}
+              </span>
+            </label>
+            {errors.terms && <p className="text-red-400 text-sm mt-2">{errors.terms}</p>}
+          </div>
+
           {/* 提交 */}
-          <div className="flex gap-4 animate-fade-up delay-4">
+          <div className="flex gap-4 animate-fade-up delay-5">
             <button type="button" onClick={() => router.back()} className="btn-secondary flex-1 h-14">
               {t('cancel')}
             </button>

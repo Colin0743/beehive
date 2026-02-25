@@ -12,6 +12,8 @@ import LanguageSwitcher from '@/components/LanguageSwitcher';
 import NotificationBell from '@/components/NotificationBell';
 import UserDropdown from '@/components/UserDropdown';
 import Logo from '@/components/Logo';
+import MobileNav from '@/components/MobileNav';
+import { ProjectGridSkeleton, TaskPreviewSkeleton } from '@/components/SkeletonCard';
 
 const Icons = {
   search: (
@@ -171,34 +173,38 @@ function HomeContent() {
   const [searchQuery, setSearchQuery] = useState('');
   const [clickCounts, setClickCounts] = useState<Record<string, number>>({});
   const [recentTasks, setRecentTasks] = useState<(Task & { projectId: string; projectName: string; projectCategory: string })[]>([]);
+  const [loadingProjects, setLoadingProjects] = useState(true);
+  const [loadingTasks, setLoadingTasks] = useState(true);
 
+  // 并行加载项目和任务
   useEffect(() => {
     const loadData = async () => {
-      try {
-        const result = await projectStorage.getAllProjects();
-        if (result.success && result.data) {
-          setProjects(result.data);
-          if (result.data.length > 0) {
-            const projectIds = result.data.map(p => p.id);
-            const counts = await clickTracker.getBatchClickCounts(projectIds);
-            setClickCounts(counts);
-          }
-        }
-      } catch (err) {
-        console.error('Failed to load projects:', err);
+      const [projectsResult, tasksResult] = await Promise.all([
+        projectStorage.getAllProjects(),
+        taskStorage.getAllPublishedTasks(),
+      ]);
+
+      if (projectsResult.success && projectsResult.data) {
+        setProjects(projectsResult.data);
       }
-      try {
-        const tasksResult = await taskStorage.getAllPublishedTasks();
-        if (tasksResult.success && tasksResult.data) {
-          const sorted = tasksResult.data.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-          setRecentTasks(sorted.slice(0, 5));
-        }
-      } catch (err) {
-        console.error('Failed to load tasks:', err);
+      setLoadingProjects(false);
+
+      if (tasksResult.success && tasksResult.data) {
+        const sorted = tasksResult.data.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+        setRecentTasks(sorted.slice(0, 5));
       }
+      setLoadingTasks(false);
     };
     loadData();
   }, []);
+
+  // 延迟加载点击统计（不阻塞项目渲染）
+  useEffect(() => {
+    if (projects.length > 0) {
+      const projectIds = projects.map(p => p.id);
+      clickTracker.getBatchClickCounts(projectIds).then(setClickCounts);
+    }
+  }, [projects]);
 
   const featuredProjects = sortingEngine.getFeaturedProjects(projects, clickCounts, 6);
 
@@ -216,7 +222,11 @@ function HomeContent() {
       <nav className="sticky top-0 z-50 bg-[var(--ink)]/95 backdrop-blur-md border-b border-[var(--ink-border)]">
         <div className="container">
           <div className="h-16 flex items-center justify-between">
-            <Link href="/"><Logo size="medium" /></Link>
+            <Link href="/" className="flex-shrink-0">
+              <Logo size="medium" showText={false} className="sm:hidden" />
+              <Logo size="medium" className="hidden sm:flex" />
+            </Link>
+            {/* 桌面端搜索栏 */}
             <form onSubmit={handleSearch} className="flex-1 max-w-md mx-8 hidden md:block">
               <div className="relative">
                 <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-muted)] pointer-events-none">{Icons.search}</span>
@@ -224,7 +234,8 @@ function HomeContent() {
                   onChange={(e) => setSearchQuery(e.target.value)} className="input pl-10" />
               </div>
             </form>
-            <div className="flex items-center gap-4">
+            {/* 桌面端导航 */}
+            <div className="hidden md:flex items-center gap-2 sm:gap-4 flex-shrink-0">
               <LanguageSwitcher />
               {isLoggedIn && user && <NotificationBell userId={user.id} />}
               {isLoggedIn ? (
@@ -242,19 +253,21 @@ function HomeContent() {
                 </>
               )}
             </div>
+            {/* 移动端导航 */}
+            <MobileNav />
           </div>
         </div>
       </nav>
       {/* 分类导航栏 */}
       <div className="sticky top-16 z-40 bg-[var(--ink)]/95 backdrop-blur-md border-b border-[var(--ink-border)]">
         <div className="container">
-          <div className="flex gap-1 py-3 overflow-x-auto">
-            <Link href="/projects" className="px-4 py-2 text-sm font-medium rounded-md text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--ink-lighter)] transition-all">
+          <div className="flex gap-1 py-3 overflow-x-auto scrollbar-hide">
+            <Link href="/projects" className="flex-shrink-0 px-4 py-2 text-sm font-medium rounded-md text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--ink-lighter)] transition-all touch-manipulation">
               {t('all')}
             </Link>
             {CATEGORIES.map((cat) => (
               <Link key={cat.key} href={`/projects?category=${cat.key}`}
-                className="px-4 py-2 text-sm font-medium rounded-md text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--ink-lighter)] transition-all">
+                className="flex-shrink-0 px-4 py-2 text-sm font-medium rounded-md text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--ink-lighter)] transition-all touch-manipulation">
                 {t(cat.key)}
               </Link>
             ))}
@@ -307,12 +320,15 @@ function HomeContent() {
                 <h2 className="text-2xl text-[var(--text-primary)]">{t('featuredProjects')}</h2>
                 <Link href="/projects" className="text-xl text-[var(--gold)] hover:underline">{t('viewAllProjects')}</Link>
               </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-                {featuredProjects.map((project, i) => (
-                  <ProjectCard key={project.id} project={project} index={i} />
-                ))}
-              </div>
-              {featuredProjects.length === 0 && (
+              {loadingProjects ? (
+                <ProjectGridSkeleton count={6} />
+              ) : featuredProjects.length > 0 ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+                  {featuredProjects.map((project, i) => (
+                    <ProjectCard key={project.id} project={project} index={i} />
+                  ))}
+                </div>
+              ) : (
                 <div className="text-center py-16 text-[var(--text-muted)]"><p>{t('noProjects')}</p></div>
               )}
             </section>
@@ -339,18 +355,22 @@ function HomeContent() {
           </div>
 
           {/* 最新任务 - sticky 侧边栏 */}
-          {recentTasks.length > 0 && (
+          {(loadingTasks || recentTasks.length > 0) && (
             <div className="hidden lg:block w-80 flex-shrink-0">
               <div className="sticky top-36">
                 <div className="flex items-center justify-between mb-6">
                   <h2 className="text-2xl text-[var(--text-primary)]">{t('recentTasks')}</h2>
                   <Link href="/tasks" className="text-xl text-[var(--gold)] hover:underline">{t('viewAllTasks')}</Link>
                 </div>
-                <div className="flex flex-col gap-3">
-                  {recentTasks.map((task) => (
-                    <TaskPreviewCard key={task.id} task={task} />
-                  ))}
-                </div>
+                {loadingTasks ? (
+                  <TaskPreviewSkeleton />
+                ) : (
+                  <div className="flex flex-col gap-3">
+                    {recentTasks.map((task) => (
+                      <TaskPreviewCard key={task.id} task={task} />
+                    ))}
+                  </div>
+                )}
               </div>
             </div>
           )}
@@ -370,7 +390,7 @@ function HomeContent() {
                 <li><Link href="/about" className="hover:text-[var(--gold)] transition-colors">{t('aboutUs')}</Link></li>
                 <li><Link href="/how-it-works" className="hover:text-[var(--gold)] transition-colors">{t('howItWorks')}</Link></li>
                 <li><Link href="/guide" className="hover:text-[var(--gold)] transition-colors">{t('creationGuide')}</Link></li>
-                <li><Link href="/help" className="hover:text-[var(--gold)] transition-colors">{t('helpCenter')}</Link></li>
+                <li><Link href="/help" className="hover:text-[var(--gold)] transition-colors">{t('faq')}</Link></li>
               </ul>
             </div>
             <div>

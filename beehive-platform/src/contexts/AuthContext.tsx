@@ -15,6 +15,10 @@ interface AuthContextValue {
   login: (userData: User) => void;
   logout: () => Promise<void>;
   sendMagicLink: (email: string) => Promise<void>;
+  signInWithPassword: (email: string, password: string) => Promise<void>;
+  signUpWithPassword: (email: string, password: string, name: string) => Promise<void>;
+  sendPasswordReset: (email: string) => Promise<void>;
+  updatePassword: (password: string) => Promise<void>;
   updateUser: (updatedData: Partial<User>) => Promise<void>;
   isProjectOwner: (projectId: string) => boolean;
 }
@@ -93,9 +97,39 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const { error } = await supabase.auth.signInWithOtp({
       email,
       options: {
-        emailRedirectTo: `${window.location.origin}/`,
+        // 必须重定向到 /auth/callback，该路由会用 code 交换 session
+        emailRedirectTo: `${window.location.origin}/auth/callback`,
       },
     });
+    if (error) throw error;
+  }, [supabase]);
+
+  const signInWithPassword = useCallback(async (email: string, password: string) => {
+    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    if (error) throw error;
+  }, [supabase]);
+
+  const signUpWithPassword = useCallback(async (email: string, password: string, name: string) => {
+    const { error } = await supabase.auth.signUp({
+      email,
+      password,
+      options: {
+        data: { name },
+        emailRedirectTo: `${window.location.origin}/auth/callback`,
+      },
+    });
+    if (error) throw error;
+  }, [supabase]);
+
+  const sendPasswordReset = useCallback(async (email: string) => {
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: `${window.location.origin}/auth/callback?type=recovery`,
+    });
+    if (error) throw error;
+  }, [supabase]);
+
+  const updatePassword = useCallback(async (password: string) => {
+    const { error } = await supabase.auth.updateUser({ password });
     if (error) throw error;
   }, [supabase]);
 
@@ -146,6 +180,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     login,
     logout,
     sendMagicLink,
+    signInWithPassword,
+    signUpWithPassword,
+    sendPasswordReset,
+    updatePassword,
     updateUser,
     isProjectOwner,
   };

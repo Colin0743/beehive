@@ -7,6 +7,7 @@ import LayoutSimple from '@/components/LayoutSimple';
 import { useAuth } from '@/contexts/AuthContext';
 import { Task } from '@/types';
 import { taskStorage, taskAcceptanceStorage } from '@/lib/api';
+import { TaskGridSkeleton } from '@/components/SkeletonCard';
 
 type PublishedTask = Task & { projectId: string; projectName: string; projectCategory: string };
 
@@ -388,9 +389,7 @@ export default function TaskHallPage() {
 
         {/* ===== 任务墙（Task Wall）- 5列全宽布局 ===== */}
         {loading ? (
-          <div className="text-center py-20">
-            <div className="inline-block w-8 h-8 border-2 border-[var(--gold)] border-t-transparent rounded-full animate-spin" />
-          </div>
+          <TaskGridSkeleton count={15} />
         ) : filteredTasks.length > 0 ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
             {filteredTasks.map(task => (

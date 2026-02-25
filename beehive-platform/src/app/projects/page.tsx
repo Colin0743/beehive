@@ -8,6 +8,7 @@ import LayoutSimple from '@/components/LayoutSimple';
 import { Project } from '@/types';
 import { projectStorage, clickTracker } from '@/lib/api';
 import { sortingEngine, SortOption } from '@/lib/sortingEngine';
+import { ProjectGridSkeleton } from '@/components/SkeletonCard';
 
 // SVG 图标
 const Icons = {
@@ -188,22 +189,24 @@ function ProjectsContent() {
     setCurrentPage(1);
   };
 
-  // 加载项目数据和点击数据
+  // 并行加载项目数据和点击数据
   useEffect(() => {
     const loadData = async () => {
       try {
         const result = await projectStorage.getAllProjects();
         if (result.success && result.data) {
           setProjects(result.data);
+          setLoading(false);
 
-          // 批量获取点击数据
+          // 延迟加载点击数据（不阻塞项目渲染）
           if (result.data.length > 0) {
             const projectIds = result.data.map(p => p.id);
-            const counts = await clickTracker.getBatchClickCounts(projectIds);
-            setClickCounts(counts);
+            clickTracker.getBatchClickCounts(projectIds).then(setClickCounts);
           }
+        } else {
+          setLoading(false);
         }
-      } finally {
+      } catch {
         setLoading(false);
       }
     };
@@ -298,9 +301,7 @@ function ProjectsContent() {
 
         {/* 项目列表 */}
         {loading ? (
-          <div className="text-center py-20">
-            <div className="inline-block w-8 h-8 border-2 border-[var(--gold)] border-t-transparent rounded-full animate-spin" />
-          </div>
+          <ProjectGridSkeleton count={12} columns="grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4" />
         ) : currentProjects.length > 0 ? (
           <>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">

@@ -1,4 +1,22 @@
 import { test, expect } from '@playwright/test';
+import { createClient } from '@supabase/supabase-js';
+
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+const adminClient = supabaseUrl && serviceRoleKey
+  ? createClient(supabaseUrl, serviceRoleKey, { auth: { autoRefreshToken: false, persistSession: false } })
+  : null;
+
+async function createConfirmedUser(email: string, password: string) {
+  if (!adminClient) throw new Error('Supabase admin client not configured');
+  const { data, error } = await adminClient.auth.admin.createUser({
+    email,
+    password,
+    email_confirm: true,
+  });
+  if (error || !data.user) throw error || new Error('Failed to create user');
+  return data.user;
+}
 
 /**
  * 用户认证功能测试
@@ -15,8 +33,9 @@ test.describe('用户认证测试', () => {
     await page.waitForLoadState('networkidle');
     await expect(page).toHaveURL(/.*auth\/register/);
     
-    const title = page.locator('h2').filter({ hasText: '加入蜂巢' });
+    const title = page.locator('h1');
     await expect(title).toBeVisible({ timeout: 10000 });
+    await expect(title).toContainText(/加入.*制片厂/);
   });
 
   test('应该能够访问登录页面', async ({ page }) => {
@@ -24,8 +43,9 @@ test.describe('用户认证测试', () => {
     await page.waitForLoadState('networkidle');
     await expect(page).toHaveURL(/.*auth\/login/);
     
-    const title = page.locator('h2').filter({ hasText: '欢迎回到蜂巢' });
+    const title = page.locator('h1');
     await expect(title).toBeVisible({ timeout: 10000 });
+    await expect(title).toContainText(/欢迎/);
   });
 
   test('注册表单验证应该正常工作', async ({ page }) => {
@@ -48,24 +68,19 @@ test.describe('用户认证测试', () => {
     await page.waitForLoadState('networkidle');
     
     // 填写注册表单
-    const timestamp = Date.now();
-    const testEmail = `test${timestamp}@example.com`;
-    const testName = `测试用户${timestamp}`;
+    const uniqueId = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+    const testEmail = `test${uniqueId}@example.com`;
     const testPassword = 'test123456';
     
-    await page.fill('input[type="text"]', testName);
     await page.fill('input[type="email"]', testEmail);
-    const passwordInputs = page.locator('input[type="password"]');
-    await passwordInputs.nth(0).fill(testPassword);
-    await passwordInputs.nth(1).fill(testPassword);
+    await page.fill('input[type="password"]', testPassword);
     
     // 提交表单
     const submitButton = page.locator('button').filter({ hasText: '注册' });
     await submitButton.click();
     
-    // 应该跳转到首页
-    await page.waitForURL('/', { timeout: 10000 });
-    await expect(page).toHaveURL('/');
+    await page.waitForURL(/.*auth\/login/, { timeout: 10000 });
+    await expect(page).toHaveURL(/.*auth\/login/);
   });
 
   test('登录表单验证应该正常工作', async ({ page }) => {
@@ -84,29 +99,10 @@ test.describe('用户认证测试', () => {
   });
 
   test('使用错误密码登录应该失败', async ({ page }) => {
-    await page.goto('/auth/login');
-    await page.waitForLoadState('networkidle');
-    
-    // 先注册一个用户
-    await page.goto('/auth/register');
-    await page.waitForLoadState('networkidle');
-    const timestamp = Date.now();
-    const testEmail = `test${timestamp}@example.com`;
-    const testName = `测试用户${timestamp}`;
+    const uniqueId = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+    const testEmail = `test${uniqueId}@example.com`;
     const testPassword = 'test123456';
-    
-    await page.fill('input[type="text"]', testName);
-    await page.fill('input[type="email"]', testEmail);
-    const passwordInputs = page.locator('input[type="password"]');
-    await passwordInputs.nth(0).fill(testPassword);
-    await passwordInputs.nth(1).fill(testPassword);
-    
-    const registerButton = page.locator('button').filter({ hasText: '注册' });
-    await registerButton.click();
-    await page.waitForURL('/', { timeout: 10000 });
-    
-    // 登出
-    await page.evaluate(() => localStorage.clear());
+    await createConfirmedUser(testEmail, testPassword);
     
     // 尝试用错误密码登录
     await page.goto('/auth/login');
@@ -124,26 +120,10 @@ test.describe('用户认证测试', () => {
   });
 
   test('使用正确密码登录应该成功', async ({ page }) => {
-    // 先注册一个用户
-    await page.goto('/auth/register');
-    await page.waitForLoadState('networkidle');
     const timestamp = Date.now();
     const testEmail = `test${timestamp}@example.com`;
-    const testName = `测试用户${timestamp}`;
     const testPassword = 'test123456';
-    
-    await page.fill('input[type="text"]', testName);
-    await page.fill('input[type="email"]', testEmail);
-    const passwordInputs = page.locator('input[type="password"]');
-    await passwordInputs.nth(0).fill(testPassword);
-    await passwordInputs.nth(1).fill(testPassword);
-    
-    const registerButton = page.locator('button').filter({ hasText: '注册' });
-    await registerButton.click();
-    await page.waitForURL('/', { timeout: 10000 });
-    
-    // 登出
-    await page.evaluate(() => localStorage.clear());
+    await createConfirmedUser(testEmail, testPassword);
     
     // 使用正确密码登录
     await page.goto('/auth/login');
@@ -154,7 +134,6 @@ test.describe('用户认证测试', () => {
     const loginButton = page.locator('button').filter({ hasText: '登录' });
     await loginButton.click();
     
-    // 应该跳转到首页
     await page.waitForURL('/', { timeout: 10000 });
     await expect(page).toHaveURL('/');
   });

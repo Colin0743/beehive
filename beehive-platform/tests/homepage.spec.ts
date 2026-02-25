@@ -9,29 +9,23 @@ test.describe('首页测试', () => {
   });
 
   test('应该显示页面标题', async ({ page }) => {
-    await expect(page).toHaveTitle(/蜂巢/);
+    await expect(page).toHaveTitle(/泱泱云合AI制片厂/);
   });
 
   test('应该显示主标题和副标题', async ({ page }) => {
     const title = page.locator('h1');
     await expect(title).toBeVisible();
-    await expect(title).toContainText('蜂巢');
+    await expect(title).toContainText('泱泱云合AI制片厂');
     
-    const subtitle = page.locator('text=蜂巢是AI视频创作者的协作平台');
+    const subtitle = page.locator('p').filter({ hasText: 'AI视频创作者的协作平台' }).first();
     await expect(subtitle).toBeVisible();
   });
 
-  test('应该显示流程漫画轮播', async ({ page }) => {
+  test('应该显示首页主行动按钮', async ({ page }) => {
     await page.waitForLoadState('networkidle');
     
-    // 检查轮播容器是否存在（使用更通用的选择器）
-    const carousel = page.locator('div').filter({ hasText: /发起人创建项目|工蜂加入项目|协作完成作品/ }).first();
-    await expect(carousel).toBeVisible({ timeout: 10000 });
-    
-    // 检查轮播指示器
-    const indicators = page.locator('button[aria-label*="步骤"]');
-    const count = await indicators.count();
-    expect(count).toBeGreaterThan(0);
+    const startButton = page.locator('a[href="/projects/new"] button').filter({ hasText: '开始创作' }).first();
+    await expect(startButton).toBeVisible({ timeout: 10000 });
   });
 
   test('应该显示精选项目标题', async ({ page }) => {
@@ -39,23 +33,10 @@ test.describe('首页测试', () => {
     await expect(featuredTitle).toBeVisible();
   });
 
-  test('流程漫画应该可以切换', async ({ page }) => {
-    // 等待轮播加载
-    await page.waitForTimeout(1000);
-    
-    // 点击下一个按钮
-    const nextButton = page.locator('button[aria-label="下一个步骤"]').first();
-    if (await nextButton.isVisible()) {
-      await nextButton.click();
-      await page.waitForTimeout(500);
-    }
-    
-    // 点击上一个按钮
-    const prevButton = page.locator('button[aria-label="上一个步骤"]').first();
-    if (await prevButton.isVisible()) {
-      await prevButton.click();
-      await page.waitForTimeout(500);
-    }
+  test('应该显示项目分类导航', async ({ page }) => {
+    const categoryNav = page.locator('a[href^="/projects?category="]');
+    const count = await categoryNav.count();
+    expect(count).toBeGreaterThan(0);
   });
 });
 

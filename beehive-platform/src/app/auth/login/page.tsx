@@ -11,15 +11,15 @@ import Logo from '@/components/Logo';
 
 export default function LoginPage() {
   const { t } = useTranslation('common');
-  const { sendMagicLink, isLoggedIn } = useAuth();
+  const { signInWithPassword, sendPasswordReset, isLoggedIn } = useAuth();
   const { showToast } = useToast();
   const router = useRouter();
 
   const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [errors, setErrors] = useState<FormErrors>({});
-  const [sending, setSending] = useState(false);
-  // 发送成功后显示提示界面
-  const [sent, setSent] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [resetting, setResetting] = useState(false);
 
   // 已登录则跳转首页
   useEffect(() => {
@@ -28,7 +28,6 @@ export default function LoginPage() {
     }
   }, [isLoggedIn, router]);
 
-  // 验证邮箱格式
   const validateEmail = (): boolean => {
     const newErrors: FormErrors = {};
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -37,21 +36,58 @@ export default function LoginPage() {
     } else if (!emailRegex.test(email)) {
       newErrors.email = t('invalidEmail', '邮箱格式不正确');
     }
-    setErrors(newErrors);
+    setErrors((prev) => ({ ...prev, ...newErrors }));
     return Object.keys(newErrors).length === 0;
   };
 
-  // 发送 Magic Link
-  const handleSendLink = useCallback(async () => {
-    if (!validateEmail()) return;
+  const validatePassword = (): boolean => {
+    const newErrors: FormErrors = {};
+    if (!password.trim()) {
+      newErrors.password = t('passwordRequired', '请输入密码');
+    } else if (password.trim().length < 6) {
+      newErrors.password = t('passwordMinLength', '密码至少需要6个字符');
+    }
+    setErrors((prev) => ({ ...prev, ...newErrors }));
+    return Object.keys(newErrors).length === 0;
+  };
 
-    setSending(true);
+  const handleLogin = useCallback(async () => {
+    const okEmail = validateEmail();
+    const okPassword = validatePassword();
+    if (!okEmail || !okPassword) return;
+
+    setLoading(true);
     setErrors({});
 
     try {
-      await sendMagicLink(email.trim());
-      setSent(true);
-      showToast('success', '登录链接已发送到您的邮箱');
+      await signInWithPassword(email.trim(), password.trim());
+      showToast('success', t('loginSuccess', '登录成功'));
+      router.push('/');
+    } catch (error) {
+      const message = error instanceof Error ? error.message : '';
+      if (message.includes('Invalid login credentials')) {
+        setErrors({ general: t('wrongCredentials', '邮箱或密码错误') });
+      } else if (message.includes('Email not confirmed')) {
+        setErrors({ general: '邮箱未验证，请先完成邮箱验证' });
+      } else if (message.includes('fetch') || message.includes('network') || message.includes('Failed')) {
+        setErrors({ general: '服务暂时不可用，请稍后重试' });
+      } else {
+        setErrors({ general: message || '登录失败，请稍后重试' });
+      }
+      showToast('error', t('loginFailed', '登录失败'));
+    } finally {
+      setLoading(false);
+    }
+  }, [email, password, router, showToast, signInWithPassword, t]);
+
+  const handleReset = useCallback(async () => {
+    if (!validateEmail()) return;
+    setResetting(true);
+    setErrors({});
+
+    try {
+      await sendPasswordReset(email.trim());
+      showToast('success', '重置密码邮件已发送');
     } catch (error) {
       const message = error instanceof Error ? error.message : '';
       if (message.includes('fetch') || message.includes('network') || message.includes('Failed')) {
@@ -61,19 +97,13 @@ export default function LoginPage() {
       }
       showToast('error', '发送失败，请稍后重试');
     } finally {
-      setSending(false);
+      setResetting(false);
     }
-  }, [email, sendMagicLink, showToast]);
+  }, [email, sendPasswordReset, showToast]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    handleSendLink();
-  };
-
-  // 返回重新输入邮箱
-  const handleBack = () => {
-    setSent(false);
-    setErrors({});
+    handleLogin();
   };
 
   return (
@@ -93,9 +123,7 @@ export default function LoginPage() {
               {t('welcomeBack', '欢迎回来')}
             </h1>
             <p className="text-[var(--text-muted)]">
-              {sent
-                ? '请查看您的邮箱'
-                : t('continueJourney', '输入邮箱，我们会发送登录链接')}
+              {t('continueJourney', '使用邮箱和密码登录')}
             </p>
           </div>
 
@@ -103,98 +131,68 @@ export default function LoginPage() {
             {errors.general && (
               <div className="p-4 rounded-md bg-red-500/10 border border-red-500/20 text-red-400 text-sm mb-6">
                 <p>{errors.general}</p>
-                {errors.general.includes('服务暂时不可用') && (
-                  <button
-                    type="button"
-                    onClick={handleSendLink}
-                    className="mt-2 text-[var(--gold)] hover:underline text-sm"
-                  >
-                    点击重试
-                  </button>
+              </div>
+            )}
+
+            <form onSubmit={handleSubmit} className="space-y-6">
+              <div>
+                <label className="block text-sm font-medium text-[var(--text-secondary)] mb-2">
+                  {t('email', '邮箱地址')}
+                </label>
+                <input
+                  type="email"
+                  placeholder={t('emailPlaceholder', '请输入您的邮箱')}
+                  value={email}
+                  onChange={(e) => {
+                    setEmail(e.target.value);
+                    setErrors((p) => ({ ...p, email: undefined, general: undefined }));
+                  }}
+                  className={`input ${errors.email ? 'input-error' : ''}`}
+                  autoFocus
+                />
+                {errors.email && (
+                  <p className="text-xs text-red-400 mt-2">{errors.email}</p>
                 )}
               </div>
-            )}
 
-            {!sent ? (
-              /* 输入邮箱 */
-              <form onSubmit={handleSubmit} className="space-y-6">
-                <div>
-                  <label className="block text-sm font-medium text-[var(--text-secondary)] mb-2">
-                    {t('email', '邮箱地址')}
-                  </label>
-                  <input
-                    type="email"
-                    placeholder={t('emailPlaceholder', '请输入您的邮箱')}
-                    value={email}
-                    onChange={(e) => {
-                      setEmail(e.target.value);
-                      setErrors((p) => ({ ...p, email: undefined }));
-                    }}
-                    className={`input ${errors.email ? 'input-error' : ''}`}
-                    autoFocus
-                  />
-                  {errors.email && (
-                    <p className="text-xs text-red-400 mt-2">{errors.email}</p>
-                  )}
-                </div>
-
-                <button
-                  type="submit"
-                  disabled={sending}
-                  className="btn-primary w-full disabled:opacity-50"
-                >
-                  {sending ? '发送中...' : '发送登录链接'}
-                </button>
-              </form>
-            ) : (
-              /* 发送成功提示 */
-              <div className="text-center space-y-6">
-                <div className="w-16 h-16 mx-auto rounded-full bg-[var(--gold)]/10 flex items-center justify-center">
-                  <svg
-                    className="w-8 h-8 text-[var(--gold)]"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                    aria-hidden="true"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
-                    />
-                  </svg>
-                </div>
-                <div>
-                  <p className="text-[var(--text-secondary)] mb-2">
-                    登录链接已发送至
-                  </p>
-                  <p className="text-[var(--gold)] font-medium">{email}</p>
-                </div>
-                <p className="text-sm text-[var(--text-muted)]">
-                  请打开邮箱，点击邮件中的链接即可登录。<br />
-                  如未收到，请检查垃圾邮件文件夹。
-                </p>
-
-                <div className="space-y-3 pt-2">
-                  <button
-                    type="button"
-                    onClick={handleSendLink}
-                    disabled={sending}
-                    className="btn-primary w-full disabled:opacity-50"
-                  >
-                    {sending ? '发送中...' : '重新发送'}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={handleBack}
-                    className="w-full text-center text-sm text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors"
-                  >
-                    ← 更换邮箱
-                  </button>
-                </div>
+              <div>
+                <label className="block text-sm font-medium text-[var(--text-secondary)] mb-2">
+                  {t('password', '密码')}
+                </label>
+                <input
+                  type="password"
+                  placeholder={t('passwordPlaceholder', '请输入密码')}
+                  value={password}
+                  onChange={(e) => {
+                    setPassword(e.target.value);
+                    setErrors((p) => ({ ...p, password: undefined, general: undefined }));
+                  }}
+                  className={`input ${errors.password ? 'input-error' : ''}`}
+                />
+                {errors.password && (
+                  <p className="text-xs text-red-400 mt-2">{errors.password}</p>
+                )}
               </div>
-            )}
+
+              <button
+                type="submit"
+                disabled={loading}
+                className="btn-primary w-full disabled:opacity-50"
+              >
+                {loading ? t('loggingIn', '登录中...') : t('login', '登录')}
+              </button>
+            </form>
+
+            <div className="mt-4 flex items-center justify-between text-sm">
+              <button
+                type="button"
+                onClick={handleReset}
+                disabled={resetting}
+                className="text-[var(--gold)] hover:underline disabled:opacity-50"
+              >
+                {resetting ? '发送中...' : '忘记密码'}
+              </button>
+            </div>
 
             <div className="divider my-8" />
 

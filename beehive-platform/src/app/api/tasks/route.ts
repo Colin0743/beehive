@@ -1,5 +1,5 @@
 import { createServerSupabaseClient } from '@/lib/supabase-server';
-import { successResponse, errorResponse } from '@/app/api/_helpers';
+import { cachedSuccessResponse, errorResponse } from '@/app/api/_helpers';
 
 // ============================================================
 // 任务大厅 API
@@ -32,5 +32,5 @@ export async function GET() {
     return errorResponse('获取任务列表失败', 500);
   }
 
-  return successResponse(data);
+  return cachedSuccessResponse(data);
 }

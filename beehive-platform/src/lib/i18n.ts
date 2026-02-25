@@ -1,11 +1,16 @@
 import i18n from 'i18next';
 import { initReactI18next } from 'react-i18next';
+import { getRegion } from '@/lib/region';
+
+// 区域与语言的映射关系
+const regionLangMap = { cn: 'zh', global: 'en' } as const;
+const currentLang = regionLangMap[getRegion()];
 
 // 英文资源
 const enResources = {
   common: {
     // Site Meta
-    'site.title': 'Bee AI Movie Studio - AI Video Collaboration Platform',
+    'site.title': 'YangYang Cloud AI Studio - AI Video Collaboration Platform',
     'site.description': 'AI video creators collaboration platform, gathering creativity and computing power',
     
     // Navigation
@@ -13,9 +18,14 @@ const enResources = {
     register: 'Register',
     logout: 'Logout',
     startCreating: 'Start Creating',
-    appName: 'Bee Studio AI',
-    appFullName: 'Bee AI Movie Studio',
+    appName: 'YangYang Cloud AI',
+    appFullName: 'YangYang Cloud AI Studio',
     searchPlaceholder: 'Search projects...',
+    home: 'Home',
+    menu: 'Menu',
+    close: 'Close',
+    search: 'Search',
+    allProjects: 'All Projects',
     
     // Categories
     all: 'All',
@@ -26,8 +36,8 @@ const enResources = {
     other: 'Other',
     
     // Hero Section
-    heroTitle: 'Let Creativity Bloom in the Bee Studio',
-    heroSubtitle: 'Bee Studio is a collaboration platform for AI video creators. Join the Bee Studio and work with excellent creators to complete AI video works',
+    heroTitle: 'Let Creativity Bloom in the YangYang Cloud AI Studio',
+    heroSubtitle: 'YangYang Cloud AI Studio is a collaboration platform for AI video creators. Join the studio and work with excellent creators to complete AI video works',
     
     // Project Cards
     supporters: 'supporters',
@@ -50,7 +60,7 @@ const enResources = {
     noProjects: 'No projects yet',
     noCategoryProjects: 'No projects in this category',
     tryOtherCategories: 'Try viewing other categories',
-    firstProjectCTA: 'Be the first creator to create an AI video project on the Bee Studio!',
+    firstProjectCTA: 'Be the first creator to create an AI video project on the YangYang Cloud AI Studio!',
     createFirstProject: 'Create First Project',
     
     // My Works
@@ -64,7 +74,7 @@ const enResources = {
     allProjectsTitle: 'All Projects',
     
     // Footer
-    footerDescription: 'AI video creators collaboration platform, let creativity bloom in the Bee Studio',
+    footerDescription: 'AI video creators collaboration platform, let creativity bloom in the YangYang Cloud AI Studio',
     quickLinks: 'Quick Links',
     aboutUs: 'About Us',
     howItWorks: 'How It Works',
@@ -76,7 +86,7 @@ const enResources = {
     creatorStories: 'Creator Stories',
     partners: 'Partners',
     contactUs: 'Contact Us',
-    allRightsReserved: '© 2025 Bee Studio AI. All rights reserved.',
+    allRightsReserved: '© 2025 YangYang Cloud AI Studio. All rights reserved.',
     privacyPolicy: 'Privacy Policy',
     termsOfService: 'Terms of Service',
     cookieSettings: 'Cookie Settings',
@@ -165,7 +175,7 @@ const enResources = {
     termsTitle: 'Terms of Service',
     termsLastUpdated: 'Last updated: January 2025',
     'terms.section1Title': '1. Service Description',
-    'terms.section1Content': 'Beehive is an AI video creator collaboration platform that provides users with project publishing, browsing and participation features. By using this platform, you agree to comply with the following terms.',
+    'terms.section1Content': 'YangYang Cloud AI Studio is an AI video creator collaboration platform that provides users with project publishing, browsing and participation features. By using this platform, you agree to comply with the following terms.',
     'terms.section2Title': '2. User Accounts',
     'terms.section2Item1': 'You must provide accurate and complete registration information',
     'terms.section2Item2': 'You are responsible for protecting your account security and must not share your account with others',
@@ -251,7 +261,7 @@ const enResources = {
     goToStep: 'Go to step {{step}}',
     
     // Login Page
-    welcomeBack: 'Welcome Back to Hive',
+    welcomeBack: 'Welcome Back to YangYang Cloud AI Studio',
     continueJourney: 'Continue your AI video creation journey',
     email: 'Email',
     emailPlaceholder: 'Enter your email',
@@ -268,7 +278,7 @@ const enResources = {
     loginSuccess: 'Login successful',
     
     // Register Page
-    joinHive: 'Join the Hive',
+    joinHive: 'Join the YangYang Cloud AI Studio',
     startJourney: 'Start your AI video creation journey',
     name: 'Name',
     namePlaceholder: 'Enter your name',
@@ -331,6 +341,12 @@ const enResources = {
     durationRequired: 'Please enter target duration',
     invalidDuration: 'Please enter a valid duration (seconds)',
     coverRequired: 'Please upload a cover image',
+    termsRequired: 'Please agree to the terms',
+    durationTooLong: 'Duration cannot exceed 300 seconds',
+    projectTermsText: 'I agree to credit the original author\'s email or ID in the published video for any materials used',
+    contactGroupLabel: 'Contact Group Number (optional)',
+    contactGroupPlaceholder: 'e.g., 123456789',
+    contactGroupHint: 'Fill in the contact group number for collaborators to join',
     createFailed: 'Failed to create project, please try again',
     createSuccess: 'Project created successfully',
     removeFile: 'Remove',
@@ -442,7 +458,7 @@ const enResources = {
     payNow: 'Pay now',
     rechargeSuccess: 'Recharge successful',
     paymentChannel: 'Payment channel',
-    paymentChannelAlipayPc: 'Alipay (PC)',
+    paymentChannelAlipayPc: 'Alipay',
     paymentChannelAlipayWap: 'Alipay (Mobile)',
     paymentChannelWxPub: 'WeChat Pay',
     paymentChannelWxNative: 'WeChat Pay (Scan QR)',
@@ -490,8 +506,9 @@ const enResources = {
     closeModal: 'Close',
 
     // Admin System
-    'admin.systemTitle': 'Beehive Admin',
+    'admin.systemTitle': 'YangYang Cloud AI Admin',
     'admin.dashboard': 'Dashboard',
+    'admin.contentReview': 'Content Review',
     'admin.projectManagement': 'Project Management',
     'admin.userManagement': 'User Management',
     'admin.backToHome': 'Back to Home',
@@ -571,6 +588,56 @@ const enResources = {
     'admin.createdProjectsCount': 'Created Projects ({{count}})',
     'admin.noUserProjects': 'This user has not created any projects yet',
     'admin.userNotFound': 'User not found',
+
+    // Admin Feedback Management
+    'admin.feedbackManagement': 'Feedback Management',
+    'admin.pendingFeedbacks': '{{count}} pending',
+    'admin.statusPending': 'Pending',
+    'admin.statusResolved': 'Resolved',
+    'admin.noFeedbacks': 'No feedbacks yet',
+    'admin.feedbackResolved': 'Feedback resolved',
+    'admin.processFeedback': 'Process',
+    'admin.markResolved': 'Mark as Resolved',
+    'admin.adminReply': 'Admin Reply',
+    'admin.replyPlaceholder': 'Enter reply message (optional, default: Thank you for your feedback)...',
+    'admin.resolvedAt': 'Resolved at',
+
+    // Feedback
+    'feedback.title': 'Feedback',
+    'feedback.entry': 'Feedback',
+    'feedback.categoryLabel': 'Issue Type',
+    'feedback.categoryPlaceholder': 'e.g., Bug Report, Feature Request, Usage Issue',
+    'feedback.descriptionLabel': 'Description',
+    'feedback.descriptionPlaceholder': 'Please describe the issue in detail, including steps, error messages, expected results...',
+    'feedback.imagesLabel': 'Screenshots (optional)',
+    'feedback.imagesHint': 'Supports JPG, PNG, GIF, max 5MB each. {{count}} more allowed.',
+    'feedback.addImage': 'Add Image',
+    'feedback.maxImages': 'Maximum 3 images allowed',
+    'feedback.categoryRequired': 'Please enter the issue type',
+    'feedback.descriptionRequired': 'Please enter the description',
+    'feedback.submit': 'Submit Feedback',
+    'feedback.submitting': 'Submitting...',
+    'feedback.submitSuccess': 'Feedback submitted successfully, thank you!',
+    'feedback.submitFailed': 'Failed to submit feedback, please try again',
+
+    // FAQ / Help Page
+    faq: 'FAQ',
+    'help.q1': 'How do I create a new project?',
+    'help.a1': 'After logging in, click the "Start Creating" button in the top right corner, fill in the project information (title, description, duration target, etc.), and submit to create a project.',
+    'help.q2': 'How do I join someone else\'s project?',
+    'help.a2': 'Browse the project list, find a project you\'re interested in, click to view details, then click the "Join Project" button.',
+    'help.q3': 'What is the Task Hall?',
+    'help.a3': 'The Task Hall displays all published tasks. You can browse tasks, accept them, and contribute your AI video generation computing power to projects.',
+    'help.q4': 'How does the balance system work?',
+    'help.a4': 'Publishing tasks requires a fee deducted from your balance. You can recharge via Alipay or WeChat Pay on the Recharge page.',
+    'help.q5': 'Can I participate in multiple projects?',
+    'help.a5': 'Yes! You can participate in multiple projects based on your time and interests.',
+    'help.q6': 'How do I check notifications?',
+    'help.a6': 'Click the bell icon in the top navigation bar to view your notifications, including task completion and feedback reply notifications.',
+    'help.q7': 'How do I report an issue?',
+    'help.a7': 'Click "Feedback" in the user menu or at the bottom of the page to submit your issue. We will process it and notify you.',
+    'help.moreQuestions': 'Have more questions?',
+    'help.moreQuestionsDesc': 'If the above didn\'t answer your question, feel free to submit feedback directly:',
   }
 };
 
@@ -578,7 +645,7 @@ const enResources = {
 const zhResources = {
   common: {
     // Site Meta
-    'site.title': '蜜蜂AI电影制片厂 - AI视频协作平台',
+    'site.title': '泱泱云合AI制片厂 - AI视频协作平台',
     'site.description': 'AI视频创作者的协作平台，汇聚创意与算力',
     
     // Navigation
@@ -586,9 +653,14 @@ const zhResources = {
     register: '注册',
     logout: '退出',
     startCreating: '开始创作',
-    appName: '蜜蜂制片厂AI',
-    appFullName: '蜜蜂AI电影制片厂',
+    appName: '泱泱云合AI制片厂',
+    appFullName: '泱泱云合AI制片厂',
     searchPlaceholder: '搜索项目...',
+    home: '首页',
+    menu: '菜单',
+    close: '关闭',
+    search: '搜索',
+    allProjects: '全部项目',
     
     // Categories
     all: '全部',
@@ -599,8 +671,8 @@ const zhResources = {
     other: '其他',
     
     // Hero Section
-    heroTitle: '让创意在蜜蜂AI电影制片厂中绽放',
-    heroSubtitle: '蜜蜂AI电影制片厂是AI视频创作者的协作平台，加入蜜蜂AI电影制片厂，与优秀创作者一起完成AI视频作品',
+    heroTitle: '让创意在泱泱云合AI制片厂中绽放',
+    heroSubtitle: '泱泱云合AI制片厂是AI视频创作者的协作平台，加入泱泱云合AI制片厂，与优秀创作者一起完成AI视频作品',
     
     // Project Cards
     supporters: '支持者',
@@ -623,7 +695,7 @@ const zhResources = {
     noProjects: '还没有项目',
     noCategoryProjects: '该分类暂无项目',
     tryOtherCategories: '尝试查看其他分类',
-    firstProjectCTA: '成为第一个在蜜蜂AI电影制片厂创建AI视频项目的创作者！',
+    firstProjectCTA: '成为第一个在泱泱云合AI制片厂创建AI视频项目的创作者！',
     createFirstProject: '创建第一个项目',
     
     // 我的作品
@@ -637,7 +709,7 @@ const zhResources = {
     allProjectsTitle: '全部项目',
     
     // Footer
-    footerDescription: 'AI视频创作者的协作平台，让创意在蜜蜂AI电影制片厂中绽放',
+    footerDescription: 'AI视频创作者的协作平台，让创意在泱泱云合AI制片厂中绽放',
     quickLinks: '快速链接',
     aboutUs: '关于我们',
     howItWorks: '如何运作',
@@ -649,7 +721,7 @@ const zhResources = {
     creatorStories: '创作者故事',
     partners: '合作伙伴',
     contactUs: '联系我们',
-    allRightsReserved: '© 2025 蜂巢平台. All rights reserved.',
+    allRightsReserved: '© 2025 泱泱云合AI制片厂. All rights reserved.',
     privacyPolicy: '隐私政策',
     termsOfService: '服务条款',
     cookieSettings: 'Cookie设置',
@@ -824,7 +896,7 @@ const zhResources = {
     goToStep: '跳转到步骤 {{step}}',
     
     // Login Page
-    welcomeBack: '欢迎回到蜜蜂AI电影制片厂',
+    welcomeBack: '欢迎回到泱泱云合AI制片厂',
     continueJourney: '继续你的AI视频创作之旅',
     email: '邮箱',
     emailPlaceholder: '请输入您的邮箱',
@@ -841,7 +913,7 @@ const zhResources = {
     loginSuccess: '登录成功',
     
     // Register Page
-    joinHive: '加入蜜蜂AI电影制片厂',
+    joinHive: '加入泱泱云合AI制片厂',
     startJourney: '开始你的AI视频创作之旅',
     name: '姓名',
     namePlaceholder: '请输入您的姓名',
@@ -904,6 +976,12 @@ const zhResources = {
     durationRequired: '请输入目标时长',
     invalidDuration: '请输入有效的时长（秒）',
     coverRequired: '请上传项目封面图片',
+    termsRequired: '请同意创作条款',
+    durationTooLong: '目标时长不能超过300秒',
+    projectTermsText: '承诺在发布的视频中标注所采用素材的原作者邮箱或ID',
+    contactGroupLabel: '联系群号（可选）',
+    contactGroupPlaceholder: '例如：123456789',
+    contactGroupHint: '填写联系群号，方便协作者加入',
     createFailed: '创建项目失败，请重试',
     createSuccess: '项目创建成功',
     removeFile: '删除',
@@ -1015,7 +1093,7 @@ const zhResources = {
     payNow: '立即支付',
     rechargeSuccess: '充值成功',
     paymentChannel: '支付渠道',
-    paymentChannelAlipayPc: '支付宝（电脑）',
+    paymentChannelAlipayPc: '支付宝',
     paymentChannelAlipayWap: '支付宝（手机）',
     paymentChannelWxPub: '微信支付',
     paymentChannelWxNative: '微信扫码支付',
@@ -1063,8 +1141,9 @@ const zhResources = {
     closeModal: '关闭',
 
     // Admin System - 管理系统
-    'admin.systemTitle': '蜂巢管理系统',
+    'admin.systemTitle': '泱泱云合管理系统',
     'admin.dashboard': '数据统计',
+    'admin.contentReview': '内容审核',
     'admin.projectManagement': '项目管理',
     'admin.userManagement': '用户管理',
     'admin.backToHome': '返回首页',
@@ -1144,6 +1223,56 @@ const zhResources = {
     'admin.createdProjectsCount': '创建的项目 ({{count}})',
     'admin.noUserProjects': '该用户还没有创建项目',
     'admin.userNotFound': '用户不存在',
+
+    // Admin Feedback Management - 反馈管理
+    'admin.feedbackManagement': '反馈管理',
+    'admin.pendingFeedbacks': '{{count}} 条待处理',
+    'admin.statusPending': '待处理',
+    'admin.statusResolved': '已处理',
+    'admin.noFeedbacks': '暂无反馈记录',
+    'admin.feedbackResolved': '反馈已处理',
+    'admin.processFeedback': '处理反馈',
+    'admin.markResolved': '标记为已处理',
+    'admin.adminReply': '管理员回复',
+    'admin.replyPlaceholder': '输入回复内容（可选，默认：感谢您的反馈，我们已收到并处理）...',
+    'admin.resolvedAt': '处理时间',
+
+    // Feedback - 问题反馈
+    'feedback.title': '问题反馈',
+    'feedback.entry': '问题反馈',
+    'feedback.categoryLabel': '问题类型',
+    'feedback.categoryPlaceholder': '例如：Bug报告、功能建议、使用问题',
+    'feedback.descriptionLabel': '问题描述',
+    'feedback.descriptionPlaceholder': '请详细描述你遇到的问题，包括具体的操作步骤、错误信息、期望结果等...',
+    'feedback.imagesLabel': '反馈图片（可选）',
+    'feedback.imagesHint': '支持 JPG、PNG、GIF，每张最大 5MB，还可上传 {{count}} 张',
+    'feedback.addImage': '添加图片',
+    'feedback.maxImages': '最多只能上传3张图片',
+    'feedback.categoryRequired': '请输入问题类型',
+    'feedback.descriptionRequired': '请输入问题描述',
+    'feedback.submit': '提交反馈',
+    'feedback.submitting': '提交中...',
+    'feedback.submitSuccess': '反馈提交成功，感谢您的反馈！',
+    'feedback.submitFailed': '反馈提交失败，请重试',
+
+    // FAQ / Help Page - 常见问题
+    faq: '常见问题',
+    'help.q1': '如何创建一个新项目？',
+    'help.a1': '登录后，点击页面右上角的「开始创作」按钮，填写项目信息（标题、描述、时长目标等），提交即可创建项目。',
+    'help.q2': '如何加入别人的项目？',
+    'help.a2': '浏览项目列表，找到感兴趣的项目，点击进入项目详情页，然后点击「加入项目」按钮即可。',
+    'help.q3': '任务大厅是什么？',
+    'help.a3': '任务大厅展示所有已发布的任务。你可以浏览任务、接受任务，贡献你的AI视频生成算力。',
+    'help.q4': '余额系统怎么用？',
+    'help.a4': '发布任务需要从余额中扣除费用。你可以在充值页面通过支付宝或微信支付进行充值。',
+    'help.q5': '可以同时参与多个项目吗？',
+    'help.a5': '当然可以！你可以根据自己的时间和兴趣，同时参与多个项目。',
+    'help.q6': '如何查看通知？',
+    'help.a6': '点击顶部导航栏的铃铛图标即可查看通知，包括任务完成通知和反馈处理通知。',
+    'help.q7': '遇到问题如何反馈？',
+    'help.a7': '点击用户菜单或页面底部的「问题反馈」，提交你的问题，我们会处理并通知你。',
+    'help.moreQuestions': '还有其他问题？',
+    'help.moreQuestionsDesc': '如果以上内容没有解答你的疑问，欢迎直接提交反馈：',
   }
 };
 
@@ -1156,13 +1285,14 @@ if (typeof window !== 'undefined') {
         en: enResources,
         zh: zhResources,
       },
-      lng: 'en', // 默认语言设置为英文
-      fallbackLng: 'en',
+      lng: currentLang, // 根据区域锁定语言：cn→zh, global→en
+      fallbackLng: currentLang,
+      defaultNS: 'common',
       
       detection: {
-        // 禁用浏览器语言检测，始终使用默认语言或用户选择的语言
-        order: ['localStorage', 'cookie'],
-        caches: ['localStorage', 'cookie'],
+        // 禁用语言自动检测和缓存，由区域配置完全控制语言
+        order: [],
+        caches: [],
       },
       
       interpolation: {

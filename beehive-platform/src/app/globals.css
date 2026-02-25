@@ -266,6 +266,17 @@ h1, h2, h3, h4 {
   }
 }
 
+@keyframes slide-up {
+  from {
+    opacity: 0;
+    transform: translateY(100%);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
 .animate-fade-up {
   animation: fade-up var(--duration-slow) var(--ease-out) forwards;
   opacity: 0;
@@ -281,7 +292,12 @@ h1, h2, h3, h4 {
   opacity: 0;
 }
 
+.animate-slide-up {
+  animation: slide-up var(--duration-base) var(--ease-out) forwards;
+}
+
 .delay-1 { animation-delay: 100ms; }
+.delay-5 { animation-delay: 500ms; }
 .delay-2 { animation-delay: 200ms; }
 .delay-3 { animation-delay: 300ms; }
 .delay-4 { animation-delay: 400ms; }
@@ -376,8 +392,103 @@ h1, h2, h3, h4 {
     --space-3xl: 3rem;
   }
   
+  body {
+    font-size: 14px;
+  }
+  
   .container {
     padding: 0 var(--space-md);
+  }
+  
+  h1 { font-size: 1.75rem; }
+  h2 { font-size: 1.5rem; }
+  h3 { font-size: 1.25rem; }
+}
+
+/* ===== 触摸优化 ===== */
+.touch-manipulation {
+  touch-action: manipulation;
+}
+
+/* 触摸友好的最小点击区域 */
+.btn-primary,
+.btn-secondary,
+button,
+a {
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* 移动端按钮尺寸优化 */
+@media (max-width: 768px) {
+  .btn-primary,
+  .btn-secondary {
+    min-height: 44px;
+    min-width: 44px;
+  }
+}
+
+/* ===== 隐藏滚动条 ===== */
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+
+/* ===== 安全区域适配 (iOS) ===== */
+.safe-area-inset-bottom {
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+.safe-area-inset-top {
+  padding-top: env(safe-area-inset-top);
+}
+
+/* ===== 移动端模态框 ===== */
+@media (max-width: 768px) {
+  .modal-content {
+    max-height: calc(100vh - env(safe-area-inset-top) - env(safe-area-inset-bottom) - 2rem);
+    max-width: calc(100vw - 2rem);
+  }
+}
+
+/* ===== 防止文本选择干扰交互 ===== */
+.no-select {
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+/* ===== 优化卡片在移动端的hover效果 ===== */
+@media (hover: none) {
+  .card:hover {
+    transform: none;
+    border-color: var(--ink-border);
+  }
+  
+  .btn-primary:hover {
+    transform: none;
+  }
+  
+  .btn-secondary:hover {
+    border-color: var(--ink-border);
+    color: var(--text-primary);
+  }
+}
+
+/* 移动端点击反馈 */
+@media (hover: none) {
+  .card:active {
+    transform: scale(0.98);
+    transition: transform 0.1s ease;
+  }
+  
+  .btn-primary:active,
+  .btn-secondary:active {
+    transform: scale(0.96);
+    transition: transform 0.1s ease;
   }
 }
 

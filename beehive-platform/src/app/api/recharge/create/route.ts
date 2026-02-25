@@ -80,6 +80,11 @@ export async function POST(request: NextRequest) {
   const config = validatePaymentConfig();
   const useMockExplicit = process.env.USE_MOCK_PAYMENT === 'true';
 
+  // 调试日志：输出配置状态
+  console.log('[Recharge] 支付配置状态:', JSON.stringify(config));
+  console.log('[Recharge] ALIPAY_APP_ID:', process.env.ALIPAY_APP_ID ? '已配置' : '未配置');
+  console.log('[Recharge] ALIPAY_PRIVATE_KEY:', process.env.ALIPAY_PRIVATE_KEY ? `已配置(长度:${process.env.ALIPAY_PRIVATE_KEY.length})` : '未配置');
+
   // 密钥未配置且未显式开启 mock 模式时，拒绝充值请求
   if (!useMockExplicit && config.mockMode) {
     console.warn(

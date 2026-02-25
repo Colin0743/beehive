@@ -25,6 +25,15 @@ export async function GET(request: NextRequest) {
   // 公开接口，使用匿名客户端即可
   const supabase = await createServerSupabaseClient();
   const { searchParams } = new URL(request.url);
+  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+  const isMissingResourceError = (error: { message?: string } | null) => {
+    const message = error?.message ?? '';
+    return (
+      message.includes('does not exist') ||
+      message.includes('relation') ||
+      message.includes('column')
+    );
+  };
 
   // 构建查询
   let query = supabase.from('achievements').select('*');
@@ -32,6 +41,9 @@ export async function GET(request: NextRequest) {
   // 可选：按项目筛选
   const projectId = searchParams.get('project_id');
   if (projectId) {
+    if (!uuidRegex.test(projectId)) {
+      return successResponse([]);
+    }
     query = query.eq('project_id', projectId);
   }
 
@@ -47,6 +59,9 @@ export async function GET(request: NextRequest) {
   const { data, error } = await query;
 
   if (error) {
+    if (isMissingResourceError(error)) {
+      return successResponse([]);
+    }
     return errorResponse('获取成就列表失败', 500);
   }
 

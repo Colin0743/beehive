@@ -26,12 +26,28 @@ const WXPAY_REQUIRED_VARS = [
 /** 微信支付私钥变量组（二选一） */
 const WXPAY_PRIVATE_KEY_VARS = ['WXPAY_PRIVATE_KEY', 'WXPAY_PRIVATE_KEY_PATH'] as const;
 
+/** Stripe 必需的环境变量 */
+const STRIPE_REQUIRED_VARS = [
+  'STRIPE_SECRET_KEY',
+  'STRIPE_PUBLISHABLE_KEY',
+] as const;
+
+/** PayPal 必需的环境变量 */
+const PAYPAL_REQUIRED_VARS = [
+  'PAYPAL_CLIENT_ID',
+  'PAYPAL_CLIENT_SECRET',
+] as const;
+
 /** 支付配置状态 */
 export interface PaymentConfigStatus {
   /** 支付宝是否可用 */
   alipayEnabled: boolean;
   /** 微信支付是否可用 */
   wxPayEnabled: boolean;
+  /** Stripe 是否可用 */
+  stripeEnabled: boolean;
+  /** PayPal 是否可用 */
+  paypalEnabled: boolean;
   /** 是否处于模拟支付模式 */
   mockMode: boolean;
   /** 缺失的环境变量名称列表 */
@@ -85,13 +101,25 @@ export function validatePaymentConfig(): PaymentConfigStatus {
 
   const wxPayEnabled = wxMissing.length === 0 && wxKeyMissing === null;
 
-  // 判断模拟模式：显式设置 USE_MOCK_PAYMENT=true，或者两个渠道都不可用
+  // 检查 Stripe 配置
+  const stripeMissing = checkRequiredVars(STRIPE_REQUIRED_VARS);
+  missingVars.push(...stripeMissing);
+  const stripeEnabled = stripeMissing.length === 0;
+
+  // 检查 PayPal 配置
+  const paypalMissing = checkRequiredVars(PAYPAL_REQUIRED_VARS);
+  missingVars.push(...paypalMissing);
+  const paypalEnabled = paypalMissing.length === 0;
+
+  // 判断模拟模式：显式设置 USE_MOCK_PAYMENT=true，或者所有渠道都不可用
   const useMockEnv = process.env.USE_MOCK_PAYMENT;
-  const mockMode = useMockEnv === 'true' || (!alipayEnabled && !wxPayEnabled);
+  const mockMode = useMockEnv === 'true' || (!alipayEnabled && !wxPayEnabled && !stripeEnabled && !paypalEnabled);
 
   return {
     alipayEnabled,
     wxPayEnabled,
+    stripeEnabled,
+    paypalEnabled,
     mockMode,
     missingVars,
   };
@@ -106,7 +134,7 @@ export function logPaymentConfigStatus(): void {
 
   // 输出各渠道启用状态
   console.log(
-    `[Payment Config] 支付宝: ${status.alipayEnabled ? '已启用' : '未启用'} | 微信支付: ${status.wxPayEnabled ? '已启用' : '未启用'} | 模拟模式: ${status.mockMode ? '是' : '否'}`
+    `[Payment Config] 支付宝: ${status.alipayEnabled ? '已启用' : '未启用'} | 微信支付: ${status.wxPayEnabled ? '已启用' : '未启用'} | Stripe: ${status.stripeEnabled ? '已启用' : '未启用'} | PayPal: ${status.paypalEnabled ? '已启用' : '未启用'} | 模拟模式: ${status.mockMode ? '是' : '否'}`
   );
 
   // 缺失变量时输出明确的 WARN 日志

@@ -9,6 +9,7 @@ import Link from 'next/link';
 import { Project, Achievement } from '@/types';
 import { projectStorage, achievementStorage } from '@/lib/api';
 import AchievementList from '@/components/AchievementList';
+import { ProjectGridSkeleton } from '@/components/SkeletonCard';
 
 export default function MyProjectsPage() {
   const { t } = useTranslation('common');
@@ -25,11 +26,13 @@ export default function MyProjectsPage() {
 
     const loadData = async () => {
       try {
-        const allProjects = await projectStorage.getAllProjects();
+        const [allProjects, achResult] = await Promise.all([
+          projectStorage.getAllProjects(),
+          achievementStorage.getByContributor(user.name),
+        ]);
         if (allProjects.success && allProjects.data) {
           setCreatedProjects(allProjects.data.filter(p => p.creatorId === user.id));
         }
-        const achResult = await achievementStorage.getByContributor(user.name);
         if (achResult.success && achResult.data) setAchievements(achResult.data);
       } finally {
         setLoading(false);
@@ -96,9 +99,7 @@ export default function MyProjectsPage() {
           <div className="p-6">
             {activeTab === 'created' && (
               loading ? (
-                <div className="text-center py-16">
-                  <div className="inline-block w-8 h-8 border-2 border-[var(--gold)] border-t-transparent rounded-full animate-spin" />
-                </div>
+                <ProjectGridSkeleton count={6} columns="grid-cols-1 md:grid-cols-2 lg:grid-cols-3" />
               ) : createdProjects.length > 0 ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                   {createdProjects.map((project, i) => {

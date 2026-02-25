@@ -15,6 +15,7 @@ import type { SupabaseClient } from '@supabase/supabase-js';
 export interface AuthResult {
   supabase: SupabaseClient;
   userId: string;
+  user: NonNullable<Awaited<ReturnType<SupabaseClient['auth']['getUser']>>['data']['user']>;
 }
 
 /**
@@ -30,7 +31,7 @@ export async function getAuthenticatedClient(): Promise<AuthResult | null> {
     return null;
   }
 
-  return { supabase, userId: user.id };
+  return { supabase, userId: user.id, user };
 }
 
 /**
@@ -41,6 +42,26 @@ export async function getAuthenticatedClient(): Promise<AuthResult | null> {
  */
 export function successResponse<T>(data: T, status: number = 200): NextResponse {
   return NextResponse.json({ success: true, data }, { status });
+}
+
+/**
+ * 返回带缓存的成功响应（用于公开只读 API）
+ * 默认 s-maxage=60, stale-while-revalidate=300
+ */
+export function cachedSuccessResponse<T>(
+  data: T,
+  maxAge: number = 60,
+  staleWhileRevalidate: number = 300
+): NextResponse {
+  return NextResponse.json(
+    { success: true, data },
+    {
+      status: 200,
+      headers: {
+        'Cache-Control': `public, s-maxage=${maxAge}, stale-while-revalidate=${staleWhileRevalidate}`,
+      },
+    }
+  );
 }
 
 /**

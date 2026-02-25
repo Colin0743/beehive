@@ -98,6 +98,24 @@ beehive-platform/
 3. 配置环境变量 (`NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`)
 4. 部署完成
 
+也可以使用本地 SSH 脚本部署到服务器：
+
+```bash
+SERVER_IP=你的服务器IP \
+SERVER_USER=你的用户名 \
+REMOTE_PATH=/www/wwwroot/beehive-platform \
+SSH_PORT=22 \
+SSH_KEY=~/.ssh/id_rsa \
+bash scripts/deploy.sh
+```
+
+可选参数（默认已配置）：
+
+- `PACKAGE_MANAGER`：默认 `npm`
+- `INSTALL_CMD`：默认 `npm install`
+- `BUILD_CMD`：默认 `npm run build`
+- `START_CMD`：默认 `pm2 restart start || pm2 start npm --name 'start' -- start`
+
 ## 许可证
 
 MIT

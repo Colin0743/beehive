@@ -30,8 +30,8 @@ const IMAGE_TYPES = new Set(['image/jpeg', 'image/png', 'image/gif']);
 /** 图片大小限制：5MB */
 const IMAGE_SIZE_LIMIT = 5 * 1024 * 1024;
 
-/** 视频大小限制：50MB */
-const VIDEO_SIZE_LIMIT = 50 * 1024 * 1024;
+/** 视频大小限制：100MB */
+const VIDEO_SIZE_LIMIT = 100 * 1024 * 1024;
 
 /** MIME 类型到文件扩展名的映射 */
 const MIME_TO_EXT: Record<string, string> = {
@@ -106,7 +106,7 @@ export async function POST(request: NextRequest) {
   // 5. 验证文件大小
   const isImage = IMAGE_TYPES.has(file.type);
   const sizeLimit = isImage ? IMAGE_SIZE_LIMIT : VIDEO_SIZE_LIMIT;
-  const sizeLimitLabel = isImage ? '5MB' : '50MB';
+  const sizeLimitLabel = isImage ? '5MB' : '100MB';
 
   if (file.size > sizeLimit) {
     return errorResponse(`文件大小超过限制，最大允许 ${sizeLimitLabel}`, 400);

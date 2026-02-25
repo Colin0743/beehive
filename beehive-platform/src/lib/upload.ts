@@ -25,8 +25,8 @@ const VIDEO_TYPES: readonly string[] = ['video/mp4', 'video/quicktime'];
 /** 图片大小限制：5MB */
 export const IMAGE_SIZE_LIMIT = 5 * 1024 * 1024;
 
-/** 视频大小限制：50MB */
-export const VIDEO_SIZE_LIMIT = 50 * 1024 * 1024;
+/** 视频大小限制：100MB */
+export const VIDEO_SIZE_LIMIT = 100 * 1024 * 1024;
 
 // ==================== 验证函数 ====================
 
@@ -62,7 +62,7 @@ export function isFileSizeValid(file: File): boolean {
  */
 function getSizeLimitLabel(type: string): string {
   if (IMAGE_TYPES.includes(type)) return '5MB';
-  if (VIDEO_TYPES.includes(type)) return '50MB';
+  if (VIDEO_TYPES.includes(type)) return '100MB';
   return '未知';
 }
 

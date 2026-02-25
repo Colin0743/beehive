@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
 import { AuthProvider } from "@/contexts/AuthContext";
@@ -7,15 +7,51 @@ import { ErrorBoundary } from "@/components/ErrorBoundary";
 import PageLoader from "@/components/PageLoader";
 import I18nProvider from "@/components/I18nProvider";
 import DynamicTitle from "@/components/DynamicTitle";
+import { getRegion } from "@/lib/region";
 
 const inter = Inter({
   subsets: ["latin"],
   variable: "--font-inter",
 });
 
+export const viewport: Viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  maximumScale: 5,
+  userScalable: true,
+  viewportFit: 'cover',
+  themeColor: '#0a0a0b',
+};
+
+// 根据区域动态生成元数据
+const regionMeta = {
+  cn: {
+    title: '泱泱云合AI制片厂 - AI视频协作平台',
+    description: 'AI视频创作者的协作平台，汇聚创意与算力',
+    appleWebAppTitle: '泱泱云合',
+    lang: 'zh-CN',
+  },
+  global: {
+    title: 'YangYang Cloud AI Studio - AI Video Collaboration Platform',
+    description: 'AI video creators collaboration platform, gathering creativity and computing power',
+    appleWebAppTitle: 'YangYang Cloud AI',
+    lang: 'en',
+  },
+} as const;
+
+const currentRegionMeta = regionMeta[getRegion()];
+
 export const metadata: Metadata = {
-  title: "Bee AI Movie Studio - AI Video Collaboration Platform",
-  description: "AI video creators collaboration platform, gathering creativity and computing power",
+  title: currentRegionMeta.title,
+  description: currentRegionMeta.description,
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: 'black-translucent',
+    title: currentRegionMeta.appleWebAppTitle,
+  },
+  formatDetection: {
+    telephone: false,
+  },
 };
 
 export default function RootLayout({
@@ -24,7 +60,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="zh-CN">
+    <html lang={currentRegionMeta.lang}>
       <head>
         <link
           rel="stylesheet"
@@ -39,7 +75,7 @@ export default function RootLayout({
             <DynamicTitle />
             <AuthProvider>
               <ToastProvider>
-                <PageLoader />
+                {/* <PageLoader /> */}
                 {children}
               </ToastProvider>
             </AuthProvider>

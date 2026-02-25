@@ -29,7 +29,7 @@ export async function GET(_request: NextRequest) {
 
   const balanceCents = data?.balance_cents ?? 0;
   const taskPublishFeeCents = parseInt(
-    process.env.TASK_PUBLISH_FEE_CENTS ?? '100',
+    process.env.TASK_PUBLISH_FEE_CENTS ?? '50',
     10
   );
   return successResponse({

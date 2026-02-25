@@ -41,12 +41,31 @@ export interface TaskAcceptance {
 // 站内通知接口
 export interface Notification {
   id: string;
-  type: 'task_completed' | 'contribution_accepted';
+  type: 'task_completed' | 'contribution_accepted' | 'feedback_replied';
   message: string;
   taskId: string;
   projectId: string;
   isRead: boolean;
   createdAt: string;  // ISO 时间戳
+}
+
+// 用户反馈接口
+export type FeedbackStatus = 'pending' | 'resolved';
+
+export interface Feedback {
+  id: string;
+  userId: string;
+  category: string;
+  description: string;
+  images: string[];
+  status: FeedbackStatus;
+  adminReply: string | null;
+  createdAt: string;  // ISO 时间戳
+  resolvedAt: string | null;
+  // 管理员查看时可能包含用户信息
+  userName?: string;
+  userEmail?: string;
+  userAvatar?: string;
 }
 
 // 成就记录接口

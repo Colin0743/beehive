@@ -6,6 +6,9 @@
 import { AlipaySdk } from 'alipay-sdk';
 import fs from 'fs';
 
+/** 支付宝沙箱网关地址 */
+const ALIPAY_SANDBOX_GATEWAY = 'https://openapi-sandbox.dl.alipaydev.com/gateway.do';
+
 let alipaySdk: AlipaySdk | null = null;
 
 function getAlipaySdk(): AlipaySdk {
@@ -15,6 +18,7 @@ function getAlipaySdk(): AlipaySdk {
     const publicKey = process.env.ALIPAY_PUBLIC_KEY;
     const privateKeyPath = process.env.ALIPAY_PRIVATE_KEY_PATH;
     const publicKeyPath = process.env.ALIPAY_PUBLIC_KEY_PATH;
+    const isSandbox = process.env.ALIPAY_SANDBOX === 'true';
 
     if (!appId || (!privateKey && !privateKeyPath)) {
       throw new Error('ALIPAY_APP_ID 和 ALIPAY_PRIVATE_KEY（或 ALIPAY_PRIVATE_KEY_PATH）必须配置');
@@ -32,7 +36,13 @@ function getAlipaySdk(): AlipaySdk {
       privateKey: privKey,
       alipayPublicKey: pubKey || undefined,
       keyType: 'PKCS8',
+      // 沙箱环境使用沙箱网关
+      ...(isSandbox && { gateway: ALIPAY_SANDBOX_GATEWAY }),
     });
+
+    if (isSandbox) {
+      console.log('[Alipay] 使用沙箱环境:', ALIPAY_SANDBOX_GATEWAY);
+    }
   }
   return alipaySdk;
 }
@@ -89,6 +99,28 @@ export function verifyAlipayNotify(postData: Record<string, string>): boolean {
     return sdk.checkNotifySignV2(postData);
   } catch {
     return false;
+  }
+}
+
+/**
+ * 主动查询支付宝订单交易状态
+ * 用于本地开发或异步通知未到达时，服务端主动确认支付结果
+ * @returns 交易状态字符串（TRADE_SUCCESS / TRADE_FINISHED / WAIT_BUYER_PAY / TRADE_CLOSED）或 null
+ */
+export async function queryAlipayTradeStatus(outTradeNo: string): Promise<string | null> {
+  try {
+    const sdk = getAlipaySdk();
+    const result = await sdk.exec('alipay.trade.query', {
+      bizContent: {
+        out_trade_no: outTradeNo,
+      },
+    });
+    const tradeStatus = (result as Record<string, unknown>)?.tradeStatus as string | undefined;
+    console.log('[Alipay] trade query result:', { outTradeNo, tradeStatus });
+    return tradeStatus || null;
+  } catch (err) {
+    console.error('[Alipay] trade query failed:', err);
+    return null;
   }
 }
 

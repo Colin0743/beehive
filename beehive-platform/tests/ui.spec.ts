@@ -41,15 +41,8 @@ test.describe('UI 组件测试', () => {
   });
 
   test('图片和媒体应该正确加载', async ({ page }) => {
-    // 检查页面上的图片
-    const images = page.locator('img');
-    const imageCount = await images.count();
-    
-    if (imageCount > 0) {
-      // 检查第一张图片是否加载
-      const firstImage = images.first();
-      await expect(firstImage).toBeVisible();
-    }
+    const logoImage = page.getByRole('img', { name: '泱泱云合AI制片厂' }).first();
+    await expect(logoImage).toBeVisible({ timeout: 10000 });
   });
 
   test('表单输入应该正常工作', async ({ page }) => {
