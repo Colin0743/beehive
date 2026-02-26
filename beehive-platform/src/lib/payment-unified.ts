@@ -39,11 +39,18 @@ export function getAvailableProviders(): PaymentProvider[] {
  * 统一创建订单接口
  * CN 区域调用现有 Alipay/WeChat 实现
  * Global 区域调用 Stripe/PayPal（未实现时返回 mock）
+ * 
+ * 注意：此函数仅在服务端使用（API Routes），不应在客户端调用
  */
 export async function createOrder(
   provider: PaymentProvider,
   params: CreateOrderParams
 ): Promise<CreateOrderResult> {
+  // 客户端环境检测
+  if (typeof window !== 'undefined') {
+    throw new Error('createOrder 只能在服务端调用，请通过 API Routes 使用');
+  }
+
   const region = getRegion();
 
   if (region === 'cn') {
@@ -88,11 +95,18 @@ export async function createOrder(
 
 /**
  * 统一验证支付回调
+ * 
+ * 注意：此函数仅在服务端使用（API Routes），不应在客户端调用
  */
 export async function verifyPayment(
   provider: PaymentProvider,
   payload: Record<string, string>
 ): Promise<boolean> {
+  // 客户端环境检测
+  if (typeof window !== 'undefined') {
+    throw new Error('verifyPayment 只能在服务端调用，请通过 API Routes 使用');
+  }
+
   if (provider === 'alipay') {
     const { verifyAlipayNotify } = await import('@/lib/payment');
     return verifyAlipayNotify(payload);
