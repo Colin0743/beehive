@@ -3,6 +3,8 @@
  * 根据区域自动选择对应的支付服务商
  * CN 区域：支付宝、微信支付（复用现有实现）
  * Global 区域：Stripe、PayPal（未实现时使用 mock 模式）
+ * 
+ * 注意：此模块仅在服务端使用（API Routes），客户端请使用 payment-config.ts
  */
 import { getRegion } from '@/lib/region';
 
@@ -24,15 +26,6 @@ export interface CreateOrderResult {
   payUrl: string;
   /** 实际使用的支付渠道 */
   channel: string;
-}
-
-/**
- * 获取当前区域可用的支付方式列表
- */
-export function getAvailableProviders(): PaymentProvider[] {
-  return getRegion() === 'cn'
-    ? ['alipay', 'wechat']
-    : ['stripe', 'paypal'];
 }
 
 /**

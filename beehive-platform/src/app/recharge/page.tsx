@@ -7,7 +7,7 @@ import LayoutSimple from '@/components/LayoutSimple';
 import { useAuth } from '@/contexts/AuthContext';
 import { balanceStorage, rechargeStorage } from '@/lib/api';
 import LoadingSpinner from '@/components/LoadingSpinner';
-import { getAvailableProviders } from '@/lib/payment-unified';
+import { getAvailableProviders } from '@/lib/payment-config';
 import { useRegion } from '@/hooks/useRegion';
 
 const AMOUNT_OPTIONS = [
