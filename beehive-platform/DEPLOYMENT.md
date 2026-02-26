@@ -1,106 +1,151 @@
-# 部署指南
+# 蜂巢平台部署文档
 
-## 1. 自动化部署 (推荐)
+## 海外版部署信息
 
-本项目提供了一键部署脚本，位于 `scripts/deploy.sh`。该脚本会自动打包本地代码、上传到服务器、解压、安装依赖、构建并重启服务。
+### 部署平台
+- **托管**: Vercel
+- **域名**: https://beehive-gules.vercel.app
+- **GitHub 仓库**: https://github.com/Colin0743/beehive
+- **分支**: main
 
-### 前置条件
-*   本地已安装 `ssh` 和 `scp` 工具。
-*   建议配置 SSH 免密登录（见下文），否则每次需手动输入密码。
+### 自动部署配置
 
-### 使用方法
+Vercel 已配置 GitHub 集成，实现自动部署：
 
-在项目根目录下运行：
+1. **触发条件**: 推送代码到 `main` 分支
+2. **构建命令**: `npm run build`
+3. **输出目录**: `.next`
+4. **Root Directory**: `beehive-platform`
+
+### 部署流程
 
 ```bash
-# 替换为你的服务器信息
-SERVER_IP=120.79.173.147 SERVER_USER=root bash scripts/deploy.sh
+# 1. 本地开发
+cd beehive-platform
+npm run dev
+
+# 2. 提交代码
+git add .
+git commit -m "your commit message"
+
+# 3. 推送到 GitHub（自动触发 Vercel 部署）
+git -c http.sslVerify=false push beehive main
 ```
 
-如果配置了 SSH 密钥（推荐）：
-```bash
-SERVER_IP=120.79.173.147 SERVER_USER=root SSH_KEY=~/.ssh/id_rsa bash scripts/deploy.sh
-```
+### 环境变量配置
 
-### 脚本流程
-1.  **打包**: 自动排除 `node_modules`、`.next` 等无关文件，生成 `deploy_package.tar.gz`。
-2.  **上传**: 使用 `scp` 将压缩包上传至服务器 `/www/wwwroot/beehive-platform`。
-3.  **远程执行**:
-    *   解压文件。
-    *   安装依赖 (`npm install`)。
-    *   构建项目 (`npm run build`)。
-    *   重启 PM2 服务 (`pm2 restart start`)。
-    *   清理 Nginx 缓存。
+在 Vercel Dashboard 已配置以下环境变量：
+
+| 变量名 | 说明 | 状态 |
+|--------|------|------|
+| `NEXT_PUBLIC_REGION` | 区域标识（global） | ✅ 已配置 |
+| `NEXT_PUBLIC_SUPABASE_URL` | Supabase 项目 URL | ✅ 已配置 |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Supabase 匿名密钥 | ✅ 已配置 |
+| `SUPABASE_SERVICE_ROLE_KEY` | Supabase 服务端密钥 | ✅ 已配置 |
+| `USE_MOCK_PAYMENT` | 使用 mock 支付模式 | ✅ 已配置 (true) |
+
+### 数据库配置
+
+- **Supabase 项目**: beehive-global
+- **项目 ID**: wsadzkdjmgebmwgpmjzm
+- **区域**: US East
+- **数据库迁移**: 已完成（10 个迁移脚本）
+
+### 验证清单
+
+- [x] 代码推送到 GitHub
+- [x] Vercel 自动部署成功
+- [x] 网站可访问（https://beehive-gules.vercel.app）
+- [x] Supabase 数据库迁移完成
+- [x] 环境变量配置完整
+- [ ] 测试用户注册/登录
+- [ ] 测试项目创建
+- [ ] 测试充值功能（mock 模式）
+
+### 后续优化
+
+1. **自定义域名**（可选）
+   - 在 Vercel Dashboard → Settings → Domains 添加自定义域名
+   - 配置 DNS 记录指向 Vercel
+
+2. **Stripe 支付接入**
+   - 注册 Stripe 账号
+   - 获取 API 密钥
+   - 在 Vercel 添加环境变量：
+     - `STRIPE_SECRET_KEY`
+     - `STRIPE_PUBLISHABLE_KEY`
+   - 设置 `USE_MOCK_PAYMENT=false`
+
+3. **PayPal 支付接入**（可选）
+   - 注册 PayPal Developer 账号
+   - 获取 Client ID 和 Secret
+   - 在 Vercel 添加环境变量：
+     - `PAYPAL_CLIENT_ID`
+     - `PAYPAL_CLIENT_SECRET`
+
+### 监控和日志
+
+- **Vercel Dashboard**: https://vercel.com/dashboard
+- **部署日志**: 在 Vercel Dashboard → Deployments 查看
+- **运行时日志**: 在 Vercel Dashboard → Logs 查看
+
+### 回滚部署
+
+如果新部署出现问题，可以在 Vercel Dashboard 快速回滚：
+
+1. 进入 Deployments 页面
+2. 找到之前的稳定版本
+3. 点击 "Promote to Production"
 
 ---
 
-## 2. 手动部署流程（备用）
+## 国内版部署信息
 
-### 服务器信息
+### 部署平台
+- **托管**: 自建服务器（yangyangyunhe.cloud）
+- **数据库**: 国内 Supabase 实例
+- **支付**: 支付宝 + 微信支付
 
-- **SSH**: `ssh root@120.79.173.147`
-- **路径**: `/www/wwwroot/beehive-platform/`
-- **运行方式**: PM2 (进程名 `start`)
-- **反向代理**: Nginx -> 3001 端口
+### 环境变量
 
-### 手动步骤
-
-#### 1. 上传文件
-使用 SCP 或 FTP 工具上传代码到服务器。
-
-#### 2. SSH 登录后执行更新
-```bash
-cd /www/wwwroot/beehive-platform
-
-# 1. 安装新依赖 (如果有)
-npm install
-
-# 2. 清理旧构建缓存
-rm -rf .next
-
-# 3. 构建项目
-npm run build
-
-# 4. 重启服务
-pm2 restart start
-
-# 5. 清理 Nginx 缓存 (重要)
-rm -rf /www/server/nginx/proxy_cache_dir/*
-nginx -s reload
-```
-
-### 排查问题常用命令
-```bash
-# 查看 PM2 日志
-pm2 logs start --lines 50
-
-# 检查端口占用
-netstat -tulpn | grep 3001
-
-# 验证本地服务响应
-curl http://localhost:3001
+```env
+NEXT_PUBLIC_REGION=cn
+NEXT_PUBLIC_SUPABASE_URL=<国内Supabase地址>
+NEXT_PUBLIC_SUPABASE_ANON_KEY=<国内Supabase密钥>
+SUPABASE_SERVICE_ROLE_KEY=<国内Service Role Key>
+USE_MOCK_PAYMENT=false
+ALIPAY_APP_ID=<支付宝AppID>
+ALIPAY_PRIVATE_KEY=<支付宝私钥>
+WXPAY_APP_ID=<微信AppID>
+WXPAY_MCHID=<微信商户号>
+WXPAY_API_KEY=<微信API密钥>
+WXPAY_PRIVATE_KEY=<微信私钥>
 ```
 
 ---
 
-## 3. SSH 密钥认证配置（免密登录）
+## 故障排查
 
-为了方便部署，建议配置 SSH 密钥认证。
+### 构建失败
 
-#### 1. 本地生成密钥
-```bash
-ssh-keygen -t rsa -b 4096 -C "beehive-deploy"
-# 一路回车，默认生成在 ~/.ssh/id_rsa
-```
+1. 检查 Vercel 构建日志
+2. 本地运行 `npm run build` 验证
+3. 检查 TypeScript 类型错误
+4. 检查环境变量是否配置完整
 
-#### 2. 将公钥上传到服务器
-```bash
-ssh-copy-id root@120.79.173.147
-# 输入一次密码即可
-```
+### 数据库连接失败
 
-#### 3. 验证
-```bash
-ssh root@120.79.173.147
-# 此时应直接登录，无需密码
-```
+1. 检查 Supabase 项目状态
+2. 验证环境变量中的 URL 和密钥
+3. 检查 RLS 策略是否正确
+
+### 支付功能异常
+
+1. 确认 `USE_MOCK_PAYMENT` 设置
+2. 检查支付密钥配置
+3. 查看服务端日志
+
+---
+
+**最后更新**: 2026-02-26
+**版本**: v1.2.4
