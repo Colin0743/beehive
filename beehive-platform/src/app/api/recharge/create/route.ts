@@ -128,7 +128,7 @@ export async function POST(request: NextRequest) {
   const baseUrl = getBaseUrl(request);
 
   // 微信 Native 扫码支付
-  if (channel === 'wx_native' && config.wxPayEnabled) {
+  if (channel === 'wx_native' && config.wechatEnabled) {
     try {
       const notifyUrl = `${baseUrl}/api/recharge/callback/wechat`;
       const codeUrl = await createWxNativeOrder({
