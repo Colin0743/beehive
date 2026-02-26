@@ -10,7 +10,7 @@ const currentLang = regionLangMap[getRegion()];
 const enResources = {
   common: {
     // Site Meta
-    'site.title': 'YangYang Cloud AI Studio - AI Video Collaboration Platform',
+    'site.title': 'Bee Studio AI - AI Video Collaboration Platform',
     'site.description': 'AI video creators collaboration platform, gathering creativity and computing power',
     
     // Navigation
@@ -18,8 +18,8 @@ const enResources = {
     register: 'Register',
     logout: 'Logout',
     startCreating: 'Start Creating',
-    appName: 'YangYang Cloud AI',
-    appFullName: 'YangYang Cloud AI Studio',
+    appName: 'Bee Studio AI',
+    appFullName: 'Bee Studio AI',
     searchPlaceholder: 'Search projects...',
     home: 'Home',
     menu: 'Menu',
@@ -36,8 +36,8 @@ const enResources = {
     other: 'Other',
     
     // Hero Section
-    heroTitle: 'Let Creativity Bloom in the YangYang Cloud AI Studio',
-    heroSubtitle: 'YangYang Cloud AI Studio is a collaboration platform for AI video creators. Join the studio and work with excellent creators to complete AI video works',
+    heroTitle: 'Let Creativity Bloom in Bee Studio AI',
+    heroSubtitle: 'Bee Studio AI is a collaboration platform for AI video creators. Join the studio and work with excellent creators to complete AI video works',
     
     // Project Cards
     supporters: 'supporters',
@@ -60,7 +60,7 @@ const enResources = {
     noProjects: 'No projects yet',
     noCategoryProjects: 'No projects in this category',
     tryOtherCategories: 'Try viewing other categories',
-    firstProjectCTA: 'Be the first creator to create an AI video project on the YangYang Cloud AI Studio!',
+    firstProjectCTA: 'Be the first creator to create an AI video project on Bee Studio AI!',
     createFirstProject: 'Create First Project',
     
     // My Works
@@ -74,7 +74,7 @@ const enResources = {
     allProjectsTitle: 'All Projects',
     
     // Footer
-    footerDescription: 'AI video creators collaboration platform, let creativity bloom in the YangYang Cloud AI Studio',
+    footerDescription: 'AI video creators collaboration platform, let creativity bloom in Bee Studio AI',
     quickLinks: 'Quick Links',
     aboutUs: 'About Us',
     howItWorks: 'How It Works',
@@ -86,7 +86,7 @@ const enResources = {
     creatorStories: 'Creator Stories',
     partners: 'Partners',
     contactUs: 'Contact Us',
-    allRightsReserved: '© 2025 YangYang Cloud AI Studio. All rights reserved.',
+    allRightsReserved: '© 2025 Bee Studio AI. All rights reserved.',
     privacyPolicy: 'Privacy Policy',
     termsOfService: 'Terms of Service',
     cookieSettings: 'Cookie Settings',
@@ -175,7 +175,7 @@ const enResources = {
     termsTitle: 'Terms of Service',
     termsLastUpdated: 'Last updated: January 2025',
     'terms.section1Title': '1. Service Description',
-    'terms.section1Content': 'YangYang Cloud AI Studio is an AI video creator collaboration platform that provides users with project publishing, browsing and participation features. By using this platform, you agree to comply with the following terms.',
+    'terms.section1Content': 'Bee Studio AI is an AI video creator collaboration platform that provides users with project publishing, browsing and participation features. By using this platform, you agree to comply with the following terms.',
     'terms.section2Title': '2. User Accounts',
     'terms.section2Item1': 'You must provide accurate and complete registration information',
     'terms.section2Item2': 'You are responsible for protecting your account security and must not share your account with others',
@@ -261,7 +261,7 @@ const enResources = {
     goToStep: 'Go to step {{step}}',
     
     // Login Page
-    welcomeBack: 'Welcome Back to YangYang Cloud AI Studio',
+    welcomeBack: 'Welcome Back to Bee Studio AI',
     continueJourney: 'Continue your AI video creation journey',
     email: 'Email',
     emailPlaceholder: 'Enter your email',
@@ -278,7 +278,7 @@ const enResources = {
     loginSuccess: 'Login successful',
     
     // Register Page
-    joinHive: 'Join the YangYang Cloud AI Studio',
+    joinHive: 'Join Bee Studio AI',
     startJourney: 'Start your AI video creation journey',
     name: 'Name',
     namePlaceholder: 'Enter your name',

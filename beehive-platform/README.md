@@ -1,8 +1,40 @@
-# 🐝 蜜蜂AI电影制片厂 - AI视频协作平台
+# 🐝 蜂巢 AI 视频协作平台
 
 AI视频创作者的协作平台，汇聚创意与算力。
 
-## 功能特性
+---
+
+## 🌍 双版本部署架构
+
+本项目采用**单代码库、双品牌**架构，同时运营国内版和海外版：
+
+### 国内版 - 泱泱云合AI制片厂
+- **域名**: yangyangyunhe.cloud
+- **品牌名**: 泱泱云合AI制片厂
+- **语言**: 纯中文
+- **支付**: 支付宝 + 微信支付
+- **部署**: 自建服务器
+- **数据库**: 国内 Supabase 实例
+
+### 海外版 - Bee Studio AI
+- **域名**: beestudioai.com (当前临时域名: beehive-gules.vercel.app)
+- **品牌名**: Bee Studio AI
+- **语言**: 纯英文
+- **支付**: Stripe + PayPal (当前使用 mock 模式)
+- **部署**: Vercel + GitHub 自动部署
+- **数据库**: 海外 Supabase 实例
+
+### 🔄 区域切换机制
+
+通过环境变量 `NEXT_PUBLIC_REGION` 控制：
+- `cn` = 国内版（泱泱云合AI制片厂）
+- `global` = 海外版（Bee Studio AI）
+
+**品牌名称、语言、支付方式会根据区域自动切换，无需修改代码。**
+
+---
+
+## ✨ 功能特性
 
 ### ✅ 已实现功能
 
@@ -29,17 +61,27 @@ AI视频创作者的协作平台，汇聚创意与算力。
   - 查看参与的项目
   - 查看关注的项目
 
-## 技术栈
+- **多区域支持**
+  - 国内版/海外版自动切换
+  - 品牌名称本地化
+  - 支付方式区域化
+
+---
+
+## 🛠 技术栈
 
 - **框架**: Next.js 14 (App Router)
 - **语言**: TypeScript
 - **样式**: Tailwind CSS + Semantic UI React
+- **国际化**: i18next + react-i18next
 - **后端服务**: Supabase
   - **Auth**: 身份认证
   - **Database**: PostgreSQL
   - **Storage**: 文件存储
 
-## 快速开始
+---
+
+## 🚀 快速开始
 
 ### 1. 安装依赖
 
@@ -49,15 +91,29 @@ npm install
 
 ### 2. 配置环境变量
 
-复制 `.env.local.example` 为 `.env.local` 并填入 Supabase 项目配置：
+#### 国内版配置 (`.env.local`)
 
 ```bash
-NEXT_PUBLIC_SUPABASE_URL=你的项目URL
-NEXT_PUBLIC_SUPABASE_ANON_KEY=你的AnonKey
-SUPABASE_SERVICE_ROLE_KEY=你的ServiceRoleKey
+NEXT_PUBLIC_REGION=cn
+NEXT_PUBLIC_SUPABASE_URL=你的国内Supabase项目URL
+NEXT_PUBLIC_SUPABASE_ANON_KEY=你的国内AnonKey
+SUPABASE_SERVICE_ROLE_KEY=你的国内ServiceRoleKey
+USE_MOCK_PAYMENT=false
+ALIPAY_APP_ID=你的支付宝AppID
+ALIPAY_PRIVATE_KEY=你的支付宝私钥
 ```
 
-*详细配置指南请参考 [SUPABASE_SETUP.md](SUPABASE_SETUP.md)*
+#### 海外版配置 (`.env.global.local`)
+
+```bash
+NEXT_PUBLIC_REGION=global
+NEXT_PUBLIC_SUPABASE_URL=你的海外Supabase项目URL
+NEXT_PUBLIC_SUPABASE_ANON_KEY=你的海外AnonKey
+SUPABASE_SERVICE_ROLE_KEY=你的海外ServiceRoleKey
+USE_MOCK_PAYMENT=true
+```
+
+*详细配置指南请参考 [DEPLOYMENT.md](DEPLOYMENT.md)*
 
 ### 3. 启动开发服务器
 
@@ -74,31 +130,54 @@ npm run build
 npm start
 ```
 
-## 项目结构
+---
+
+## 📁 项目结构
 
 ```
 beehive-platform/
 ├── src/
 │   ├── app/                    # Next.js App Router 页面
-│   ├── components/            # React 组件
-│   ├── lib/                   # 工具库 (含 Supabase 客户端)
-│   ├── types/                 # TypeScript 类型定义
-│   └── middleware.ts          # 中间件 (Auth 保护)
-├── supabase/                  # Supabase 配置与迁移文件
-├── public/                    # 静态资源
+│   │   ├── api/                # API Routes (RESTful 端点)
+│   │   └── projects/           # 项目相关页面
+│   ├── components/             # React 组件
+│   ├── lib/                    # 工具库
+│   │   ├── api.ts              # API 客户端封装
+│   │   ├── region.ts           # 区域配置模块
+│   │   ├── i18n.ts             # 国际化配置
+│   │   ├── payment-unified.ts  # 统一支付接口
+│   │   └── supabase.ts         # Supabase 客户端
+│   ├── types/                  # TypeScript 类型定义
+│   └── middleware.ts           # 中间件 (Auth 保护)
+├── supabase/                   # Supabase 配置与迁移文件
+│   └── migrations/             # 数据库迁移 SQL 脚本
+├── public/                     # 静态资源
 └── package.json
 ```
 
-## 部署
+---
 
-本项目针对 **Vercel** 部署进行了优化。
+## 🌐 部署
 
-1. 将代码推送到 GitHub
-2. 在 Vercel 中导入项目
-3. 配置环境变量 (`NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`)
-4. 部署完成
+### 海外版部署 (Vercel)
 
-也可以使用本地 SSH 脚本部署到服务器：
+海外版已配置 GitHub + Vercel 自动部署：
+
+1. 推送代码到 GitHub 仓库 `Colin0743/beehive`
+2. Vercel 自动检测并部署
+3. 访问 https://beehive-gules.vercel.app
+
+**自动部署流程**：
+```bash
+git add .
+git commit -m "your commit message"
+git -c http.sslVerify=false push beehive main
+# Vercel 会自动构建并部署
+```
+
+### 国内版部署 (自建服务器)
+
+使用本地 SSH 脚本部署到服务器：
 
 ```bash
 SERVER_IP=你的服务器IP \
@@ -109,17 +188,28 @@ SSH_KEY=~/.ssh/id_rsa \
 bash scripts/deploy.sh
 ```
 
-可选参数（默认已配置）：
+---
 
-- `PACKAGE_MANAGER`：默认 `npm`
-- `INSTALL_CMD`：默认 `npm install`
-- `BUILD_CMD`：默认 `npm run build`
-- `START_CMD`：默认 `pm2 restart start || pm2 start npm --name 'start' -- start`
+## 📝 重要说明
 
-## 许可证
+### 品牌差异
+
+- **国内版**使用"泱泱云合AI制片厂"品牌，面向中文用户
+- **海外版**使用"Bee Studio AI"品牌，面向英文用户
+- 两个版本功能完全一致，仅品牌名称、语言和支付方式不同
+- 数据库完全独立，用户和项目数据不互通
+
+### 域名配置
+
+- 国内版域名：yangyangyunhe.cloud
+- 海外版域名：beestudioai.com（需在 Vercel 配置自定义域名）
+
+---
+
+## 📄 许可证
 
 MIT
 
-## 联系方式
+## 📧 联系方式
 
 如有问题或建议，请提交 Issue。

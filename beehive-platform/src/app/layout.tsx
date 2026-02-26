@@ -32,9 +32,9 @@ const regionMeta = {
     lang: 'zh-CN',
   },
   global: {
-    title: 'YangYang Cloud AI Studio - AI Video Collaboration Platform',
+    title: 'Bee Studio AI - AI Video Collaboration Platform',
     description: 'AI video creators collaboration platform, gathering creativity and computing power',
-    appleWebAppTitle: 'YangYang Cloud AI',
+    appleWebAppTitle: 'Bee Studio AI',
     lang: 'en',
   },
 } as const;
