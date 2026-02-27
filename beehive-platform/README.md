@@ -1,5 +1,8 @@
 # 🐝 蜂巢 AI 视频协作平台
 
+**版本**: v1.2.5  
+**最后更新**: 2025-02-27
+
 AI视频创作者的协作平台，汇聚创意与算力。
 
 ---
@@ -20,7 +23,7 @@ AI视频创作者的协作平台，汇聚创意与算力。
 - **域名**: beestudioai.com (当前临时域名: beehive-gules.vercel.app)
 - **品牌名**: Bee Studio AI
 - **语言**: 纯英文
-- **支付**: Stripe + PayPal (当前使用 mock 模式)
+- **支付**: Paddle (审核中)
 - **部署**: Vercel + GitHub 自动部署
 - **数据库**: 海外 Supabase 实例
 
@@ -66,6 +69,22 @@ AI视频创作者的协作平台，汇聚创意与算力。
   - 品牌名称本地化
   - 支付方式区域化
 
+- **任务系统**
+  - 任务发布与管理
+  - 任务大厅浏览
+  - 任务接受与完成
+  - 余额充值系统
+
+- **支付集成**
+  - 国内版：支付宝 + 微信支付
+  - 海外版：Paddle 支付（审核中）
+  - 任务发布费用：$0.5 USD / 任务
+
+- **合规页面**
+  - 服务条款页面 (`/terms`)
+  - 充值/定价页面 (`/recharge`)
+  - Footer 链接完整
+
 ---
 
 ## 🛠 技术栈
@@ -110,10 +129,11 @@ NEXT_PUBLIC_REGION=global
 NEXT_PUBLIC_SUPABASE_URL=你的海外Supabase项目URL
 NEXT_PUBLIC_SUPABASE_ANON_KEY=你的海外AnonKey
 SUPABASE_SERVICE_ROLE_KEY=你的海外ServiceRoleKey
-USE_MOCK_PAYMENT=true
+USE_MOCK_PAYMENT=true  # Paddle 集成完成后改为 false
 ```
 
-*详细配置指南请参考 [DEPLOYMENT.md](DEPLOYMENT.md)*
+*详细配置指南请参考 [DEPLOYMENT.md](DEPLOYMENT.md)*  
+*Paddle 支付集成指南请参考 [PADDLE_INTEGRATION_CHECKLIST.md](PADDLE_INTEGRATION_CHECKLIST.md)*
 
 ### 3. 启动开发服务器
 
@@ -203,6 +223,38 @@ bash scripts/deploy.sh
 
 - 国内版域名：yangyangyunhe.cloud
 - 海外版域名：beestudioai.com（需在 Vercel 配置自定义域名）
+
+### 支付方式
+
+- **国内版**：支付宝 + 微信支付（已集成）
+- **海外版**：Paddle 支付（审核中，当前使用 mock 模式）
+- **任务发布费用**：$0.5 USD / 任务
+
+---
+
+## 📋 版本历史
+
+### v1.2.5 (2025-02-27)
+- ✅ 创建服务条款页面 (`/terms`)，符合 Paddle 审核要求
+- ✅ 更新充值页面，明确显示定价信息（$0.5 per task）
+- ✅ 添加 Paddle 支付处理商声明
+- ✅ 完善退款政策说明
+- ✅ 创建 Paddle 集成准备文档 (`PADDLE_INTEGRATION_CHECKLIST.md`)
+- ✅ 提交 Paddle 商家账号审核
+
+### v1.2.4 (2025-02-26)
+- ✅ 海外版品牌更名：YangYang Cloud → Bee Studio AI
+- ✅ 更新所有英文翻译中的品牌名称
+- ✅ 创建详细的 README 说明双版本架构
+- ✅ 配置 Vercel 自动部署
+
+### v1.2.0 - v1.2.3
+- ✅ 多区域版本管理系统
+- ✅ 统一支付接口
+- ✅ 区域配置模块
+- ✅ 动态语言锁定
+- ✅ Supabase 海外数据库迁移
+- ✅ Vercel 部署配置
 
 ---
 
