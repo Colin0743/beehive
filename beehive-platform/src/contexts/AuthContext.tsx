@@ -15,6 +15,7 @@ interface AuthContextValue {
   login: (userData: User) => void;
   logout: () => Promise<void>;
   sendMagicLink: (email: string) => Promise<void>;
+  verifyOtp: (email: string, token: string, type: 'magiclink' | 'signup') => Promise<void>;
   signInWithPassword: (email: string, password: string) => Promise<void>;
   signUpWithPassword: (email: string, password: string, name: string) => Promise<void>;
   sendPasswordReset: (email: string) => Promise<void>;
@@ -104,6 +105,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (error) throw error;
   }, [supabase]);
 
+  // 校验 OTP (适用于 6 位验证码登录或注册)
+  const verifyOtp = useCallback(async (email: string, token: string, type: 'magiclink' | 'signup') => {
+    const { error } = await supabase.auth.verifyOtp({
+      email,
+      token,
+      type, // 'magiclink' 用于登录，'signup' 用于注册
+    });
+    if (error) throw error;
+
+    // 验证成功后，获取最新的 session 并刷新用户状态
+    const { data: { session } } = await supabase.auth.getSession();
+    await refreshUser(session);
+  }, [supabase, refreshUser]);
+
   const signInWithPassword = useCallback(async (email: string, password: string) => {
     const { error } = await supabase.auth.signInWithPassword({ email, password });
     if (error) throw error;
@@ -180,6 +195,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     login,
     logout,
     sendMagicLink,
+    verifyOtp,
     signInWithPassword,
     signUpWithPassword,
     sendPasswordReset,

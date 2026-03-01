@@ -111,7 +111,7 @@ export interface ProjectLog {
 // 项目参与关系类型
 export interface ProjectParticipation {
   id: string;
-  role: 'worker_bee'; // 只有工蜂角色
+  role: 'worker_bee'; // 只有参与者角色
   joinedAt: string;
 }
 

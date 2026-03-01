@@ -13,7 +13,7 @@ export default function HowItWorksPage() {
           <section>
             <h2 className="text-xl font-medium text-[#111827] mb-4">🎬 蜂巢协作模式</h2>
             <p className="text-[#4B5563] leading-relaxed mb-4">
-              蜂巢采用独特的“导演+工蜂”协作模式，让AI视频创作变得简单高效。
+              蜂巢采用独特的“导演+参与者”协作模式，让AI视频创作变得简单高效。
             </p>
           </section>
 
@@ -32,7 +32,7 @@ export default function HowItWorksPage() {
 
             <div className="bg-[#FEF3C7] rounded-xl p-6">
               <div className="text-3xl mb-3">🐝</div>
-              <h3 className="text-lg font-medium text-[#111827] mb-2">工蜂（参与者）</h3>
+              <h3 className="text-lg font-medium text-[#111827] mb-2">参与者（参与者）</h3>
               <ul className="text-sm text-[#4B5563] space-y-2">
                 <li>• 加入感兴趣的项目</li>
                 <li>• 在Telegram群组接收任务</li>

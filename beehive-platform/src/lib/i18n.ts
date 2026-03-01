@@ -894,9 +894,9 @@ const zhResources = {
     
     // Process Comic (How It Works)
     processStep1Title: '发起人创建项目',
-    processStep1Desc: '提出创意蓝图，设定视频时长目标，吸引工蜂加入',
-    processStep2Title: '工蜂加入项目',
-    processStep2Desc: '浏览项目，关注感兴趣的项目，以工蜂身份加入并提供算力支持',
+    processStep1Desc: '提出创意蓝图，设定视频时长目标，吸引参与者加入',
+    processStep2Title: '参与者加入项目',
+    processStep2Desc: '浏览项目，关注感兴趣的项目，以参与者身份加入并提供算力支持',
     processStep3Title: '协作完成作品',
     processStep3Desc: '在Telegram群组中接收任务，生成AI视频片段，发起人整合完成最终作品',
     previousStep: '上一个步骤',
@@ -989,7 +989,7 @@ const zhResources = {
     projectTermsText: '承诺在发布的视频中标注所采用素材的原作者邮箱或ID',
     contactGroupLabel: '联系群号（可选）',
     contactGroupPlaceholder: '例如：123456789',
-    contactGroupHint: '填写联系群号，方便协作者加入',
+    contactGroupHint: '填写联系群号，方便参与者加入',
     createFailed: '创建项目失败，请重试',
     createSuccess: '项目创建成功',
     removeFile: '删除',

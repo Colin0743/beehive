@@ -11,12 +11,14 @@ import Logo from '@/components/Logo';
 
 export default function LoginPage() {
   const { t } = useTranslation('common');
-  const { signInWithPassword, sendPasswordReset, isLoggedIn } = useAuth();
+  const { signInWithPassword, sendPasswordReset, sendMagicLink, verifyOtp, isLoggedIn } = useAuth();
   const { showToast } = useToast();
   const router = useRouter();
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [otp, setOtp] = useState('');
+  const [step, setStep] = useState<'email' | 'otp'>('email');
   const [errors, setErrors] = useState<FormErrors>({});
   const [loading, setLoading] = useState(false);
   const [resetting, setResetting] = useState(false);
@@ -68,7 +70,7 @@ export default function LoginPage() {
       if (message.includes('Invalid login credentials')) {
         setErrors({ general: t('wrongCredentials', '邮箱或密码错误') });
       } else if (message.includes('Email not confirmed')) {
-        setErrors({ general: '邮箱未验证，请先完成邮箱验证' });
+        setErrors({ general: '邮箱未验证，请重新注册或通过验证码登录' });
       } else if (message.includes('fetch') || message.includes('network') || message.includes('Failed')) {
         setErrors({ general: '服务暂时不可用，请稍后重试' });
       } else {
@@ -79,6 +81,43 @@ export default function LoginPage() {
       setLoading(false);
     }
   }, [email, password, router, showToast, signInWithPassword, t]);
+
+  const handleSendOtp = useCallback(async () => {
+    if (!validateEmail()) return;
+    setLoading(true);
+    setErrors({});
+    try {
+      await sendMagicLink(email.trim());
+      showToast('success', '验证码已发送至邮箱');
+      setStep('otp');
+    } catch (error) {
+      const message = error instanceof Error ? error.message : '';
+      setErrors({ general: message || '发送验证码失败' });
+      showToast('error', '发送验证码失败');
+    } finally {
+      setLoading(false);
+    }
+  }, [email, sendMagicLink, showToast, validateEmail]);
+
+  const handleVerifyOtp = useCallback(async () => {
+    if (otp.length !== 6) {
+      setErrors({ otp: '请输入 6 位验证码' });
+      return;
+    }
+    setLoading(true);
+    setErrors({});
+    try {
+      await verifyOtp(email.trim(), otp.trim(), 'magiclink');
+      showToast('success', '验证成功并登录');
+      router.push('/');
+    } catch (error) {
+      const message = error instanceof Error ? error.message : '';
+      setErrors({ general: message || '验证码无效或已过期' });
+      showToast('error', '验证失败');
+    } finally {
+      setLoading(false);
+    }
+  }, [email, otp, router, showToast, verifyOtp]);
 
   const handleReset = useCallback(async () => {
     if (!validateEmail()) return;
@@ -103,7 +142,11 @@ export default function LoginPage() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    handleLogin();
+    if (step === 'email') {
+      handleLogin();
+    } else {
+      handleVerifyOtp();
+    }
   };
 
   return (
@@ -135,25 +178,91 @@ export default function LoginPage() {
             )}
 
             <form onSubmit={handleSubmit} className="space-y-6">
-              <div>
-                <label className="block text-sm font-medium text-[var(--text-secondary)] mb-2">
-                  {t('email', '邮箱地址')}
-                </label>
-                <input
-                  type="email"
-                  placeholder={t('emailPlaceholder', '请输入您的邮箱')}
-                  value={email}
-                  onChange={(e) => {
-                    setEmail(e.target.value);
-                    setErrors((p) => ({ ...p, email: undefined, general: undefined }));
-                  }}
-                  className={`input ${errors.email ? 'input-error' : ''}`}
-                  autoFocus
-                />
-                {errors.email && (
-                  <p className="text-xs text-red-400 mt-2">{errors.email}</p>
-                )}
-              </div>
+              {step === 'email' ? (
+                <>
+                  <div>
+                    <label className="block text-sm font-medium text-[var(--text-secondary)] mb-2">
+                      {t('email', '邮箱地址')}
+                    </label>
+                    <input
+                      type="email"
+                      placeholder={t('emailPlaceholder', '请输入您的邮箱')}
+                      value={email}
+                      onChange={(e) => {
+                        setEmail(e.target.value);
+                        setErrors((p) => ({ ...p, email: undefined, general: undefined }));
+                      }}
+                      className={`input ${errors.email ? 'input-error' : ''}`}
+                      autoFocus
+                    />
+                    {errors.email && (
+                      <p className="text-xs text-red-400 mt-2">{errors.email}</p>
+                    )}
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-[var(--text-secondary)] mb-2">
+                      {t('password', '密码')}
+                    </label>
+                    <input
+                      type="password"
+                      placeholder={t('passwordPlaceholder', '请输入密码')}
+                      value={password}
+                      onChange={(e) => {
+                        setPassword(e.target.value);
+                        setErrors((p) => ({ ...p, password: undefined, general: undefined }));
+                      }}
+                      className={`input ${errors.password ? 'input-error' : ''}`}
+                    />
+                    {errors.password && (
+                      <p className="text-xs text-red-400 mt-2">{errors.password}</p>
+                    )}
+                  </div>
+                </>
+              ) : (
+                <div>
+                  <label className="block text-sm font-medium text-[var(--text-secondary)] mb-2">
+                    Enter Verification Code
+                  </label>
+                  <p className="text-xs text-[var(--text-muted)] mb-4">
+                    A 6-digit code has been sent to <span className="text-[var(--text-primary)] font-medium">{email}</span>
+                  </p>
+                  <input
+                    type="text"
+                    maxLength={6}
+                    placeholder="123456"
+                    value={otp}
+                    onChange={(e) => {
+                      // 仅允许输入数字
+                      const val = e.target.value.replace(/\D/g, '');
+                      setOtp(val);
+                      setErrors((p) => ({ ...p, otp: undefined, general: undefined }));
+                      // 如果粘贴了 6 位数字，自动提交 (可选体验优化)
+                      if (val.length === 6 && !loading) {
+                        // setTimeout to let state update
+                        setTimeout(() => {
+                          const btn = document.getElementById('verify-btn');
+                          btn?.click();
+                        }, 100);
+                      }
+                    }}
+                    className={`input text-center text-2xl tracking-[0.5em] font-mono ${errors.otp ? 'input-error' : ''}`}
+                    autoFocus
+                  />
+                  {errors.otp && (
+                    <p className="text-xs text-red-400 mt-2 text-center">{errors.otp}</p>
+                  )}
+                  <div className="mt-4 text-center">
+                    <button
+                      type="button"
+                      onClick={() => setStep('email')}
+                      className="text-xs text-[var(--gold)] hover:underline"
+                    >
+                      Back to Email / Password
+                    </button>
+                  </div>
+                </div>
+              )}
 
               <div>
                 <label className="block text-sm font-medium text-[var(--text-secondary)] mb-2">
@@ -174,13 +283,36 @@ export default function LoginPage() {
                 )}
               </div>
 
-              <button
-                type="submit"
-                disabled={loading}
-                className="btn-primary w-full disabled:opacity-50"
-              >
-                {loading ? t('loggingIn', '登录中...') : t('login', '登录')}
-              </button>
+              <div className="flex flex-col gap-3">
+                {step === 'email' ? (
+                  <>
+                    <button
+                      type="submit"
+                      disabled={loading}
+                      className="btn-primary w-full disabled:opacity-50"
+                    >
+                      {loading ? t('loggingIn', '登录中...') : t('login', '登录')}
+                    </button>
+                    <button
+                      type="button"
+                      disabled={loading}
+                      onClick={handleSendOtp}
+                      className="btn-outline w-full disabled:opacity-50 !border-[var(--gold)] !text-[var(--gold)] hover:!bg-[var(--gold)] hover:!text-[var(--ink)]"
+                    >
+                      {loading ? '发送中...' : '使用验证码登录 (Log in with OTP)'}
+                    </button>
+                  </>
+                ) : (
+                  <button
+                    id="verify-btn"
+                    type="submit"
+                    disabled={loading || otp.length < 6}
+                    className="btn-primary w-full disabled:opacity-50"
+                  >
+                    {loading ? 'Verifying...' : 'Verify Code'}
+                  </button>
+                )}
+              </div>
             </form>
 
             <div className="mt-4 flex items-center justify-between text-sm">

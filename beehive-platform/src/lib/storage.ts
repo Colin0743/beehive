@@ -472,7 +472,7 @@ export const projectRelationStorage = {
   participateInProject(
     userId: string,
     projectId: string,
-    role: 'worker_bee' // 只有工蜂角色
+    role: 'worker_bee' // 只有参与者角色
   ): StorageResult<void> {
     const key = STORAGE_KEYS.PARTICIPATED_PROJECTS(userId);
     const result = safeGetItem(key);

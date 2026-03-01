@@ -33,7 +33,7 @@ export default function GuidePage() {
                 <ul className="list-disc list-inside space-y-1 text-sm">
                   <li>创建Telegram群组用于日常沟通</li>
                   <li>准备清晰的任务分配流程</li>
-                  <li>制定提示词模板供工蜂使用</li>
+                  <li>制定提示词模板供参与者使用</li>
                 </ul>
               </div>
             </div>
