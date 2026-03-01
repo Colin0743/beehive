@@ -26,9 +26,9 @@ export default function RegisterPage() {
     const newErrors: FormErrors = {};
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!email.trim()) {
-      newErrors.email = t('emailRequired', '请输入邮箱地址');
+      newErrors.email = t('emailRequired', 'Email address is required');
     } else if (!emailRegex.test(email)) {
-      newErrors.email = t('invalidEmail', '邮箱格式不正确');
+      newErrors.email = t('invalidEmail', 'Invalid email address');
     }
     setErrors((prev) => ({ ...prev, ...newErrors }));
     return Object.keys(newErrors).length === 0;
@@ -37,9 +37,9 @@ export default function RegisterPage() {
   const validatePassword = (): boolean => {
     const newErrors: FormErrors = {};
     if (!password.trim()) {
-      newErrors.password = t('passwordRequired', '请输入密码');
+      newErrors.password = t('passwordRequired', 'Password is required');
     } else if (password.trim().length < 6) {
-      newErrors.password = t('passwordMinLength', '密码至少需要6个字符');
+      newErrors.password = t('passwordMinLength', 'Password must be at least 6 characters');
     }
     setErrors((prev) => ({ ...prev, ...newErrors }));
     return Object.keys(newErrors).length === 0;
@@ -54,20 +54,22 @@ export default function RegisterPage() {
     setErrors({});
 
     try {
-      const displayName = email.trim().split('@')[0] || '用户';
+      const displayName = email.trim().split('@')[0] || 'User';
       await signUpWithPassword(email.trim(), password.trim(), displayName);
-      showToast('success', '验证码已发送至邮箱，请验证');
+      showToast('success', 'Verification code sent to email. Please verify.');
       setStep('otp');
     } catch (error) {
       const message = error instanceof Error ? error.message : '';
       if (message.includes('User already registered') || message.includes('already exists')) {
-        setErrors({ general: '该邮箱已注册，请直接登录' });
+        setErrors({ general: 'Email already registered. Please sign in.' });
       } else if (message.includes('fetch') || message.includes('network') || message.includes('Failed')) {
-        setErrors({ general: '服务暂时不可用，请稍后重试' });
+        setErrors({ general: 'Service temporarily unavailable, please try again later' });
+      } else if (message.includes('rate limit')) {
+        setErrors({ general: 'Rate limit exceeded. Please wait a few minutes before trying again.' });
       } else {
-        setErrors({ general: message || '注册失败，请稍后重试' });
+        setErrors({ general: message || 'Registration failed, please try again later' });
       }
-      showToast('error', '注册失败');
+      showToast('error', 'Registration failed');
     } finally {
       setLoading(false);
     }
@@ -75,7 +77,7 @@ export default function RegisterPage() {
 
   const handleVerifyOtp = async () => {
     if (otp.length !== 6) {
-      setErrors({ otp: '请输入 6 位验证码' });
+      setErrors({ otp: 'Please enter 6-digit code' });
       return;
     }
     setLoading(true);
@@ -83,12 +85,12 @@ export default function RegisterPage() {
     try {
       // 注册后发出的邮件同样可以通过 verifyOtp 验证 (type 传 'signup')
       await verifyOtp(email.trim(), otp.trim(), 'signup');
-      showToast('success', '注册验证成功！');
+      showToast('success', 'Registration verified successfully!');
       router.push('/');
     } catch (error) {
       const message = error instanceof Error ? error.message : '';
-      setErrors({ general: message || '验证码无效或已过期' });
-      showToast('error', '验证失败');
+      setErrors({ general: message || 'Invalid or expired verification code' });
+      showToast('error', 'Verification failed');
     } finally {
       setLoading(false);
     }
@@ -120,10 +122,10 @@ export default function RegisterPage() {
           {/* 标题 */}
           <div className="text-center mb-10 animate-fade-up">
             <h1 className="text-3xl text-[var(--text-primary)] mb-3">
-              {t('joinHive', '加入蜂巢')}
+              {t('joinHive', 'Join Bee Studio AI')}
             </h1>
             <p className="text-[var(--text-muted)]">
-              {t('startJourney', '开始你的创作之旅')}
+              {t('startJourney', 'Start your AI video creation journey')}
             </p>
           </div>
 
@@ -140,11 +142,11 @@ export default function RegisterPage() {
                 <>
                   <div>
                     <label className="block text-sm font-medium text-[var(--text-secondary)] mb-2">
-                      {t('email', '邮箱地址')}
+                      {t('email', 'Email Address')}
                     </label>
                     <input
                       type="email"
-                      placeholder={t('emailPlaceholder', '请输入您的邮箱')}
+                      placeholder={t('emailPlaceholder', 'Enter your email')}
                       value={email}
                       onChange={(e) => {
                         setEmail(e.target.value);
@@ -160,11 +162,11 @@ export default function RegisterPage() {
 
                   <div>
                     <label className="block text-sm font-medium text-[var(--text-secondary)] mb-2">
-                      {t('password', '密码')}
+                      {t('password', 'Password')}
                     </label>
                     <input
                       type="password"
-                      placeholder={t('passwordPlaceholder', '请输入密码')}
+                      placeholder={t('passwordPlaceholder', 'Enter your password')}
                       value={password}
                       onChange={(e) => {
                         setPassword(e.target.value);
@@ -182,7 +184,7 @@ export default function RegisterPage() {
                     disabled={loading}
                     className="btn-primary w-full disabled:opacity-50"
                   >
-                    {loading ? t('registering', '发送中...') : '发送验证码'}
+                    {loading ? t('registering', 'Sending...') : 'Send Verification Code'}
                   </button>
                 </>
               ) : (
@@ -233,9 +235,9 @@ export default function RegisterPage() {
             <div className="divider my-8" />
 
             <p className="text-center text-sm text-[var(--text-muted)]">
-              {t('hasAccount', '已有账号？')}{' '}
+              {t('hasAccount', 'Already have an account?')} {' '}
               <Link href="/auth/login" className="text-[var(--gold)] hover:underline">
-                {t('loginNow', '立即登录')}
+                {t('loginNow', 'Sign In')}
               </Link>
             </p>
           </div>
@@ -245,7 +247,7 @@ export default function RegisterPage() {
               href="/"
               className="text-sm text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors"
             >
-              {t('backToHome', '返回首页')}
+              {t('backToHome', 'Back to Home')}
             </Link>
           </p>
         </div>
