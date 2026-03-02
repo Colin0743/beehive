@@ -160,6 +160,7 @@ export default function LoginPage() {
                 Continue with Google
               </button>
 
+              {/* Apple Login temporarily hidden
               <button
                 type="button"
                 onClick={handleAppleLogin}
@@ -170,6 +171,7 @@ export default function LoginPage() {
                 </svg>
                 Continue with Apple
               </button>
+              */}
             </div>
 
             {/* Divider */}
