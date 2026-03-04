@@ -145,28 +145,32 @@ export default function LoginPage() {
             )}
 
             {/* SSO Primary Buttons */}
-            <div className="flex flex-col gap-3 mb-6">
-              <button
-                type="button"
-                onClick={handleGoogleLogin}
-                className="w-full flex items-center justify-center gap-3 px-4 py-3 rounded-lg bg-white text-gray-800 font-semibold text-sm hover:bg-gray-100 transition-colors"
-              >
-                <svg width="18" height="18" viewBox="0 0 24 24">
-                  <path fill="#4285F4" d="M23.49 12.27c0-.79-.07-1.54-.19-2.27H12v4.51h6.47a5.52 5.52 0 01-2.4 3.64v3.01h3.88c2.26-2.09 3.54-5.17 3.54-8.89z" />
-                  <path fill="#34A853" d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.88-3.01a7.16 7.16 0 01-4.05 1.15 7.13 7.13 0 01-6.71-4.92H1.3v3.11A11.99 11.99 0 0012 24z" />
-                  <path fill="#FBBC05" d="M5.29 14.31a7.19 7.19 0 010-4.62V6.58H1.3a11.99 11.99 0 000 10.84l3.99-3.11z" />
-                  <path fill="#EA4335" d="M12 4.75a6.87 6.87 0 014.86 1.9l3.63-3.63A11.95 11.95 0 0012 0 11.99 11.99 0 001.3 6.58l3.99 3.11A7.13 7.13 0 0112 4.75z" />
-                </svg>
-                Continue with Google
-              </button>
-            </div>
+            {process.env.NEXT_PUBLIC_REGION !== 'cn' && (
+              <>
+                <div className="flex flex-col gap-3 mb-6">
+                  <button
+                    type="button"
+                    onClick={handleGoogleLogin}
+                    className="w-full flex items-center justify-center gap-3 px-4 py-3 rounded-lg bg-white text-gray-800 font-semibold text-sm hover:bg-gray-100 transition-colors"
+                  >
+                    <svg width="18" height="18" viewBox="0 0 24 24">
+                      <path fill="#4285F4" d="M23.49 12.27c0-.79-.07-1.54-.19-2.27H12v4.51h6.47a5.52 5.52 0 01-2.4 3.64v3.01h3.88c2.26-2.09 3.54-5.17 3.54-8.89z" />
+                      <path fill="#34A853" d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.88-3.01a7.16 7.16 0 01-4.05 1.15 7.13 7.13 0 01-6.71-4.92H1.3v3.11A11.99 11.99 0 0012 24z" />
+                      <path fill="#FBBC05" d="M5.29 14.31a7.19 7.19 0 010-4.62V6.58H1.3a11.99 11.99 0 000 10.84l3.99-3.11z" />
+                      <path fill="#EA4335" d="M12 4.75a6.87 6.87 0 014.86 1.9l3.63-3.63A11.95 11.95 0 0012 0 11.99 11.99 0 001.3 6.58l3.99 3.11A7.13 7.13 0 0112 4.75z" />
+                    </svg>
+                    Continue with Google
+                  </button>
+                </div>
 
-            {/* Divider */}
-            <div className="flex items-center gap-4 mb-6">
-              <div className="flex-1 h-px bg-[var(--ink-border)]" />
-              <span className="text-[var(--text-muted)] text-xs">or</span>
-              <div className="flex-1 h-px bg-[var(--ink-border)]" />
-            </div>
+                {/* Divider */}
+                <div className="flex items-center gap-4 mb-6">
+                  <div className="flex-1 h-px bg-[var(--ink-border)]" />
+                  <span className="text-[var(--text-muted)] text-xs">or</span>
+                  <div className="flex-1 h-px bg-[var(--ink-border)]" />
+                </div>
+              </>
+            )}
             {/* Email Form: collapsed by default */}
             {!showEmail ? (
               <button
