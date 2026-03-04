@@ -25,15 +25,15 @@ export default function ProgressSidebar({
   const [isDragging, setIsDragging] = useState(false);
   const [localValue, setLocalValue] = useState(project.currentDuration);
   const progressBarRef = useRef<HTMLDivElement>(null);
-  
+
   // 同步外部变化
   useEffect(() => {
     setLocalValue(project.currentDuration);
   }, [project.currentDuration]);
-  
+
   // 计算进度百分比
   const progress = Math.min((localValue / project.targetDuration) * 100, 100);
-  
+
   // 计算已完成任务数
   const completedTasksCount = tasks.filter(t => t.status === 'completed').length;
 
@@ -94,28 +94,29 @@ export default function ProgressSidebar({
 
   return (
     <div className="space-y-6">
-      {/* 进度卡片 */}
-      <div className="card p-6 border-2 border-[var(--gold)] animate-fade-up">
-        <div className="mb-6">
-          {/* Target seconds 和 Current seconds 同一行 */}
-          <div className="flex items-baseline justify-between gap-2 mb-4">
-            <div className="flex items-baseline gap-1 text-sm text-[var(--text-muted)]">
-              <span>{t('target')}</span>
-              <span className="text-[var(--text-primary)]">{project.targetDuration}</span>
-              <span>{t('seconds')}</span>
-            </div>
-            <div className="flex items-baseline gap-1 text-sm">
-              <span className="text-2xl font-bold" style={{ color: '#FFD700' }}>
+      {/* 进度卡片 - 改为更现代、清爽的样式 */}
+      <div className="card p-8 border border-[var(--ink-border)] shadow-sm animate-fade-up">
+        <div className="mb-8">
+          {/* 大数字突出显示 */}
+          <div className="flex flex-col mb-4">
+            <div className="flex items-baseline gap-2">
+              <span className="text-5xl font-extrabold text-[#FFD700] tracking-tight">
                 {localValue}
               </span>
-              <span className="text-[var(--text-muted)]">{t('seconds')}</span>
+              <span className="text-[var(--text-muted)] font-medium">{t('seconds')}</span>
+            </div>
+
+            <div className="flex items-baseline gap-2 mt-2 text-[var(--text-secondary)]">
+              <span>{t('target')}</span>
+              <span className="font-semibold text-[var(--text-primary)]">{project.targetDuration}</span>
+              <span>{t('seconds')}</span>
             </div>
           </div>
-          
-          {/* 可拖动进度条 */}
+
+          {/* 可拖动进度条：加粗，去圆点 */}
           <div
             ref={progressBarRef}
-            className={`progress-track mb-2 relative ${canEdit ? 'cursor-pointer' : ''}`}
+            className={`progress-track h-3 rounded-full mb-3 relative overflow-hidden bg-[var(--ink-border)] ${canEdit ? 'cursor-pointer hover:opacity-90 transition-opacity' : ''}`}
             onMouseDown={handleMouseDown}
             onKeyDown={handleKeyDown}
             tabIndex={canEdit ? 0 : -1}
@@ -123,51 +124,46 @@ export default function ProgressSidebar({
             aria-valuemin={0}
             aria-valuemax={project.targetDuration}
             aria-valuenow={localValue}
-            style={{ overflow: 'visible' }}
           >
-            <div className="progress-fill" style={{ width: `${progress}%` }} />
-            {/* 小黄点指示器 */}
-            <div 
-              className="absolute top-1/2 w-4 h-4 rounded-full bg-[#FFD700] shadow-lg transition-all pointer-events-none"
-              style={{ 
-                left: `${progress}%`,
-                transform: 'translate(-50%, -50%)',
-                boxShadow: '0 0 12px rgba(255, 215, 0, 0.8)',
-                zIndex: 10
-              }}
+            <div
+              className="absolute top-0 left-0 h-full bg-[#FFD700] transition-all duration-200"
+              style={{ width: `${progress}%` }}
             />
           </div>
-          <p className="text-xs text-[var(--text-muted)]">
-            {progress.toFixed(1)}% {t('completedStatus')}
-          </p>
+          <div className="flex justify-between items-center text-sm font-medium">
+            <span className="text-[#FFD700]">{progress.toFixed(1)}% {t('completedStatus')}</span>
+          </div>
         </div>
-        
+
         {/* 视觉分隔符 */}
-        <div className="divider mb-4" />
-        
-        {/* 任务完成统计 */}
-        <div className="flex justify-between text-sm mb-3">
-          <span className="text-[var(--text-muted)]">{t('tasks')}</span>
-          <span className="text-[var(--text-primary)]">
-            {completedTasksCount} / {tasks.length}
-          </span>
-        </div>
-        
-        {/* 成就数量 */}
-        <div className="flex justify-between text-sm">
-          <span className="text-[var(--text-muted)]">{t('achievements')}</span>
-          <span className="text-[var(--text-primary)]">{achievementsCount}</span>
+        <div className="w-full h-px bg-[var(--ink-border)] mb-6" />
+
+        {/* 数据统计列 */}
+        <div className="grid grid-cols-2 gap-4">
+          <div className="flex flex-col">
+            <span className="text-2xl font-bold text-[var(--text-primary)]">
+              {completedTasksCount}
+            </span>
+            <span className="text-sm text-[var(--text-muted)] mt-1">{t('completedLabel')} {t('tasks')}</span>
+          </div>
+
+          <div className="flex flex-col">
+            <span className="text-2xl font-bold text-[var(--text-primary)]">
+              {achievementsCount}
+            </span>
+            <span className="text-sm text-[var(--text-muted)] mt-1">{t('achievements')}</span>
+          </div>
         </div>
       </div>
 
       {/* Telegram 群组链接卡片 */}
-      <div className="card p-6 animate-fade-up delay-1">
+      <div className="card p-6 border border-[var(--ink-border)] shadow-sm animate-fade-up delay-1">
         <div className="flex items-center gap-2 mb-3">
-          <svg 
-            width="18" 
-            height="18" 
-            viewBox="0 0 24 24" 
-            fill="currentColor" 
+          <svg
+            width="18"
+            height="18"
+            viewBox="0 0 24 24"
+            fill="currentColor"
             className="text-[var(--text-muted)]"
           >
             <path d="M11.944 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0a12 12 0 0 0-.056 0zm4.962 7.224c.1-.002.321.023.465.14a.506.506 0 0 1 .171.325c.016.093.036.306.02.472-.18 1.898-.962 6.502-1.36 8.627-.168.9-.499 1.201-.82 1.23-.696.065-1.225-.46-1.9-.902-1.056-.693-1.653-1.124-2.678-1.8-1.185-.78-.417-1.21.258-1.91.177-.184 3.247-2.977 3.307-3.23.007-.032.014-.15-.056-.212s-.174-.041-.249-.024c-.106.024-1.793 1.14-5.061 3.345-.48.33-.913.49-1.302.48-.428-.008-1.252-.241-1.865-.44-.752-.245-1.349-.374-1.297-.789.027-.216.325-.437.893-.663 3.498-1.524 5.83-2.529 6.998-3.014 3.332-1.386 4.025-1.627 4.476-1.635z" />

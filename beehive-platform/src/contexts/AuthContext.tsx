@@ -22,6 +22,7 @@ interface AuthContextValue {
   updatePassword: (password: string) => Promise<void>;
   updateUser: (updatedData: Partial<User>) => Promise<void>;
   isProjectOwner: (projectId: string) => boolean;
+  signInWithGoogle: () => Promise<void>;
 }
 
 // 创建 Context
@@ -136,6 +137,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (error) throw error;
   }, [supabase]);
 
+  const signInWithGoogle = useCallback(async () => {
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: 'google',
+      options: {
+        redirectTo: `${window.location.origin}/auth/callback`,
+      },
+    });
+    if (error) throw error;
+  }, [supabase]);
+
   const sendPasswordReset = useCallback(async (email: string) => {
     const { error } = await supabase.auth.resetPasswordForEmail(email, {
       redirectTo: `${window.location.origin}/auth/callback?type=recovery`,
@@ -202,6 +213,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     updatePassword,
     updateUser,
     isProjectOwner,
+    signInWithGoogle,
   };
 
   return (

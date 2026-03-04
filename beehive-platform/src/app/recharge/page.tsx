@@ -10,12 +10,22 @@ import LoadingSpinner from '@/components/LoadingSpinner';
 import { getAvailableProviders } from '@/lib/payment-config';
 import { useRegion } from '@/hooks/useRegion';
 
-const AMOUNT_OPTIONS = [
+// 国内版金额选项（人民币分）
+const AMOUNT_OPTIONS_CN = [
   { cents: 100, label: '¥1' },
   { cents: 500, label: '¥5' },
   { cents: 1000, label: '¥10' },
   { cents: 5000, label: '¥50' },
   { cents: 10000, label: '¥100' },
+];
+
+// 海外版金额选项（美分，1 USD = 100 cents）
+const AMOUNT_OPTIONS_GLOBAL = [
+  { cents: 50, label: '$0.50' },
+  { cents: 500, label: '$5' },
+  { cents: 1000, label: '$10' },
+  { cents: 5000, label: '$50' },
+  { cents: 10000, label: '$100' },
 ];
 
 // 支付方式到渠道值的映射
@@ -24,6 +34,7 @@ const PROVIDER_CHANNEL_MAP: Record<string, { value: string; labelKey: string }[]
   wechat: [{ value: 'wx_native', labelKey: 'paymentChannelWxNative' }],
   stripe: [{ value: 'stripe', labelKey: 'paymentChannelStripe' }],
   paypal: [{ value: 'paypal', labelKey: 'paymentChannelPaypal' }],
+  crypto: [{ value: 'crypto', labelKey: 'paymentChannelCrypto' }],
 };
 
 const PENDING_ORDER_KEY = 'recharge_pending_out_trade_no';
@@ -43,11 +54,12 @@ export default function RechargePage() {
   const [qrCodeUrl, setQrCodeUrl] = useState<string | null>(null);
   const [pollingOutTradeNo, setPollingOutTradeNo] = useState<string | null>(null);
 
-  // 根据区域动态获取可用支付渠道
+  // 根据区域动态获取可用支付渠道和金额选项
   const availableProviders = getAvailableProviders();
   const channelOptions = availableProviders.flatMap(
     (p) => PROVIDER_CHANNEL_MAP[p] || []
   );
+  const amountOptions = region === 'global' ? AMOUNT_OPTIONS_GLOBAL : AMOUNT_OPTIONS_CN;
 
   // 默认选中第一个可用渠道
   useEffect(() => {
@@ -96,10 +108,18 @@ export default function RechargePage() {
     [t, refreshBalance]
   );
 
-  // 支付返回后轮询订单状态（支付宝 return_url 跳回）
+  // 支付返回后轮询订单状态（支付宝/NOWPayments return_url 跳回）
   useEffect(() => {
     const returnFlag = searchParams.get('return');
     const outTradeNo = searchParams.get('out_trade_no');
+    const cancelled = searchParams.get('cancelled');
+
+    if (cancelled === '1') {
+      setMessage({ type: 'error', text: 'Payment cancelled. Please try again.' });
+      window.history.replaceState({}, '', '/recharge');
+      return;
+    }
+
     if (returnFlag !== '1' || !outTradeNo) return;
 
     localStorage.removeItem(PENDING_ORDER_KEY);
@@ -198,16 +218,15 @@ export default function RechargePage() {
         <div className="mb-6 animate-fade-up">
           <p className="text-sm text-[var(--text-muted)] mb-4">{t('selectAmount')}</p>
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-            {AMOUNT_OPTIONS.map((opt) => (
+            {amountOptions.map((opt) => (
               <button
                 key={opt.cents}
                 type="button"
                 onClick={() => setSelectedCents(opt.cents)}
-                className={`py-3 px-4 rounded-lg border-2 transition-colors ${
-                  selectedCents === opt.cents
+                className={`py-3 px-4 rounded-lg border-2 transition-colors ${selectedCents === opt.cents
                     ? 'border-[var(--gold)] bg-[var(--gold)]/10 text-[var(--gold)]'
                     : 'border-[var(--ink-border)] hover:border-[var(--gold)]/50 text-[var(--text-primary)]'
-                }`}
+                  }`}
               >
                 {opt.label}
               </button>
@@ -223,11 +242,10 @@ export default function RechargePage() {
                 key={opt.value}
                 type="button"
                 onClick={() => setSelectedChannel(opt.value)}
-                className={`py-2 px-4 rounded-lg border-2 transition-colors text-sm ${
-                  selectedChannel === opt.value
+                className={`py-2 px-4 rounded-lg border-2 transition-colors text-sm ${selectedChannel === opt.value
                     ? 'border-[var(--gold)] bg-[var(--gold)]/10 text-[var(--gold)]'
                     : 'border-[var(--ink-border)] hover:border-[var(--gold)]/50 text-[var(--text-primary)]'
-                }`}
+                  }`}
               >
                 {t(opt.labelKey)}
               </button>
@@ -271,9 +289,8 @@ export default function RechargePage() {
 
         {message && (
           <p
-            className={`mt-4 text-sm ${
-              message.type === 'success' ? 'text-green-500' : 'text-red-500'
-            }`}
+            className={`mt-4 text-sm ${message.type === 'success' ? 'text-green-500' : 'text-red-500'
+              }`}
           >
             {message.text}
           </p>

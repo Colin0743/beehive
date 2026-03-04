@@ -12,7 +12,7 @@ const enResources = {
     // Site Meta
     'site.title': 'Bee Studio AI - AI Video Collaboration Platform',
     'site.description': 'AI video creators collaboration platform, gathering creativity and computing power',
-    
+
     // Navigation
     login: 'Login',
     register: 'Register',
@@ -26,7 +26,7 @@ const enResources = {
     close: 'Close',
     search: 'Search',
     allProjects: 'All Projects',
-    
+
     // Categories
     all: 'All',
     film: 'Film',
@@ -34,11 +34,11 @@ const enResources = {
     commercial: 'Commercial',
     publicWelfare: 'Public Welfare',
     other: 'Other',
-    
+
     // Hero Section
     heroTitle: 'Let Creativity Bloom in Bee Studio AI',
     heroSubtitle: 'Bee Studio AI is a collaboration platform for AI video creators. Join the studio and work with excellent creators to complete AI video works',
-    
+
     // Project Cards
     supporters: 'supporters',
     completed: 'completed',
@@ -47,22 +47,22 @@ const enResources = {
     seconds: 'seconds',
     target: 'Target',
     completedBadge: 'Completed',
-    
+
     // Project Actions
     joinProject: '📱 Join Project',
     noTelegramGroup: 'This project has no group link',
-    
+
     // Pagination
     previousPage: 'Previous',
     nextPage: 'Next',
-    
+
     // Empty States
     noProjects: 'No projects yet',
     noCategoryProjects: 'No projects in this category',
     tryOtherCategories: 'Try viewing other categories',
     firstProjectCTA: 'Be the first creator to create an AI video project on Bee Studio AI!',
     createFirstProject: 'Create First Project',
-    
+
     // My Works
     myWorks: 'My Works',
     viewAllWorks: 'View All Works',
@@ -72,7 +72,7 @@ const enResources = {
     categoryProjects: '{{category}} Projects',
     viewAllProjects: 'View All',
     allProjectsTitle: 'All Projects',
-    
+
     // Footer
     footerDescription: 'AI video creators collaboration platform, let creativity bloom in Bee Studio AI',
     quickLinks: 'Quick Links',
@@ -90,11 +90,11 @@ const enResources = {
     privacyPolicy: 'Privacy Policy',
     termsOfService: 'Terms of Service',
     cookieSettings: 'Cookie Settings',
-    
+
     // Loading
     loading: 'Loading...',
     loadingText: 'Loading',
-    
+
     // Common Actions
     save: 'Save',
     cancel: 'Cancel',
@@ -104,12 +104,12 @@ const enResources = {
     view: 'View',
     share: 'Share',
     retry: 'Retry',
-    
+
     // Error Pages
     somethingWentWrong: 'Something went wrong',
     errorDetails: 'Error details (dev mode)',
     backToHomePage: 'Back to Home',
-    
+
     // Inline Edit
     notSelected: 'Not selected',
     noDescription: 'No description',
@@ -128,11 +128,11 @@ const enResources = {
     saveFailed: 'Save failed, please retry',
     fileProcessFailed: 'File processing failed, please retry',
     inputDescPlaceholder: 'Enter project description...',
-    
+
     // Task Form
     taskDurationLabel: 'Task Duration (seconds)',
     taskDurationHint: 'seconds (5 - 30)',
-    
+
     // Categories Page
     categoryProjectsTitle: '{{category}} Projects',
     foundProjectsCount: 'Found {{count}} projects',
@@ -147,30 +147,30 @@ const enResources = {
     completedLabel: 'Completed',
     percentCompleted: '{{percent}}% completed',
     progress: 'Progress',
-    
+
     // Sorting
     sortHot: 'Hot',
     sortNewest: 'Newest',
     sortFastest: 'Fastest Progress',
     sortMostParticipants: 'Most Participants',
-    
+
     // Media
     coverPreview: 'Cover preview',
-    
+
     // Inline Edit - Number
     invalidNumber: 'Please enter a valid number',
     valueTooSmall: 'Value cannot be less than {{min}}',
     valueTooLarge: 'Value cannot be greater than {{max}}',
     notSet: 'Not set',
-    
+
     // Toast
     closeToast: 'Close notification',
-    
+
     // Rich Text Editor
     startEditing: 'Start editing...',
     imageTooLarge: 'Image size cannot exceed 5MB',
     imageProcessFailed: 'Image processing failed, please retry',
-    
+
     // Terms Page
     termsTitle: 'Terms of Service',
     termsLastUpdated: 'Last updated: February 2025',
@@ -209,14 +209,14 @@ const enResources = {
     'terms.section9Content': 'We reserve the right to modify these terms at any time. Modified terms will be published on the platform, and continued use of the service constitutes acceptance of the modified terms.',
     'terms.section10Title': '10. Contact Information',
     'terms.section10Content': 'If you have any questions about these Terms of Service, please contact us at Colincao0734@Outlook.com. Company: YangYang Yunhe (Shenzhen) Technology Co., Ltd., China.',
-    
+
     // Search Page
     searchResults: 'Search Results',
     searchResultsFor: 'Search results for "{{keyword}}"',
     noSearchResults: 'No search results',
     noSearchResultsDesc: 'Try different keywords or browse all projects',
     browseAllProjects: 'Browse All Projects',
-    
+
     // Project Detail Page
     projectDetails: 'Project Details',
     projectDescription: 'Project Description',
@@ -251,12 +251,12 @@ const enResources = {
     updateContent: 'Update Content',
     shareProgressPlaceholder: 'Share project progress, achievements or important announcements...',
     publishUpdateButton: 'Publish Update',
-    
+
     // Language
     language: 'Language',
     english: 'English',
     chinese: '中文',
-    
+
     // Process Comic (How It Works)
     processStep1Title: 'Creator Starts a Project',
     processStep1Desc: 'Propose a creative blueprint, set video duration goals, attract bees to join',
@@ -267,7 +267,7 @@ const enResources = {
     previousStep: 'Previous step',
     nextStep: 'Next step',
     goToStep: 'Go to step {{step}}',
-    
+
     // Login Page
     welcomeBack: 'Welcome Back to Bee Studio AI',
     continueJourney: 'Continue your AI video creation journey',
@@ -284,7 +284,7 @@ const enResources = {
     loginFailed: 'Login failed, please try again',
     wrongCredentials: 'Wrong email or password',
     loginSuccess: 'Login successful',
-    
+
     // Register Page
     joinHive: 'Join Bee Studio AI',
     startJourney: 'Start your AI video creation journey',
@@ -303,7 +303,7 @@ const enResources = {
     emailExists: 'This email is already registered',
     registerFailed: 'Registration failed, please try again',
     registerSuccess: 'Registration successful',
-    
+
     // Profile Page
     clickToChangeAvatar: 'Click to change avatar',
     nickname: 'Nickname',
@@ -318,7 +318,7 @@ const enResources = {
     noParticipatedProjects: 'You have not participated in any projects yet',
     startFirstProject: 'Start creating your first project',
     createProject: 'Create Project',
-    
+
     // New Project Page
     createNewProject: 'Create New Project',
     projectTitle: 'Project Title',
@@ -336,8 +336,8 @@ const enResources = {
     orDragFile: 'or drag file here',
     imageFormats: 'Supports JPG, PNG, GIF formats, max 5MB',
     projectVideo: 'Project Video (optional)',
-    videoFormats: 'Supports MP4, MOV, AVI formats, recommended under 10MB',
-    videoStorageWarning: '⚠️ Due to localStorage limits, large files may not be saved',
+    videoFormats: 'Supports MP4, MOV, AVI formats, recommended under 500MB',
+    videoStorageWarning: 'Video file will be uploaded directly to secure storage',
     telegramGroupLabel: 'Telegram Group Link (optional)',
     telegramGroupPlaceholder: 'https://t.me/your_group',
     creating: 'Creating...',
@@ -361,11 +361,11 @@ const enResources = {
     imageUploadError: 'Please upload JPG, PNG or GIF format image',
     videoUploadError: 'Please upload MP4, MOV or AVI format video',
     imageSizeError: 'Image size cannot exceed 5MB',
-    videoSizeError: 'Video size cannot exceed 20MB (localStorage limit)',
+    videoSizeError: 'Video size cannot exceed 500MB',
     fileProcessError: 'File processing failed, please try again',
-    storageFullError: 'Storage space is full, please clear browser storage',
-    storageFullVideoConfirm: 'Storage space is insufficient. Create project without saving video?',
-    
+    storageFullError: 'Storage space is full, please try again later',
+    storageFullVideoConfirm: 'Storage upload failed. Create project without saving video?',
+
     // Edit Project Page
     editProjectTitle: 'Edit Project',
     currentDurationLabel: 'Current Duration (seconds)',
@@ -377,7 +377,7 @@ const enResources = {
     saveChanges: 'Save Changes',
     coverUploadSuccess: 'Cover image uploaded successfully',
     videoUploadSuccess: 'Video uploaded successfully',
-    
+
     // Task System
     taskHall: 'Task Hall',
     tasks: 'Tasks',
@@ -470,7 +470,9 @@ const enResources = {
     paymentChannelAlipayWap: 'Alipay (Mobile)',
     paymentChannelWxPub: 'WeChat Pay',
     paymentChannelWxNative: 'WeChat Pay (Scan QR)',
-    redirectingToPay: 'Redirecting to payment...',
+    paymentChannelCrypto: '₮ Pay with Crypto (USDT/USDC)',
+    paymentChannelStripe: 'Stripe',
+    paymentChannelPaypal: 'PayPal',
     paymentReturnSuccess: 'Payment successful! Balance updated.',
     paymentReturnPending: 'Waiting for payment confirmation...',
     wechatScanQrHint: 'Please scan the QR code with WeChat to complete payment',
@@ -655,7 +657,7 @@ const zhResources = {
     // Site Meta
     'site.title': '泱泱云合AI制片厂 - AI视频协作平台',
     'site.description': 'AI视频创作者的协作平台，汇聚创意与算力',
-    
+
     // Navigation
     login: '登录',
     register: '注册',
@@ -669,7 +671,7 @@ const zhResources = {
     close: '关闭',
     search: '搜索',
     allProjects: '全部项目',
-    
+
     // Categories
     all: '全部',
     film: '电影',
@@ -677,11 +679,11 @@ const zhResources = {
     commercial: '商业制作',
     publicWelfare: '公益',
     other: '其他',
-    
+
     // Hero Section
     heroTitle: '让创意在泱泱云合AI制片厂中绽放',
     heroSubtitle: '泱泱云合AI制片厂是AI视频创作者的协作平台，加入泱泱云合AI制片厂，与优秀创作者一起完成AI视频作品',
-    
+
     // Project Cards
     supporters: '支持者',
     completed: '完成',
@@ -690,22 +692,22 @@ const zhResources = {
     seconds: '秒',
     target: '目标',
     completedBadge: '已完成',
-    
+
     // Project Actions
     joinProject: '📱 加入项目',
     noTelegramGroup: '该项目暂无群组链接',
-    
+
     // Pagination
     previousPage: '上一页',
     nextPage: '下一页',
-    
+
     // Empty States
     noProjects: '还没有项目',
     noCategoryProjects: '该分类暂无项目',
     tryOtherCategories: '尝试查看其他分类',
     firstProjectCTA: '成为第一个在泱泱云合AI制片厂创建AI视频项目的创作者！',
     createFirstProject: '创建第一个项目',
-    
+
     // 我的作品
     myWorks: '我的作品',
     viewAllWorks: '查看全部作品',
@@ -715,7 +717,7 @@ const zhResources = {
     categoryProjects: '{{category}}项目',
     viewAllProjects: '查看全部',
     allProjectsTitle: '全部项目',
-    
+
     // Footer
     footerDescription: 'AI视频创作者的协作平台，让创意在泱泱云合AI制片厂中绽放',
     quickLinks: '快速链接',
@@ -733,11 +735,11 @@ const zhResources = {
     privacyPolicy: '隐私政策',
     termsOfService: '服务条款',
     cookieSettings: 'Cookie设置',
-    
+
     // Loading
     loading: '加载中...',
     loadingText: '加载中',
-    
+
     // Common Actions
     save: '保存',
     cancel: '取消',
@@ -747,12 +749,12 @@ const zhResources = {
     view: '查看',
     share: '分享',
     retry: '重试',
-    
+
     // Error Pages
     somethingWentWrong: '出错了',
     errorDetails: '错误详情（开发模式）',
     backToHomePage: '返回首页',
-    
+
     // Inline Edit
     notSelected: '未选择',
     noDescription: '暂无描述',
@@ -771,11 +773,11 @@ const zhResources = {
     saveFailed: '保存失败，请重试',
     fileProcessFailed: '文件处理失败，请重试',
     inputDescPlaceholder: '输入项目描述...',
-    
+
     // Task Form
     taskDurationLabel: '任务时长（秒）',
     taskDurationHint: '秒（5 - 30）',
-    
+
     // Categories Page
     categoryProjectsTitle: '{{category}}项目',
     foundProjectsCount: '共找到 {{count}} 个项目',
@@ -790,30 +792,30 @@ const zhResources = {
     completedLabel: '已完成',
     percentCompleted: '{{percent}}% 已完成',
     progress: '进度',
-    
+
     // Sorting
     sortHot: '热门',
     sortNewest: '最新',
     sortFastest: '进度最快',
     sortMostParticipants: '参与者最多',
-    
+
     // Media
     coverPreview: '封面预览',
-    
+
     // Inline Edit - Number
     invalidNumber: '请输入有效的数字',
     valueTooSmall: '数值不能小于 {{min}}',
     valueTooLarge: '数值不能大于 {{max}}',
     notSet: '未设置',
-    
+
     // Toast
     closeToast: '关闭提示',
-    
+
     // Rich Text Editor
     startEditing: '开始编辑...',
     imageTooLarge: '图片大小不能超过5MB',
     imageProcessFailed: '图片处理失败，请重试',
-    
+
     // Terms Page
     termsTitle: '服务条款',
     termsLastUpdated: '最后更新日期：2025年1月',
@@ -844,14 +846,14 @@ const zhResources = {
     'terms.section7Content': '我们保留随时修改本条款的权利。修改后的条款将在平台上公布，继续使用服务即表示您接受修改后的条款。',
     'terms.section8Title': '8. 联系方式',
     'terms.section8Content': '如有任何问题，请通过 contact@beehive.ai 联系我们。',
-    
+
     // Search Page
     searchResults: '搜索结果',
     searchResultsFor: '"{{keyword}}" 的搜索结果',
     noSearchResults: '没有搜索结果',
     noSearchResultsDesc: '尝试不同的关键词或浏览所有项目',
     browseAllProjects: '浏览所有项目',
-    
+
     // Project Detail Page
     projectDetails: '项目详情',
     projectDescription: '项目描述',
@@ -886,12 +888,12 @@ const zhResources = {
     updateContent: '更新内容',
     shareProgressPlaceholder: '分享项目进展、成果或重要通知...',
     publishUpdateButton: '发布更新',
-    
+
     // Language
     language: '语言',
     english: 'English',
     chinese: '中文',
-    
+
     // Process Comic (How It Works)
     processStep1Title: '发起人创建项目',
     processStep1Desc: '提出创意蓝图，设定视频时长目标，吸引参与者加入',
@@ -902,7 +904,7 @@ const zhResources = {
     previousStep: '上一个步骤',
     nextStep: '下一个步骤',
     goToStep: '跳转到步骤 {{step}}',
-    
+
     // Login Page
     welcomeBack: '欢迎回到泱泱云合AI制片厂',
     continueJourney: '继续你的AI视频创作之旅',
@@ -919,7 +921,7 @@ const zhResources = {
     loginFailed: '登录失败，请重试',
     wrongCredentials: '邮箱或密码错误',
     loginSuccess: '登录成功',
-    
+
     // Register Page
     joinHive: '加入泱泱云合AI制片厂',
     startJourney: '开始你的AI视频创作之旅',
@@ -938,7 +940,7 @@ const zhResources = {
     emailExists: '该邮箱已被注册',
     registerFailed: '注册失败，请重试',
     registerSuccess: '注册成功',
-    
+
     // Profile Page
     clickToChangeAvatar: '点击更换头像',
     nickname: '昵称',
@@ -953,7 +955,7 @@ const zhResources = {
     noParticipatedProjects: '你还没有参与任何项目',
     startFirstProject: '开始创建你的第一个项目吧',
     createProject: '创建项目',
-    
+
     // New Project Page
     createNewProject: '创建新项目',
     projectTitle: '项目标题',
@@ -996,11 +998,11 @@ const zhResources = {
     imageUploadError: '请上传JPG、PNG或GIF格式的图片',
     videoUploadError: '请上传MP4、MOV或AVI格式的视频',
     imageSizeError: '图片大小不能超过5MB',
-    videoSizeError: '视频大小不能超过20MB（localStorage限制）',
+    videoSizeError: '视频大小不能超过500MB',
     fileProcessError: '文件处理失败，请重试',
-    storageFullError: '存储空间不足，请清理浏览器存储后重试',
-    storageFullVideoConfirm: '存储空间不足。是否创建项目但不保存视频文件？',
-    
+    storageFullError: '存储空间超限，请稍后重试',
+    storageFullVideoConfirm: '存储上传失败。是否创建项目但不保存视频文件？',
+
     // Edit Project Page
     editProjectTitle: '编辑项目',
     currentDurationLabel: '当前时长（秒）',
@@ -1012,7 +1014,7 @@ const zhResources = {
     saveChanges: '保存更改',
     coverUploadSuccess: '封面图片上传成功',
     videoUploadSuccess: '视频上传成功',
-    
+
     // Task System - 任务系统
     taskHall: '任务大厅',
     tasks: '任务',
@@ -1105,6 +1107,7 @@ const zhResources = {
     paymentChannelAlipayWap: '支付宝（手机）',
     paymentChannelWxPub: '微信支付',
     paymentChannelWxNative: '微信扫码支付',
+    paymentChannelCrypto: '₮ 稳定币 (USDT/USDC)',
     redirectingToPay: '正在跳转支付...',
     paymentReturnSuccess: '支付成功！余额已更新。',
     paymentReturnPending: '等待支付确认中...',
@@ -1296,13 +1299,13 @@ if (typeof window !== 'undefined') {
       lng: currentLang, // 根据区域锁定语言：cn→zh, global→en
       fallbackLng: currentLang,
       defaultNS: 'common',
-      
+
       detection: {
         // 禁用语言自动检测和缓存，由区域配置完全控制语言
         order: [],
         caches: [],
       },
-      
+
       interpolation: {
         escapeValue: false,
       },

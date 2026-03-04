@@ -9,7 +9,7 @@
 import { getRegion } from '@/lib/region';
 
 /** 支付服务商类型 */
-export type PaymentProvider = 'alipay' | 'wechat' | 'stripe' | 'paypal';
+export type PaymentProvider = 'alipay' | 'wechat' | 'stripe' | 'paypal' | 'crypto';
 
 /** 统一订单创建参数 */
 export interface CreateOrderParams {
@@ -70,16 +70,36 @@ export async function createOrder(
   }
 
   if (region === 'global') {
-    if (provider === 'stripe' || provider === 'paypal') {
-      // 未实现时使用 mock 模式
+    if (provider === 'crypto') {
+      // NOWPayments 稳定币支付
       if (process.env.USE_MOCK_PAYMENT === 'true') {
         return {
           payUrl: `/api/recharge/mock-confirm?out_trade_no=${params.outTradeNo}`,
           channel: 'mock',
         };
       }
-      // TODO: 实现 Stripe/PayPal 真实对接
-      throw new Error(`${provider} 支付尚未实现，请设置 USE_MOCK_PAYMENT=true`);
+      const { createNowPaymentsInvoice } = await import('@/lib/payment-nowpayments');
+      const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://beehive-gules.vercel.app';
+      const invoice = await createNowPaymentsInvoice({
+        priceAmountUsd: params.amountCents / 100,
+        orderId: params.outTradeNo,
+        orderDescription: params.subject,
+        ipnCallbackUrl: params.notifyUrl,
+        successUrl: `${appUrl}/recharge?return=1&out_trade_no=${params.outTradeNo}`,
+        cancelUrl: `${appUrl}/recharge?cancelled=1`,
+      });
+      return { payUrl: invoice.invoiceUrl, channel: 'nowpayments' };
+    }
+
+    if (provider === 'stripe' || provider === 'paypal') {
+      // 保留兼容性，未实现时返回 mock
+      if (process.env.USE_MOCK_PAYMENT === 'true') {
+        return {
+          payUrl: `/api/recharge/mock-confirm?out_trade_no=${params.outTradeNo}`,
+          channel: 'mock',
+        };
+      }
+      throw new Error(`${provider} 支付尚未实现，请使用 crypto 或设置 USE_MOCK_PAYMENT=true`);
     }
   }
 

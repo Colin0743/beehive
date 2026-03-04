@@ -5,7 +5,7 @@
 import { getRegion } from '@/lib/region';
 
 /** 支付服务商类型 */
-export type PaymentProvider = 'alipay' | 'wechat' | 'stripe' | 'paypal';
+export type PaymentProvider = 'alipay' | 'wechat' | 'stripe' | 'paypal' | 'crypto';
 
 /**
  * 获取当前区域可用的支付方式列表
@@ -14,7 +14,7 @@ export type PaymentProvider = 'alipay' | 'wechat' | 'stripe' | 'paypal';
 export function getAvailableProviders(): PaymentProvider[] {
   return getRegion() === 'cn'
     ? ['alipay', 'wechat']
-    : ['stripe', 'paypal'];
+    : ['crypto'];
 }
 
 /** 支付配置验证结果 */
@@ -29,6 +29,8 @@ export interface PaymentConfigValidation {
   stripeEnabled: boolean;
   /** PayPal 是否已配置 */
   paypalEnabled: boolean;
+  /** NOWPayments 加密货币是否已配置 */
+  cryptoEnabled: boolean;
   /** 缺失的环境变量列表 */
   missingVars: string[];
 }
@@ -72,29 +74,31 @@ export function validatePaymentConfig(): PaymentConfigValidation {
     }
   }
 
-  // 检查 Stripe 配置
+  // 检查 Stripe 配置（保留兼容性，global 区域不再使用）
   const stripeEnabled = !!(
     process.env.STRIPE_SECRET_KEY &&
     process.env.STRIPE_PUBLISHABLE_KEY
   );
-  if (region === 'global' && !stripeEnabled) {
-    if (!process.env.STRIPE_SECRET_KEY) missingVars.push('STRIPE_SECRET_KEY');
-    if (!process.env.STRIPE_PUBLISHABLE_KEY) missingVars.push('STRIPE_PUBLISHABLE_KEY');
-  }
 
-  // 检查 PayPal 配置
+  // 检查 PayPal 配置（保留兼容性，global 区域不再使用）
   const paypalEnabled = !!(
     process.env.PAYPAL_CLIENT_ID &&
     process.env.PAYPAL_CLIENT_SECRET
   );
-  if (region === 'global' && !paypalEnabled) {
-    if (!process.env.PAYPAL_CLIENT_ID) missingVars.push('PAYPAL_CLIENT_ID');
-    if (!process.env.PAYPAL_CLIENT_SECRET) missingVars.push('PAYPAL_CLIENT_SECRET');
+
+  // 检查 NOWPayments 配置
+  const cryptoEnabled = !!(
+    process.env.NOWPAYMENTS_API_KEY &&
+    process.env.NOWPAYMENTS_IPN_SECRET
+  );
+  if (region === 'global' && !cryptoEnabled) {
+    if (!process.env.NOWPAYMENTS_API_KEY) missingVars.push('NOWPAYMENTS_API_KEY');
+    if (!process.env.NOWPAYMENTS_IPN_SECRET) missingVars.push('NOWPAYMENTS_IPN_SECRET');
   }
 
   // 判断是否使用 mock 模式
   const mockMode = useMockExplicit || (
-    region === 'cn' ? (!alipayEnabled && !wechatEnabled) : (!stripeEnabled && !paypalEnabled)
+    region === 'cn' ? (!alipayEnabled && !wechatEnabled) : !cryptoEnabled
   );
 
   return {
@@ -103,6 +107,7 @@ export function validatePaymentConfig(): PaymentConfigValidation {
     wechatEnabled,
     stripeEnabled,
     paypalEnabled,
+    cryptoEnabled,
     missingVars,
   };
 }

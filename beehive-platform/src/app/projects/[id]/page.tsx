@@ -47,7 +47,7 @@ export default function ProjectDetailPage() {
   const [showCompleteModal, setShowCompleteModal] = useState(false);
   const [completingTaskId, setCompletingTaskId] = useState<string>('');
   const [contributorNameInput, setContributorNameInput] = useState('');
-  
+
   // 任务详情弹窗状态
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   const [showInsufficientModal, setShowInsufficientModal] = useState(false);
@@ -142,39 +142,39 @@ export default function ProjectDetailPage() {
   const handleTaskSubmit = async (taskData: Partial<Task>) => {
     setSubmittingTask(true);
     try {
-    if (taskFormMode === 'create') {
-      const newTask: Task = {
-        id: `task_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
-        prompt: taskData.prompt || '',
-        referenceImages: taskData.referenceImages || [],
-        requirements: taskData.requirements || '',
-        creatorEmail: taskData.creatorEmail || '',
-        status: taskData.status || 'published', // 使用表单传来的status,默认published
-        duration: taskData.duration || 10,
-        order: tasks.length,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-      };
-      const result = await taskStorage.createTask(projectId, newTask);
-      if (result.success) {
-        showToast('success', t('taskCreated'));
-        await refreshTasks();
-      } else {
-        showToast('error', result.error || t('createFailed'));
-        if (result.error && (result.error.includes('余额不足') || result.error.includes('请先充值'))) {
-          router.push('/recharge');
+      if (taskFormMode === 'create') {
+        const newTask: Task = {
+          id: `task_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
+          prompt: taskData.prompt || '',
+          referenceImages: taskData.referenceImages || [],
+          requirements: taskData.requirements || '',
+          creatorEmail: taskData.creatorEmail || '',
+          status: taskData.status || 'published', // 使用表单传来的status,默认published
+          duration: taskData.duration || 10,
+          order: tasks.length,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        };
+        const result = await taskStorage.createTask(projectId, newTask);
+        if (result.success) {
+          showToast('success', t('taskCreated'));
+          await refreshTasks();
+        } else {
+          showToast('error', result.error || t('createFailed'));
+          if (result.error && (result.error.includes('余额不足') || result.error.includes('请先充值'))) {
+            router.push('/recharge');
+          }
+        }
+      } else if (editingTask) {
+        const result = await taskStorage.updateTask(projectId, editingTask.id, {
+          ...taskData,
+          updatedAt: new Date().toISOString(),
+        });
+        if (result.success) {
+          showToast('success', t('taskUpdated'));
+          await refreshTasks();
         }
       }
-    } else if (editingTask) {
-      const result = await taskStorage.updateTask(projectId, editingTask.id, {
-        ...taskData,
-        updatedAt: new Date().toISOString(),
-      });
-      if (result.success) {
-        showToast('success', t('taskUpdated'));
-        await refreshTasks();
-      }
-    }
     } finally {
       setSubmittingTask(false);
       setShowTaskForm(false);
@@ -318,11 +318,20 @@ export default function ProjectDetailPage() {
 
   return (
     <LayoutSimple>
-      <div className="max-w-7xl mx-auto px-4">
-        {/* 顶部：分类 + 标题 + 创建者信息 */}
-        <div className="mb-8 animate-fade-up">
-          <div className="flex items-start justify-between gap-4 mb-4">
-            <div className="flex items-center gap-4">
+      <div className="max-w-7xl mx-auto px-4 py-8">
+        {/* 顶部：居中的标题和创建者信息 */}
+        <div className="mb-10 text-center animate-fade-up max-w-4xl mx-auto">
+          <InlineEditText
+            value={project.title}
+            onSave={(v) => handleFieldSave('title', v)}
+            canEdit={canEdit}
+            validate={validateTitle}
+            displayClassName="text-4xl lg:text-5xl text-[var(--text-primary)] font-extrabold mb-5 leading-tight"
+          />
+
+          <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-3 mt-4 text-sm">
+            {/* 分类徽章风格 */}
+            <div className="bg-[var(--gold)]/10 text-[var(--gold)] px-3 py-1 rounded-full font-medium">
               <InlineEditSelect
                 value={project.category}
                 options={categories}
@@ -330,44 +339,38 @@ export default function ProjectDetailPage() {
                 canEdit={canEdit}
               />
             </div>
-            
-            {/* 右侧：创建者信息 */}
-            <div className="flex items-center gap-4 text-sm text-[var(--text-muted)]">
-              <div className="flex items-center gap-2">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
-                  <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
-                </svg>
-                <span>{t('createdBy')} <span className="text-[var(--text-primary)]">{project.creatorName}</span></span>
+
+            {/* 创建者信息 */}
+            <div className="flex items-center gap-2 text-[var(--text-muted)]">
+              <div className="w-6 h-6 rounded-full bg-[var(--ink-border)] flex items-center justify-center text-xs">
+                {project.creatorName.charAt(0).toUpperCase()}
               </div>
-              <span>·</span>
-              <span>{new Date(project.createdAt).toLocaleDateString('zh-CN', { year: 'numeric', month: 'long', day: 'numeric' })}</span>
+              <span>{t('createdBy')} <span className="text-[var(--text-primary)] font-medium hover:underline cursor-pointer">{project.creatorName}</span></span>
             </div>
+
+            <div className="hidden sm:block w-1 h-1 rounded-full bg-[var(--ink-border)]" />
+
+            <span className="text-[var(--text-muted)]">
+              {new Date(project.createdAt).toLocaleDateString('zh-CN', { year: 'numeric', month: 'long', day: 'numeric' })}
+            </span>
           </div>
-          
-          <div className="flex items-center gap-4">
-            <InlineEditText
-              value={project.title}
-              onSave={(v) => handleFieldSave('title', v)}
-              canEdit={canEdit}
-              validate={validateTitle}
-              displayClassName="text-3xl lg:text-5xl text-[var(--text-primary)] font-bold"
-            />
-            
-            {isAdminUser && (
+
+          {isAdminUser && (
+            <div className="mt-6">
               <button
                 onClick={handleDeleteProject}
-                className="px-3 py-1.5 text-xs rounded-lg bg-red-600 hover:bg-red-700 text-white transition-colors whitespace-nowrap"
+                className="px-4 py-2 text-xs font-semibold rounded-lg bg-red-500/10 text-red-500 hover:bg-red-500 hover:text-white transition-colors"
               >
                 {t('deleteProject', '删除项目')}
               </button>
-            )}
-          </div>
+            </div>
+          )}
         </div>
 
-        {/* 主体区域:左侧媒体 + 右侧进度 */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-12">
-          {/* 左侧:媒体展示区域(占2/3宽度) */}
-          <div className="lg:col-span-2">
+        {/* 主体区域: 左侧媒体 + 右侧进度 (12列栅格布局) */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 mb-16">
+          {/* 左侧: 媒体展示区域 (占 7/12) */}
+          <div className="lg:col-span-7 xl:col-span-8">
             {/* 媒体容器 - 自适应高度 */}
             <MediaCarousel
               coverImage={project.coverImage}
@@ -378,8 +381,8 @@ export default function ProjectDetailPage() {
             />
           </div>
 
-          {/* 右侧：项目进度信息卡片（占1/3宽度） */}
-          <div className="lg:col-span-1">
+          {/* 右侧：项目进度信息 (占 5/12) */}
+          <div className="lg:col-span-5 xl:col-span-4">
             <div className="lg:sticky lg:top-24">
               <ProgressSidebar
                 project={project}

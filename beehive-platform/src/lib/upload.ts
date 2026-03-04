@@ -4,6 +4,7 @@
  * 提供统一的文件上传函数，将文件上传到 Supabase Storage 并返回公开 URL。
  * 包含客户端预验证（文件类型、文件大小）和 base64 格式判断工具函数。
  */
+import { createClient } from '@/lib/supabase';
 
 // ==================== 常量定义 ====================
 
@@ -25,8 +26,8 @@ const VIDEO_TYPES: readonly string[] = ['video/mp4', 'video/quicktime'];
 /** 图片大小限制：5MB */
 export const IMAGE_SIZE_LIMIT = 5 * 1024 * 1024;
 
-/** 视频大小限制：100MB */
-export const VIDEO_SIZE_LIMIT = 100 * 1024 * 1024;
+/** 视频大小限制：500MB */
+export const VIDEO_SIZE_LIMIT = 500 * 1024 * 1024;
 
 // ==================== 验证函数 ====================
 
@@ -62,7 +63,7 @@ export function isFileSizeValid(file: File): boolean {
  */
 function getSizeLimitLabel(type: string): string {
   if (IMAGE_TYPES.includes(type)) return '5MB';
-  if (VIDEO_TYPES.includes(type)) return '100MB';
+  if (VIDEO_TYPES.includes(type)) return '500MB';
   return '未知';
 }
 
@@ -93,29 +94,40 @@ export async function uploadFile(file: File): Promise<string> {
     throw new Error(`文件大小超过限制，最大允许 ${limit}`);
   }
 
-  // 3. 构建 FormData 并发送请求
-  const formData = new FormData();
-  formData.append('file', file);
+  // 3. 构建路径并直传到 Supabase Storage (绕过后端服务器，省流量、提高上限)
+  const supabase = createClient();
+  const { data: { session } } = await supabase.auth.getSession();
 
-  const res = await fetch('/api/upload', {
-    method: 'POST',
-    body: formData,
-  });
-
-  // 4. 处理响应
-  if (!res.ok) {
-    const body = await res.json().catch(() => null);
-    const message = body?.error || '上传失败，请重试';
-    throw new Error(message);
+  if (!session) {
+    throw new Error('未认证，无法上传文件');
   }
 
-  const body = await res.json();
+  const userId = session.user.id;
+  const timestamp = Date.now();
+  const randomId = Math.random().toString(36).substring(2, 7);
 
-  if (!body.success || !body.data?.url) {
-    throw new Error(body.error || '上传失败，请重试');
+  // 提取扩展名
+  const extMatch = file.name.match(/\.([a-zA-Z0-9]+)$/);
+  const ext = extMatch ? extMatch[1].toLowerCase() : 'bin';
+  const filePath = `${userId}/${timestamp}_${randomId}.${ext}`;
+
+  const { error: uploadError } = await supabase.storage
+    .from('media')
+    .upload(filePath, file, {
+      cacheControl: '3600',
+      upsert: false
+    });
+
+  if (uploadError) {
+    console.error('Supabase 直传失败:', uploadError);
+    throw new Error('上传失败，请重试');
   }
 
-  return body.data.url;
+  const { data: urlData } = supabase.storage
+    .from('media')
+    .getPublicUrl(filePath);
+
+  return urlData.publicUrl;
 }
 
 // ==================== 工具函数 ====================

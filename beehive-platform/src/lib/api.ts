@@ -954,11 +954,18 @@ export interface RechargeOrderResult {
   order_id: string;
   out_trade_no: string;
   amount_cents: number;
-  amount_yuan: string;
+  /** 格式化后的金额显示，如 "¥10.00" 或 "$0.50" */
+  amount_display?: string;
+  /** 兼容旧字段（国内版） */
+  amount_yuan?: string;
   payment_channel: string;
   mock_pay_url?: string;
   charge?: Record<string, unknown>;
+  /** 支付宝/NOWPayments 跳转 URL */
   redirect_url?: string;
+  /** NOWPayments 发票 URL（同步到 redirect_url）*/
+  invoice_url?: string;
+  /** 微信 Native 二维码内容 */
   code_url?: string;
 }
 

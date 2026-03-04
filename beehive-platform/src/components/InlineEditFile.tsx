@@ -65,9 +65,9 @@ export default function InlineEditFile({
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { t } = useTranslation('common');
 
-  // 文件大小限制：图片 5MB，视频 20MB
-  const maxSize = fileType === 'image' ? 5 * 1024 * 1024 : 20 * 1024 * 1024;
-  const maxSizeLabel = fileType === 'image' ? '5MB' : '20MB';
+  // 文件大小限制：图片 5MB，视频 500MB
+  const maxSize = fileType === 'image' ? 5 * 1024 * 1024 : 500 * 1024 * 1024;
+  const maxSizeLabel = fileType === 'image' ? '5MB' : '500MB';
 
   // 点击触发文件选择
   const handleClick = useCallback(() => {
@@ -204,11 +204,10 @@ export default function InlineEditFile({
   return (
     <div className="space-y-2">
       <div
-        className={`group relative rounded-lg overflow-hidden border-2 border-dashed transition-colors ${
-          canEdit
+        className={`group relative rounded-lg overflow-hidden border-2 border-dashed transition-colors ${canEdit
             ? 'cursor-pointer hover:border-[var(--gold)]'
             : 'cursor-default'
-        } ${error ? 'border-[var(--error)]' : 'border-[var(--ink-border)]'}`}
+          } ${error ? 'border-[var(--error)]' : 'border-[var(--ink-border)]'}`}
         onClick={handleClick}
       >
         {/* 媒体预览 */}

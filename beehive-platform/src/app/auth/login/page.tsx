@@ -11,7 +11,7 @@ import Logo from '@/components/Logo';
 
 export default function LoginPage() {
   const { t } = useTranslation('common');
-  const { signInWithPassword, sendPasswordReset, isLoggedIn } = useAuth();
+  const { signInWithPassword, sendPasswordReset, isLoggedIn, signInWithGoogle } = useAuth();
   const { showToast } = useToast();
   const router = useRouter();
 
@@ -81,14 +81,14 @@ export default function LoginPage() {
     }
   }, [email, password, router, showToast, signInWithPassword, t]);
 
-  const handleGoogleLogin = () => {
-    showToast('info', 'Google Sign In coming soon — credentials pending configuration.');
+  const handleGoogleLogin = async () => {
+    try {
+      await signInWithGoogle();
+    } catch (error) {
+      const message = error instanceof Error ? error.message : '';
+      showToast('error', message || 'Google Sign In failed');
+    }
   };
-
-  const handleAppleLogin = () => {
-    showToast('info', 'Apple Sign In coming soon — credentials pending configuration.');
-  };
-
 
   const handleReset = useCallback(async () => {
     if (!validateEmail()) return;
@@ -159,19 +159,6 @@ export default function LoginPage() {
                 </svg>
                 Continue with Google
               </button>
-
-              {/* Apple Login temporarily hidden
-              <button
-                type="button"
-                onClick={handleAppleLogin}
-                className="w-full flex items-center justify-center gap-3 px-4 py-3 rounded-lg bg-black text-white font-semibold text-sm border border-[#333] hover:bg-[#111] transition-colors"
-              >
-                <svg width="16" height="20" viewBox="0 0 814 1000" fill="white">
-                  <path d="M788.1 340.9c-5.8 4.5-108.2 62.2-108.2 190.5 0 148.4 130.3 200.9 134.2 202.2-.6 3.2-20.7 71.9-68.7 141.9-42.8 61.6-87.5 123.1-155.5 123.1s-85.5-39.5-164-39.5c-76 0-103.7 40.8-165.9 40.8s-105.3-57.8-155.5-127.4C46 376.7 0 249.7 0 129.8c0-58.8 11.5-115.1 35.5-164.1C64.3 38.1 209.2 23 324.5 23c68.1 0 141.6 36.5 191.8 36.5 49.5 0 127.3-41.4 215.4-41.4 34.8 0 138.5 7.1 208.4 108.4zM532.5 23.6C559.5 125.5 498.6 230.2 393.2 272.5c-67.4 26.1-140.9 36.8-211.8 27.6-24.9-3.4-49.7-10-70.9-18.2C139.2 245.2 98.4 184.1 72.3 89.5 88.5 85.9 105.1 84 121.5 84c88.5 0 166.8 62.2 216.6 162.5 26.3-79 88.4-133.5 159.2-133.5 13.3 0 26.1 2 38.2 5.6 39.8 11.8 77 36.5 97 97.5l-.2-1.8 8.7 41.6c-14.4-22.5-37.1-41.7-73.1-53.3a106 106 0 0 0-28.4-3.9z" />
-                </svg>
-                Continue with Apple
-              </button>
-              */}
             </div>
 
             {/* Divider */}
