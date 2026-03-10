@@ -29,11 +29,25 @@ AI视频创作者的协作平台，汇聚创意与算力。
 
 ### 🔄 区域切换机制
 
-通过环境变量 `NEXT_PUBLIC_REGION` 控制：
-- `cn` = 国内版（泱泱云合AI制片厂）
-- `global` = 海外版（Bee Studio AI）
+通过 `cross-env` 注入 `APP_ENV` 配合独立的配置文件控制：
+- 默认脚本 (`npm run dev` / `npm run build`) = 读取 `.env.cn.local`，对应国内版（泱泱云合AI制片厂）
+- Global 脚本 (`npm run dev:global` / `npm run build:global`) = 读取 `.env.global.local`，对应海外版（Bee Studio AI）
 
 **品牌名称、语言、支付方式会根据区域自动切换，无需修改代码。**
+
+---
+
+## 📧 邮件发信服务 (Custom SMTP)
+
+由于 Supabase 默认自带的测试发信服务存在严格频控（限制 3封/分钟），本项目已全面改用第三方独立 SMTP 服务发信：
+
+- **国内版**：使用**阿里云邮件推送 (DirectMail)**。
+  - 发件人：`yangyang@mail.yangyangyunhe.cloud`
+  - 每天享有 200 封免费额度，到达率高，不进国内邮箱垃圾箱。
+- **海外版**：使用 **Resend**。
+  - 域名验证于 Namecheap (`beestudioai.com`)。
+
+请在对于区域的 Supabase Dashboard -> Auth -> Providers -> Email 下配置 `Custom SMTP` 以保持发信用量自由。
 
 ---
 
@@ -110,8 +124,10 @@ npm install
 
 ### 2. 配置环境变量
 
-#### 国内版配置 (`.env.local`)
+项目根目录包含两个不同的环境变量文件模板：
 
+#### 国内版配置 (`.env.cn.local`)
+用于 `npm run dev` 和 `npm run build`：
 ```bash
 NEXT_PUBLIC_REGION=cn
 NEXT_PUBLIC_SUPABASE_URL=你的国内Supabase项目URL
@@ -123,7 +139,7 @@ ALIPAY_PRIVATE_KEY=你的支付宝私钥
 ```
 
 #### 海外版配置 (`.env.global.local`)
-
+用于 `npm run dev:global` 和 `npm run build:global`：
 ```bash
 NEXT_PUBLIC_REGION=global
 NEXT_PUBLIC_SUPABASE_URL=你的海外Supabase项目URL
@@ -137,18 +153,15 @@ USE_MOCK_PAYMENT=true  # Paddle 集成完成后改为 false
 
 ### 3. 启动开发服务器
 
-```bash
-npm run dev
-```
+- 启动国内版：`npm run dev`
+- 启动海外版：`npm run dev:global`
 
 访问 [http://localhost:3000](http://localhost:3000) 查看应用。
 
 ### 4. 构建生产版本
 
-```bash
-npm run build
-npm start
-```
+- 构建国内版：`npm run build && npm start`
+- 构建海外版：`npm run build:global && npm run start:global`
 
 ---
 
@@ -195,16 +208,17 @@ git -c http.sslVerify=false push beehive main
 # Vercel 会自动构建并部署
 ```
 
-### 国内版部署 (自建服务器)
+### 国内版部署 (自建阿里云服务器)
 
-使用本地 SSH 脚本部署到服务器：
+为了防止 Next.js 服务端渲染在基础配置（如 2C2G）服务器上导致内存溢出 (OOM) 崩溃崩溃，脚本内已通过 PM2 的 `--max-memory-restart 500M` 添加了内存保护。
+
+在本地执行自动化脚本推送到服务器：
 
 ```bash
 SERVER_IP=你的服务器IP \
 SERVER_USER=你的用户名 \
 REMOTE_PATH=/www/wwwroot/beehive-platform \
 SSH_PORT=22 \
-SSH_KEY=~/.ssh/id_rsa \
 bash scripts/deploy.sh
 ```
 
@@ -233,6 +247,11 @@ bash scripts/deploy.sh
 ---
 
 ## 📋 版本历史
+
+### v1.2.6 (2026-03-07)
+- ✅ **邮箱频控解除**: 接入阿里云企业邮件推送（国内）与 Resend（海外）解决 Supabase SMTP 发件限制
+- ✅ **双端环境隔离**：平台端与 App 端分离 `.env.cn.local` 与 `.env.global.local`，改写 package.json 以支持通过 `APP_ENV` 热切换环境
+- ✅ **部署架构优化**: 升级国内服务器 `deploy.sh`，强制使用 PM2 并控制 `--max-memory-restart 500M` 预防 OOM 宕机危机
 
 ### v1.2.5 (2025-02-27)
 - ✅ 创建服务条款页面 (`/terms`)，符合 Paddle 审核要求

@@ -34,6 +34,15 @@ export class ErrorBoundary extends Component<Props, State> {
   }
 
   componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
+    if (error.name === 'ChunkLoadError' || error.message.includes('Loading chunk')) {
+      const chunkFailed = sessionStorage.getItem('chunk_load_failed');
+      if (!chunkFailed) {
+        sessionStorage.setItem('chunk_load_failed', 'true');
+        window.location.reload();
+        return;
+      }
+    }
+
     // 记录错误信息
     ErrorHandler.logError(error, {
       componentStack: errorInfo.componentStack,
@@ -70,7 +79,7 @@ export class ErrorBoundary extends Component<Props, State> {
               {t('somethingWentWrong')}
             </h2>
             <p className="text-gray-600 mb-6">{errorMessage}</p>
-            
+
             {process.env.NODE_ENV === 'development' && this.state.error && (
               <details className="text-left mb-6">
                 <summary className="cursor-pointer text-sm text-gray-500 mb-2">

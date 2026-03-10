@@ -920,7 +920,7 @@ async function createProject(projectData: ProjectData): Promise<Project> {
 
 - WebSocket实时更新项目进度
 - 实时通知系统
-- 协作者在线状态
+- 参与者在线状态
 
 ### 高级功能
 

@@ -145,7 +145,31 @@ WXPAY_PRIVATE_KEY=<微信私钥>
 2. 检查支付密钥配置
 3. 查看服务端日志
 
+### 部署后静态资源 400 Bad Request (`ChunkLoadError`)
+
+**错误现象：**
+Next.js 核心代码（JS/CSS chunk）报 400 错误，前端报错 `ChunkLoadError`。
+
+**解决方案：**
+1. **Nginx 配置错误**：宝塔等环境生成的 Nginx 代理配置可能会包含 `proxy_set_header Connection "upgrade";` 或 `proxy_set_header Connection $connection_upgrade;`。这会给普通 HTTP 静态请求强加 WebSocket 头，导致 Next.js/Node 拒载。
+   - **操作**：进入反向代理配置，删除或注释所有带有 `Upgrade` 和 `Connection 'upgrade'` 的 `proxy_set_header` 行，然后重启 Nginx。
+2. **Next.js 缓存死循环 (ReDoS)**：确保 `next.config.mjs` 中的 `headers() source` 不要使用过于复杂的负向正则（如 `/((?!_next`），这可能导致 path-to-regexp 死循环崩溃。
+   - **操作**：使用原生的通配符匹配 `source: '/:path*'`。
+
+### 部署时服务器 CPU 100% 负载卡死
+
+**错误现象：**
+PM2 部署后服务器卡死，无法处理请求，日志大量显示 `EADDRINUSE: address already in use :::3001`。
+
+**解决方案：**
+旧版的 PM2 进程未能正确退出，霸占了服务端口。这会导致新的 PM2 进程死循环重启争夺端口，最终耗尽 CPU 资源。
+- **操作**：通过阿里云或宝塔终端执行以下一键核弹清理命令：
+  ```bash
+  pm2 kill && fuser -k 3001/tcp ; cd /www/wwwroot/beehive-platform && npm run build && pm2 start npm --name 'beehive-cn' -- start
+  ```
+  执行后 CPU 负载将立即降至正常水平，新代码顺利运行。
+
 ---
 
-**最后更新**: 2026-02-26
-**版本**: v1.2.4
+**最后更新**: 2026-03-08
+**版本**: v1.2.5

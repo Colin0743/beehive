@@ -923,6 +923,7 @@ export interface BalanceInfo {
   updated_at: string | null;
   task_publish_fee_cents: number;
   task_publish_fee_yuan: string;
+  free_task_quota: number;
 }
 
 export interface BalanceTransaction {

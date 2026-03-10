@@ -6,8 +6,8 @@ This file provides guidance to WARP (warp.dev) when working with code in this re
 
 蜂巢是一个AI视频协作平台，参考Kickstarter模式但目标是"筹集"视频制作时长而非资金。用户分为三种角色：
 - **发起人 (Initiator)**: 项目创建者/导演
-- **协作者 (Collaborator)**: 核心美术师
-- **工蜂 (Worker Bee)**: 算力提供者
+- **参与者 (Collaborator)**: 核心美术师
+- **参与者 (Worker Bee)**: 创作者
 
 ## 技术架构
 

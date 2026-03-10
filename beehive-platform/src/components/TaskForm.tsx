@@ -68,6 +68,7 @@ export default function TaskForm({
   const [publishFeeYuan, setPublishFeeYuan] = useState<string>('1.00');
   const [balanceCents, setBalanceCents] = useState<number>(0);
   const [feeCents, setFeeCents] = useState<number>(100);
+  const [freeTaskQuota, setFreeTaskQuota] = useState<number>(0);
   const [showInsufficientModal, setShowInsufficientModal] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
@@ -103,6 +104,7 @@ export default function TaskForm({
         setPublishFeeYuan(res.data.task_publish_fee_yuan);
         setBalanceCents(res.data.balance_cents);
         setFeeCents(res.data.task_publish_fee_cents);
+        setFreeTaskQuota(res.data.free_task_quota);
       }
     });
   }, [isOpen, mode]);
@@ -182,9 +184,9 @@ export default function TaskForm({
   const handleSubmit = async () => {
     if (!validate()) return;
 
-    // 创建模式：发布前校验余额
+    // 创建模式：发布前校验余额 (有免费次数时跳过)
     if (mode === 'create') {
-      if (balanceCents < feeCents) {
+      if (freeTaskQuota <= 0 && balanceCents < feeCents) {
         setShowInsufficientModal(true);
         return;
       }
@@ -402,7 +404,11 @@ export default function TaskForm({
                 {t('loading')}
               </>
             ) : (
-              mode === 'create' ? t('publishTaskWithFee', { fee: publishFeeYuan }) : t('save')
+              mode === 'create'
+                ? (freeTaskQuota > 0
+                  ? t('publishTaskFree', { defaultValue: `本次免费 (剩余${freeTaskQuota}次)` })
+                  : t('publishTaskWithFee', { fee: publishFeeYuan }))
+                : t('save')
             )}
           </button>
         </div>

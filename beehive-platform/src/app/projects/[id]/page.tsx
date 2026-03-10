@@ -52,6 +52,7 @@ export default function ProjectDetailPage() {
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   const [showInsufficientModal, setShowInsufficientModal] = useState(false);
   const [publishFeeYuan, setPublishFeeYuan] = useState<string>('1.00');
+  const [freeTaskQuota, setFreeTaskQuota] = useState<number>(0);
   const [submittingTask, setSubmittingTask] = useState(false);
   const [completingTask, setCompletingTask] = useState(false);
 
@@ -98,7 +99,10 @@ export default function ProjectDetailPage() {
   useEffect(() => {
     if (isOwner) {
       balanceStorage.getBalance().then((r) => {
-        if (r.success && r.data) setPublishFeeYuan(r.data.task_publish_fee_yuan);
+        if (r.success && r.data) {
+          setPublishFeeYuan(r.data.task_publish_fee_yuan);
+          setFreeTaskQuota(r.data.free_task_quota);
+        }
       });
     }
   }, [isOwner]);
@@ -203,7 +207,7 @@ export default function ProjectDetailPage() {
   const handlePublishTask = useCallback(async (taskId: string) => {
     const balanceRes = await balanceStorage.getBalance();
     if (balanceRes.success && balanceRes.data) {
-      if (balanceRes.data.balance_cents < balanceRes.data.task_publish_fee_cents) {
+      if (balanceRes.data.free_task_quota <= 0 && balanceRes.data.balance_cents < balanceRes.data.task_publish_fee_cents) {
         setShowInsufficientModal(true);
         return;
       }
@@ -459,7 +463,9 @@ export default function ProjectDetailPage() {
                     onClick={() => { setTaskFormMode('create'); setEditingTask(undefined); setShowTaskForm(true); }}
                     className="btn-primary h-10 px-4 text-sm"
                   >
-                    {t('publishTaskWithFee', { fee: publishFeeYuan })}
+                    {freeTaskQuota > 0
+                      ? t('publishTaskFreeFull', { defaultValue: `发布任务` })
+                      : t('publishTaskWithFee', { fee: publishFeeYuan })}
                   </button>
                 )}
                 {isOwner && tasks.length >= 10 && (

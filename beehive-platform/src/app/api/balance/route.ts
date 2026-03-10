@@ -27,7 +27,15 @@ export async function GET(_request: NextRequest) {
     return errorResponse('查询余额失败', 500);
   }
 
+  // 获取用户免费额度
+  const { data: profileData } = await supabase
+    .from('profiles')
+    .select('free_task_quota')
+    .eq('id', userId)
+    .maybeSingle();
+
   const balanceCents = data?.balance_cents ?? 0;
+  const freeTaskQuota = profileData?.free_task_quota ?? 0;
   const taskPublishFeeCents = parseInt(
     process.env.TASK_PUBLISH_FEE_CENTS ?? '50',
     10
@@ -38,5 +46,6 @@ export async function GET(_request: NextRequest) {
     updated_at: data?.updated_at ?? null,
     task_publish_fee_cents: taskPublishFeeCents,
     task_publish_fee_yuan: (taskPublishFeeCents / 100).toFixed(2),
+    free_task_quota: freeTaskQuota,
   });
 }
