@@ -1,7 +1,7 @@
 # 🐝 Bee Studio AI - Global Version
 
-**Version**: v1.2.5  
-**Last Updated**: 2025-02-27  
+**Version**: v1.2.7  
+**Last Updated**: 2026-03-11  
 **Deployment Region**: Global (International)
 
 ---
@@ -24,10 +24,10 @@
 - ✅ User Registration & Login (Email/Password)
 - ✅ Project Creation, Browsing, Editing, Search
 - ✅ Project Following & Participation (Worker Bee Role)
-- ✅ Task Publishing & Management
+- ✅ Task Publishing & Management (10 Free tasks for new users)
 - ✅ Task Hall Browsing & Acceptance
 - ✅ Balance Recharge System
-- ✅ Project Log Publishing
+- ✅ Project Log Publishing (Projects kept permanently, no auto-deletion)
 
 ### Payment Integration
 - 🔄 Paddle Payment (Under Review)
@@ -166,6 +166,11 @@ For detailed integration guide, see [PADDLE_INTEGRATION_CHECKLIST.md](PADDLE_INT
 ---
 
 ## 📝 Version History
+
+### v1.2.7 (2026-03-11)
+- ✅ 10 Free task quotas for new users
+- ✅ Projects are now kept permanently (removed 30-day auto-deletion)
+- ✅ Optimized multi-repo synchronization and deployment workflow
 
 ### v1.2.5 (2025-02-27)
 - ✅ Created Terms of Service page compliant with Paddle requirements
